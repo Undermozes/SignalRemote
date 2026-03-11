@@ -3,20 +3,30 @@
  
 <AuthorizeView>
     <NotAuthorized>
-        <div class="jumbotron">
-            <h3 class="display-4">Remotely</h3>
-            <p class="lead">
-                An open-source remote support solution.
-            </p>
-            <hr class="my-4">
-            <p class="lead">
-                <a class="btn btn-primary btn-lg me-2" href="Account/Login" role="button">Log In</a>
-
-                @if (_isRegistrationEnabled)
-                {
-                    <a class="btn btn-primary btn-lg" href="Account/Register" role="button">Register</a>
-                }
-            </p>
+        <div class="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+            <div class="text-center max-w-lg w-full">
+                <div class="flex justify-center mb-6">
+                    <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/30">
+                        <i class="fas fa-desktop text-white text-2xl"></i>
+                    </div>
+                </div>
+                <h1 class="text-4xl font-bold text-slate-100 mb-3">Remotely</h1>
+                <p class="text-slate-400 text-lg mb-2">An open-source remote support solution.</p>
+                <div class="w-16 h-0.5 bg-indigo-600 mx-auto my-6 rounded-full"></div>
+                <div class="flex items-center justify-center gap-3 flex-wrap">
+                    <a class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200 shadow-lg shadow-indigo-600/20 text-sm"
+                       href="Account/Login" role="button">
+                        <i class="fas fa-right-to-bracket me-2"></i>Log In
+                    </a>
+                    @if (_isRegistrationEnabled)
+                    {
+                        <a class="bg-slate-700 hover:bg-slate-600 text-slate-100 font-semibold px-6 py-3 rounded-lg transition-colors duration-200 border border-slate-600 text-sm"
+                           href="Account/Register" role="button">
+                            <i class="fas fa-user-plus me-2"></i>Register
+                        </a>
+                    }
+                </div>
+            </div>
         </div>
     </NotAuthorized>
     <Authorized>

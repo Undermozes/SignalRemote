@@ -3,29 +3,35 @@
 
 @inject SignInManager<RemotelyUser> SignInManager
 
-<ul class="nav nav-pills flex-column">
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">Profile</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Email">Email</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/ChangePassword">Password</NavLink>
-    </li>
+<nav class="flex flex-col gap-0.5">
+    <NavLink class="manage-nav-link" href="Account/Manage" Match="NavLinkMatch.All">
+        <i class="fas fa-id-card nav-icon" aria-hidden="true"></i>
+        Profile
+    </NavLink>
+    <NavLink class="manage-nav-link" href="Account/Manage/Email">
+        <i class="fas fa-envelope nav-icon" aria-hidden="true"></i>
+        Email
+    </NavLink>
+    <NavLink class="manage-nav-link" href="Account/Manage/ChangePassword">
+        <i class="fas fa-key nav-icon" aria-hidden="true"></i>
+        Password
+    </NavLink>
     @if (hasExternalLogins)
     {
-        <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage/ExternalLogins">External logins</NavLink>
-        </li>
+        <NavLink class="manage-nav-link" href="Account/Manage/ExternalLogins">
+            <i class="fas fa-link nav-icon" aria-hidden="true"></i>
+            External logins
+        </NavLink>
     }
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">Two-factor authentication</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/PersonalData">Personal data</NavLink>
-    </li>
-</ul>
+    <NavLink class="manage-nav-link" href="Account/Manage/TwoFactorAuthentication">
+        <i class="fas fa-shield-halved nav-icon" aria-hidden="true"></i>
+        Two-factor auth
+    </NavLink>
+    <NavLink class="manage-nav-link" href="Account/Manage/PersonalData">
+        <i class="fas fa-database nav-icon" aria-hidden="true"></i>
+        Personal data
+    </NavLink>
+</nav>
 
 @code {
     private bool hasExternalLogins;

@@ -4,151 +4,145 @@
 @inject IDataService DataService
 @inject IDataService DataService
 
-<div class="ps-4 pb-1 pe-0 pt-0 navbar navbar-dark" style="background-color: rgba(0,0,0,0.3)">
-    <a class="navbar-brand text-start" href="">
-        <div class="logo-title">
-            @if (!string.IsNullOrWhiteSpace(_organization?.OrganizationName))
-            {
-                @_organization.OrganizationName
-            }
-            else
-            {
-                <span>Remotely</span>
-            }
+<!-- Brand Header -->
+<div class="flex items-center justify-between px-4 py-4 border-b border-slate-700 flex-shrink-0">
+    <a href="" class="flex items-center gap-2.5 min-w-0">
+        <div class="w-7 h-7 bg-indigo-600 rounded-md flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-desktop text-white" style="font-size: 0.65rem;"></i>
         </div>
-        <div class="logo-subtitle">Support Portal</div>
+        <div class="min-w-0">
+            <div class="font-semibold text-slate-100 text-sm leading-tight truncate">
+                @if (!string.IsNullOrWhiteSpace(_organization?.OrganizationName))
+                {
+                    @_organization.OrganizationName
+                }
+                else
+                {
+                    <span>Remotely</span>
+                }
+            </div>
+            <div class="text-xs text-indigo-400 leading-tight mt-0.5">Support Portal</div>
+        </div>
     </a>
-    <button class="navbar-toggler" @onclick="ToggleNavMenu">
-        <span class="navbar-toggler-icon"></span>
+    <button class="nav-toggler text-slate-400 hover:text-slate-100 transition-colors p-1 rounded" @onclick="ToggleNavMenu" aria-label="Toggle navigation">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
     </button>
 </div>
 
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
-    <ul class="nav flex-column">
+<div class="@NavMenuCssClass nav-content" @onclick="ToggleNavMenu">
+    <nav class="px-3 pt-3 pb-3 flex flex-col gap-0.5 flex-1">
 
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
-            </NavLink>
-        </li>
+        <NavLink class="nav-link sidebar-link" href="" Match="NavLinkMatch.All">
+            <i class="fas fa-house nav-icon" aria-hidden="true"></i>
+            <span>Home</span>
+        </NavLink>
 
+        <NavLink class="nav-link sidebar-link" href="downloads">
+            <i class="fas fa-download nav-icon" aria-hidden="true"></i>
+            <span>Downloads</span>
+        </NavLink>
 
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="downloads">
-                <span class="oi oi-cloud-download" aria-hidden="true"></span> Downloads
-            </NavLink>
-        </li>
-
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="/Viewer" target="_blank">
-                <span class="oi oi-monitor" aria-hidden="true"></span> Remote Control
-            </NavLink>
-
-        </li>
+        <a class="sidebar-link" href="/Viewer" target="_blank">
+            <i class="fas fa-desktop nav-icon" aria-hidden="true"></i>
+            <span>Remote Control</span>
+        </a>
 
         <AuthorizeView>
             <Authorized>
-                <li class="nav-item px-3">
-                    <NavLink class="nav-link" href="deploy">
-                        <span class="oi oi-data-transfer-upload" aria-hidden="true"></span> Deploy
-                    </NavLink>
-                </li>
-                <li class="nav-item px-3">
-                    <NavLink class="nav-link" href="scripts">
-                        <span class="oi oi-script" aria-hidden="true"></span> Scripts
-                    </NavLink>
-                </li>
-                <li class="nav-item px-3">
-                    <NavLink class="nav-link" href="device-details">
-                        <span class="oi oi-info" aria-hidden="true"></span> Device Details
-                    </NavLink>
-                </li>
-                <li class="nav-item px-3">
-                    <NavLink class="nav-link" href="user-options">
-                        <span class="oi oi-pencil" aria-hidden="true"></span> User Options
-                    </NavLink>
-                </li>
-                <li class="nav-item px-3">
-                    <NavLink class="nav-link" href="backup">
-                        <span class="oi oi-hard-drive" aria-hidden="true"></span> Backup
-                    </NavLink>
-                </li>
-
+                <NavLink class="nav-link sidebar-link" href="deploy">
+                    <i class="fas fa-upload nav-icon" aria-hidden="true"></i>
+                    <span>Deploy</span>
+                </NavLink>
+                <NavLink class="nav-link sidebar-link" href="scripts">
+                    <i class="fas fa-code nav-icon" aria-hidden="true"></i>
+                    <span>Scripts</span>
+                </NavLink>
+                <NavLink class="nav-link sidebar-link" href="device-details">
+                    <i class="fas fa-laptop nav-icon" aria-hidden="true"></i>
+                    <span>Device Details</span>
+                </NavLink>
+                <NavLink class="nav-link sidebar-link" href="user-options">
+                    <i class="fas fa-sliders nav-icon" aria-hidden="true"></i>
+                    <span>User Options</span>
+                </NavLink>
+                <NavLink class="nav-link sidebar-link" href="backup">
+                    <i class="fas fa-hard-drive nav-icon" aria-hidden="true"></i>
+                    <span>Backup</span>
+                </NavLink>
             </Authorized>
         </AuthorizeView>
-
 
         @if (_user?.IsAdministrator == true)
         {
-            <li class="nav-item px-3 pt-3 small text-muted">
-                Admin
-            </li>
+            <div class="pt-4 pb-1 px-1">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Admin</span>
+            </div>
 
-            <li class="nav-item px-3">
-                <NavLink class="nav-link" href="manage-organization">
-                    <span class="oi oi-briefcase" aria-hidden="true"></span> Organization
-                </NavLink>
-            </li>
-            <li class="nav-item px-3">
-                <NavLink class="nav-link" href="branding">
-                    <span class="oi oi-brush" aria-hidden="true"></span> Branding
-                </NavLink>
-            </li>
-            <li class="nav-item px-3">
-                <NavLink class="nav-link" href="api-keys">
-                    <span class="oi oi-key" aria-hidden="true"></span> API Keys
-                </NavLink>
-            </li>
+            <NavLink class="nav-link sidebar-link" href="manage-organization">
+                <i class="fas fa-building nav-icon" aria-hidden="true"></i>
+                <span>Organization</span>
+            </NavLink>
+            <NavLink class="nav-link sidebar-link" href="branding">
+                <i class="fas fa-palette nav-icon" aria-hidden="true"></i>
+                <span>Branding</span>
+            </NavLink>
+            <NavLink class="nav-link sidebar-link" href="api-keys">
+                <i class="fas fa-key nav-icon" aria-hidden="true"></i>
+                <span>API Keys</span>
+            </NavLink>
 
             @if (_user?.IsServerAdmin == true)
             {
-                <li class="nav-item px-3">
-                    <NavLink class="nav-link" href="server-logs">
-                        <span class="oi oi-document" aria-hidden="true"></span> Server Logs
-                    </NavLink>
-                </li>
-                <li class="nav-item px-3">
-                    <NavLink class="nav-link" href="server-config">
-                        <span class="oi oi-wrench" aria-hidden="true"></span> Server Config
-                    </NavLink>
-                </li>
+                <NavLink class="nav-link sidebar-link" href="server-logs">
+                    <i class="fas fa-file-lines nav-icon" aria-hidden="true"></i>
+                    <span>Server Logs</span>
+                </NavLink>
+                <NavLink class="nav-link sidebar-link" href="server-config">
+                    <i class="fas fa-gear nav-icon" aria-hidden="true"></i>
+                    <span>Server Config</span>
+                </NavLink>
             }
         }
 
-        <AuthorizeView>
-            <Authorized>
-                <li class="px-3 mt-3">
-                    <a class="btn btn-link text-light" href="Account/Manage">
-                        Account
+        <!-- Bottom section pinned to end of sidebar -->
+        <div class="mt-auto pt-3 border-t border-slate-700 flex flex-col gap-0.5">
+            <AuthorizeView>
+                <Authorized>
+                    <a class="sidebar-link" href="Account/Manage">
+                        <i class="fas fa-user-circle nav-icon" aria-hidden="true"></i>
+                        <span>Account</span>
                     </a>
-                </li>
-                <li class="px-3">
                     <form action="Account/Logout" method="post">
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@_currentUrl" />
-                        <button type="submit" class="btn btn-link text-light">
-                            Logout
+                        <button type="submit" class="sidebar-link w-full text-left">
+                            <i class="fas fa-right-from-bracket nav-icon" aria-hidden="true"></i>
+                            <span>Logout</span>
                         </button>
                     </form>
-                </li>
-            </Authorized>
-            <NotAuthorized>
-                <li class="px-3 mt-3">
-                    <a class="btn btn-link text-light" href="Account/Login">Log in</a>
-                </li>
-                @if (_isRegistrationEnabled)
-                {
-                    <li class="px-3">
-                        <a class="btn btn-link text-light" href="Account/Register">Register</a>
-                    </li>
-                }
-            </NotAuthorized>
-        </AuthorizeView>
-
-        <li class="px-3 mt-3">
-            <a class="btn btn-link text-light" href="/about">About</a>
-        </li>
-    </ul>
+                </Authorized>
+                <NotAuthorized>
+                    <a class="sidebar-link" href="Account/Login">
+                        <i class="fas fa-right-to-bracket nav-icon" aria-hidden="true"></i>
+                        <span>Log in</span>
+                    </a>
+                    @if (_isRegistrationEnabled)
+                    {
+                        <a class="sidebar-link" href="Account/Register">
+                            <i class="fas fa-user-plus nav-icon" aria-hidden="true"></i>
+                            <span>Register</span>
+                        </a>
+                    }
+                </NotAuthorized>
+            </AuthorizeView>
+            <a class="sidebar-link" href="/about">
+                <i class="fas fa-circle-info nav-icon" aria-hidden="true"></i>
+                <span>About</span>
+            </a>
+        </div>
+    </nav>
 </div>
 
 @code {
@@ -200,7 +194,7 @@
         }
     }
 
-    private string NavMenuCssClass => collapseNavMenu ? "collapse" : "";
+    private string NavMenuCssClass => collapseNavMenu ? "nav-hidden" : "";
 
 
     private void ToggleNavMenu()

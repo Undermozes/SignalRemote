@@ -1,8 +1,14 @@
 ﻿@if (!string.IsNullOrEmpty(DisplayMessage))
 {
-    var statusMessageClass = DisplayMessage.StartsWith("Error") ? "danger" : "success";
-    <div class="alert alert-@statusMessageClass" role="alert">
-        @DisplayMessage
+    var isError = DisplayMessage.StartsWith("Error");
+    var containerClass = isError
+        ? "flex items-start gap-2.5 p-3 mb-4 bg-red-900/20 border border-red-800/40 rounded-lg text-red-400 text-sm"
+        : "flex items-start gap-2.5 p-3 mb-4 bg-emerald-900/20 border border-emerald-800/40 rounded-lg text-emerald-400 text-sm";
+    var iconClass = isError ? "fas fa-circle-exclamation" : "fas fa-circle-check";
+
+    <div class="@containerClass" role="alert">
+        <i class="@iconClass mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+        <span>@DisplayMessage</span>
     </div>
 }
 

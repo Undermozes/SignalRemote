@@ -1,15 +1,22 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @layout Remotely.Server.Components.Layout.MainLayout
 @inject NavigationManager NavigationManager
 
-@if (HttpContext is null)
-{
-    <p>Loading...</p>
-}
-else
-{
-    @Body
-}
+<div class="min-h-full">
+    @if (HttpContext is null)
+    {
+        <div class="flex items-center justify-center py-12">
+            <div class="flex items-center gap-3 text-slate-400">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span class="text-sm">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        @Body
+    }
+</div>
 
 @code {
     [CascadingParameter]

@@ -1,15 +1,16 @@
 ﻿@attribute [Authorize]
 @inherits AuthComponentBase
 
-<h3>Devices</h3>
+<h3 class="text-xl font-semibold text-slate-100 mb-4">Devices</h3>
 
 <div @onclick="ClearSelectedCard">
     <div id="deviceControlsWrapper">
-        <div>
+        <div class="flex flex-col gap-2">
             <div>
-                <div>Device Group</div>
-                <div class="text-nowrap">
-                    <select class="form-control d-inline" style="width: 150px" @bind="_selectedGroupId">
+                <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Device Group</div>
+                <div class="flex items-center gap-2">
+                    <select class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                            style="width: 150px" @bind="_selectedGroupId">
                         <option value="@_deviceGroupAll">All</option>
                         <option value="@_deviceGroupNone">None</option>
                         @foreach (var group in _deviceGroups)
@@ -17,74 +18,89 @@
                             <option @key="group.ID" value="@group.ID">@group.Name</option>
                         }
                     </select>
-                    <button class="btn btn-sm btn-secondary" title="Wake Devices in Group" style="width: 40px; margin-left: 5px;" @onclick="WakeDevices">
-                        <span class="oi oi-power-standby"></span>
+                    <button class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 hover:text-slate-100 rounded-lg px-2.5 py-1.5 transition-colors duration-150"
+                            title="Wake Devices in Group" @onclick="WakeDevices">
+                        <span class="oi oi-power-standby text-sm"></span>
                     </button>
-
                 </div>
             </div>
 
             <div>
-                <div class="mt-1">Sort</div>
-                <select class="form-control d-inline" style="width: 150px" @bind="_selectedSortProperty">
-                    <option value=""></option>
-                    @foreach (var prop in _sortableProperties)
-                    {
-                        <option value="@prop.Name">@GetDisplayName(prop)</option>
-                    }
-                </select>
-                <button class="btn btn-sm btn-secondary" title="Sort Direction" style="width: 40px; margin-left: 5px;" @onclick="ToggleSortDirection">
-                    <span class="oi @GetSortIcon()"></span>
-                </button>
+                <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Sort</div>
+                <div class="flex items-center gap-2">
+                    <select class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                            style="width: 150px" @bind="_selectedSortProperty">
+                        <option value=""></option>
+                        @foreach (var prop in _sortableProperties)
+                        {
+                            <option value="@prop.Name">@GetDisplayName(prop)</option>
+                        }
+                    </select>
+                    <button class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 hover:text-slate-100 rounded-lg px-2.5 py-1.5 transition-colors duration-150"
+                            title="Sort Direction" @onclick="ToggleSortDirection">
+                        <span class="oi @GetSortIcon() text-sm"></span>
+                    </button>
+                </div>
             </div>
 
-            <div class="custom-control custom-checkbox mt-2">
-                <input id="hideOfflineDevicesCheckbox" type="checkbox" class="custom-control-input align-middle" @bind="_hideOfflineDevices" />
-                <label class="custom-control-label align-middle" for="hideOfflineDevicesCheckbox">Hide offline devices</label>
+            <div class="flex items-center gap-2 mt-1">
+                <input id="hideOfflineDevicesCheckbox" type="checkbox" class="rounded border-slate-600 bg-slate-700 text-indigo-500 w-4 h-4" @bind="_hideOfflineDevices" />
+                <label class="text-sm text-slate-300 cursor-pointer" for="hideOfflineDevicesCheckbox">Hide offline devices</label>
             </div>
-            <div class="mt-2">
-                <button class="btn btn-sm btn-secondary me-2" @onclick="SelectAllCards">Select All</button>
-                <button class="btn btn-sm btn-primary" @onclick="HandleRefreshClicked">Refresh</button>
+            <div class="flex items-center gap-2 mt-1">
+                <button class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 hover:text-slate-100 text-sm rounded-lg px-3 py-1.5 transition-colors duration-150"
+                        @onclick="SelectAllCards">Select All</button>
+                <button class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg px-3 py-1.5 transition-colors duration-150 font-medium"
+                        @onclick="HandleRefreshClicked">
+                    <i class="fas fa-rotate-right me-1"></i>Refresh
+                </button>
             </div>
         </div>
-         
-        <div>
-            <div class="d-inline-block text-start">
+
+        <div class="text-right">
+            <div class="inline-block text-left">
                 <div>
-                    <div>Search</div>
-                    <input class="form-control d-inline"
+                    <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Search</div>
+                    <input class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none placeholder-slate-500"
                            style="width: 200px"
                            placeholder="Search device properties"
                            @bind="_filter" />
                 </div>
 
-                <div class="mt-2" style="white-space: nowrap">
-                    <button class="btn btn-sm btn-secondary" @onclick="PageDown">
-                        <i class="oi oi-chevron-left"></i>
+                <div class="flex items-center gap-1 mt-2 flex-wrap">
+                    <button class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 hover:text-slate-100 rounded-lg px-2 py-1 transition-colors duration-150"
+                            @onclick="PageDown">
+                        <i class="oi oi-chevron-left text-sm"></i>
                     </button>
-                    <span class="small">Page</span>
-                    <input id="currentPageInput" style="width:75px; text-align: center" pattern="[0-9]" @bind="_currentPage" @bind:event="oninput" />
-                    <span class="small">of</span>
-                    <span>@TotalPages</span>
-                    <button class="btn btn-sm btn-secondary" @onclick="PageUp">
-                        <i class="oi oi-chevron-right"></i>
+                    <span class="text-xs text-slate-400">Page</span>
+                    <input id="currentPageInput"
+                           class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                           style="width: 60px"
+                           pattern="[0-9]"
+                           @bind="_currentPage"
+                           @bind:event="oninput" />
+                    <span class="text-xs text-slate-400">of</span>
+                    <span class="text-sm text-slate-300 font-medium">@TotalPages</span>
+                    <button class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 hover:text-slate-100 rounded-lg px-2 py-1 transition-colors duration-150"
+                            @onclick="PageUp">
+                        <i class="oi oi-chevron-right text-sm"></i>
                     </button>
                 </div>
 
-                <div class="mt-2">
-                    <select class="form-control d-inline" style="width:100px" @bind="_devicesPerPage">
+                <div class="flex items-center gap-2 mt-2">
+                    <select class="bg-slate-700 border border-slate-600 text-slate-100 text-sm rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                            style="width: 90px" @bind="_devicesPerPage">
                         <option value="25">25</option>
                         <option value="50">50</option>
                         <option value="100">100</option>
                         <option value="200">200</option>
                     </select>
-                    <span class="ms-1 small">per page</span>
+                    <span class="text-xs text-slate-400">per page</span>
                 </div>
             </div>
-           
-
         </div>
     </div>
+
     <div id="deviceListDiv" class="p-2 mb-5">
         @foreach (var device in DisplayedDevices)
         {
