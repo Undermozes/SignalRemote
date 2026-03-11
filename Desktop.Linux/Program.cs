@@ -28,7 +28,7 @@ public class Program
         var version = AppVersionHelper.GetAppVersion();
         var logger = new FileLogger("Remotely_Desktop", version, "Program.cs");
         var filePath = Environment.ProcessPath ?? Environment.GetCommandLineArgs().First();
-        var serverUrl = Debugger.IsAttached ? "http://localhost:5000" : string.Empty;
+        var serverUrl = Debugger.IsAttached ? "http://localhost:5001" : string.Empty;
         var getEmbeddedResult = EmbeddedServerDataProvider.Instance.TryGetEmbeddedData(filePath);
         if (getEmbeddedResult.IsSuccess)
         {
