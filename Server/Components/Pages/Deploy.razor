@@ -62,6 +62,19 @@
             </button>
         </div>
     </div>
+
+    <div class="col-sm-12 mb-3">
+        <div class="mb-1">
+            <strong>Linux ARM64 (Raspberry Pi)</strong>
+        </div>
+
+        <div class="input-group">
+            <input type="text" class="form-control" readonly value="@_linuxArm64Script" />
+            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyScriptToClipboard(_linuxArm64Script)">
+                <i class="oi oi-clipboard"></i>
+            </button>
+        </div>
+    </div>
 </div>
 
 <h4 class="text-success mt-3">
@@ -174,6 +187,7 @@
     private string _windowsScript = string.Empty;
     private string _ubuntuScript = string.Empty;
     private string _manjaroScript = string.Empty;
+    private string _linuxArm64Script = string.Empty;
     private string _appDataDir = string.Empty;
     private IFileInfo? _winX64File;
     private IFileInfo? _winX86File;
@@ -288,6 +302,8 @@
         _ubuntuScript = GetLinuxScript("UbuntuInstaller-x64");
 
         _manjaroScript = GetLinuxScript("ManjaroInstaller-x64");
+
+        _linuxArm64Script = GetLinuxScript("LinuxArm64Installer");
     }
 
     private async Task TrySaveFile(IFileInfo? fileInfo, InputFileChangeEventArgs ev)

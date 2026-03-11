@@ -58,8 +58,14 @@ public class AgentUpdateController : ControllerBase
                 case "linux":
                     filePath = Path.Combine(_hostEnv.WebRootPath, "Content", "Remotely-Linux.zip");
                     break;
+                case "linux-arm64":
+                    filePath = Path.Combine(_hostEnv.WebRootPath, "Content", "Remotely-Linux-arm64.zip");
+                    break;
                 case "macos-x64":
                     filePath = Path.Combine(_hostEnv.WebRootPath, "Content", "Remotely-MacOS-x64.zip");
+                    break;
+                case "macos-arm64":
+                    filePath = Path.Combine(_hostEnv.WebRootPath, "Content", "Remotely-MacOS-arm64.zip");
                     break;
                 default:
                     _logger.LogWarning(
