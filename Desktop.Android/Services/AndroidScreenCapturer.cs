@@ -218,8 +218,11 @@ public class AndroidScreenCapturer : IAndroidScreenCapturer
             _imageReader?.Close();
             _virtualDisplay?.Release();
 
-            // PixelFormat.RGBA_8888 = 1 (used for screen capture with MediaProjection)
-            _imageReader = ImageReader.NewInstance(width, height, (ImageFormatType)1, 2);
+            // PixelFormat.RGBA_8888 = 1.  This format is required for MediaProjection screen capture.
+            // The binding's ImageFormatType enum does not expose this value by name, so we cast the
+            // integer constant that matches Android's PixelFormat.RGBA_8888 contract.
+            const int PixelFormatRgba8888 = 1;
+            _imageReader = ImageReader.NewInstance(width, height, (ImageFormatType)PixelFormatRgba8888, 2);
 
             // MediaProjection.CreateVirtualDisplay signature:
             // (name, width, height, dpi, DisplayFlags flags, Surface surface, Callback callback, Handler handler)

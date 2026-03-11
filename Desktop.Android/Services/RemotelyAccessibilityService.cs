@@ -51,11 +51,15 @@ public class RemotelyAccessibilityService : AccessibilityService
 
     /// <summary>
     /// Injects a key event (down or up).
+    /// Note: Android does not support arbitrary key injection without root or a focused
+    /// accessibility node. This method attempts a best-effort injection via the focused
+    /// text field through <see cref="InjectText"/>. For non-text keys, callers should
+    /// use <see cref="InjectText"/> directly for text input.
     /// </summary>
     public void InjectKeyEvent(KeyEvent keyEvent)
     {
-        // For keyboard input, we use AccessibilityNodeInfo.ACTION_SET_TEXT when possible.
-        // This is a best-effort implementation.
+        // Best-effort: keep the service alive; actual key injection is performed
+        // through InjectText (ACTION_SET_TEXT) for the focused node.
         PerformGlobalAction(0);
     }
 

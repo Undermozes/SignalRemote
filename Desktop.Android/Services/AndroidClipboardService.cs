@@ -46,9 +46,9 @@ public class AndroidClipboardService : IClipboardService
         try
         {
             var clip = ClipData.NewPlainText("Remotely", clipboardText);
-            if (clip != null)
+            if (clip != null && _clipboardManager != null)
             {
-                _clipboardManager!.PrimaryClip = clip;
+                _clipboardManager.PrimaryClip = clip;
             }
             _lastClipboardText = clipboardText;
         }

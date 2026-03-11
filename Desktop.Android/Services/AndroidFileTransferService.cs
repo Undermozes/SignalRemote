@@ -85,9 +85,10 @@ public class AndroidFileTransferService : IFileTransferService
 
                 if (endOfFile)
                 {
+                    var filePath = fileStream.Name;
                     fileStream.Close();
                     _partialTransfers.Remove(messageId);
-                    _logger.LogInformation("File transfer complete. Saved to: {Path}", GetBaseDirectory());
+                    _logger.LogInformation("File transfer complete. Saved to: {Path}", filePath);
                 }
             }
         }

@@ -135,23 +135,10 @@ public class AndroidKeyboardMouseInput : IKeyboardMouseInput
 
     public void SendMouseMove(double percentX, double percentY, IViewer viewer)
     {
-        try
-        {
-            var service = RemotelyAccessibilityService.Instance;
-            if (service is null)
-            {
-                return;
-            }
-
-            var bounds = viewer.Capturer.CurrentScreenBounds;
-            var x = (float)(bounds.Width * percentX);
-            var y = (float)(bounds.Height * percentY);
-            service.InjectSwipe(x, y, x, y, durationMs: 1);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while sending mouse move.");
-        }
+        // Android touch screens do not support hover/mouse-move semantics in the same way
+        // as a desktop pointer. A single-pixel zero-length swipe is a no-op on most devices.
+        // The visual cursor position on the remote viewer is updated via the screen capture
+        // stream; no gesture injection is required for plain hover moves.
     }
 
     public void SendMouseWheel(int deltaY)

@@ -16,7 +16,11 @@ namespace Remotely.Desktop.Android.Services;
 /// is in the background.  It maintains the SignalR connection to the Remotely server,
 /// reports device info, and responds to remote commands.
 /// </summary>
-[Service(Exported = false, ForegroundServiceType = global::Android.Content.PM.ForegroundService.TypeMediaProjection)]
+[Service(
+    Exported = false,
+    ForegroundServiceType =
+        global::Android.Content.PM.ForegroundService.TypeMediaProjection |
+        global::Android.Content.PM.ForegroundService.TypeRemoteMessaging)]
 public class AgentForegroundService : Service
 {
     private const string ChannelId = "remotely_agent";
