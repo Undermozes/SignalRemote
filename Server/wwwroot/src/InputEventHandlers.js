@@ -185,12 +185,31 @@ export function ApplyInputHandlers() {
         }
     });
     FullScreenButton.addEventListener("click", () => {
-        FullScreenButton.classList.toggle("toggled");
-        if (FullScreenButton.classList.contains("toggled")) {
+        if (!document.fullscreenElement) {
             document.body.requestFullscreen();
         }
         else {
             document.exitFullscreen();
+        }
+    });
+    document.addEventListener("fullscreenchange", () => {
+        if (document.fullscreenElement) {
+            FullScreenButton.classList.add("toggled");
+            FullScreenButton.title = "Exit fullscreen mode.";
+            const enterIcon = FullScreenButton.querySelector("i");
+            if (enterIcon) {
+                enterIcon.className = "fas fa-compress";
+            }
+            MenuFrame.classList.remove("open");
+            MenuButton.classList.remove("open");
+        }
+        else {
+            FullScreenButton.classList.remove("toggled");
+            FullScreenButton.title = "Enter fullscreen mode.";
+            const exitIcon = FullScreenButton.querySelector("i");
+            if (exitIcon) {
+                exitIcon.className = "fas fa-window-maximize";
+            }
         }
     });
     BlockInputButton.addEventListener("click", async (ev) => {
@@ -543,6 +562,11 @@ export function ApplyInputHandlers() {
         await ViewerApp.MessageSender.ChangeWindowsSession(Number(WindowsSessionSelect.selectedOptions[0].value));
     });
     window.addEventListener("keydown", async function (e) {
+        if (e.key === "F11") {
+            e.preventDefault();
+            FullScreenButton.click();
+            return;
+        }
         if (document.querySelector("input:focus") ||
             document.querySelector("textarea:focus")) {
             return;
