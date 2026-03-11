@@ -16,6 +16,7 @@ namespace Remotely.Agent.Services.Linux;
 
 public class UpdaterLinux : IUpdater
 {
+    private readonly bool _isArm64 = RuntimeInformation.OSArchitecture == Architecture.Arm64;
     private readonly SemaphoreSlim _checkForUpdatesLock = new(1, 1);
     private readonly IConfigService _configService;
     private readonly IUpdateDownloader _updateDownloader;
@@ -74,7 +75,9 @@ public class UpdaterLinux : IUpdater
             var connectionInfo = _configService.GetConnectionInfo();
             var serverUrl = _configService.GetConnectionInfo().Host;
 
-            var fileUrl = serverUrl + $"/Content/Remotely-Linux.zip";
+            var fileUrl = _isArm64
+                ? serverUrl + $"/Content/Remotely-Linux-arm64.zip"
+                : serverUrl + $"/Content/Remotely-Linux.zip";
 
             using var httpClient = _httpClientFactory.CreateClient();
             using var request = new HttpRequestMessage(HttpMethod.Head, fileUrl);
@@ -136,11 +139,15 @@ public class UpdaterLinux : IUpdater
 
             if (RuntimeInformation.OSDescription.Contains("Ubuntu", StringComparison.OrdinalIgnoreCase))
             {
-                platform = "UbuntuInstaller-x64";
+                platform = _isArm64 ? "LinuxArm64Installer" : "UbuntuInstaller-x64";
             }
             else if (RuntimeInformation.OSDescription.Contains("Manjaro", StringComparison.OrdinalIgnoreCase))
             {
-                platform = "ManjaroInstaller-x64";
+                platform = _isArm64 ? "LinuxArm64Installer" : "ManjaroInstaller-x64";
+            }
+            else if (_isArm64)
+            {
+                platform = "LinuxArm64Installer";
             }
             else
             {
@@ -151,8 +158,9 @@ public class UpdaterLinux : IUpdater
                    $"{serverUrl}/API/ClientDownloads/{platform}/{connectionInfo.OrganizationID}",
                    installerPath);
 
+            var agentPlatform = _isArm64 ? "linux-arm64" : "linux";
             await _updateDownloader.DownloadFile(
-               $"{serverUrl}/API/AgentUpdate/DownloadPackage/linux",
+               $"{serverUrl}/API/AgentUpdate/DownloadPackage/{agentPlatform}",
                zipPath);
 
             _logger.LogInformation("Launching installer to perform update.");

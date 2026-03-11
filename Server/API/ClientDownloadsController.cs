@@ -224,6 +224,12 @@ public class ClientDownloadsController : ControllerBase
 
                         return await GetBashInstaller(fileName, organizationId);
                     }
+                case "LinuxArm64Installer":
+                    {
+                        var fileName = "Install-Linux-arm64.sh";
+
+                        return await GetBashInstaller(fileName, organizationId);
+                    }
                 default:
                     return BadRequest();
             }
