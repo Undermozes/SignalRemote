@@ -201,7 +201,7 @@
             var backup = BackupService.CreateBackup(User, devices, deviceGroups);
             var json = BackupService.SerializeBackup(backup);
 
-            var fileName = $"remotely-backup-{DateTime.Now:yyyyMMdd-HHmmss}.json";
+            var fileName = $"remotely-backup-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json";
 
             await JsInterop.DownloadFile(fileName, json);
 
@@ -235,7 +235,7 @@
         }
     }
 
-    private Task RestoreFromFile()
+    private async Task RestoreFromFile()
     {
         EnsureUserSet();
         _isProcessing = true;
@@ -246,18 +246,18 @@
             if (string.IsNullOrEmpty(_restoreFileContent))
             {
                 _alertMessage = "No backup file loaded.";
-                return Task.CompletedTask;
+                return;
             }
 
             var backup = BackupService.DeserializeBackup(_restoreFileContent);
             if (backup is null)
             {
                 _alertMessage = "Invalid backup file format.";
-                return Task.CompletedTask;
+                return;
             }
 
             var existingDevices = DataService.GetDevicesForUser(UserName);
-            BackupService.RestoreBackup(backup, existingDevices, DataService);
+            await BackupService.RestoreBackupAsync(backup, existingDevices, DataService);
 
             _alertMessage = "Backup restored successfully.";
             _restoreFileContent = null;
@@ -273,8 +273,6 @@
         {
             _isProcessing = false;
         }
-
-        return Task.CompletedTask;
     }
 
     private void ConnectGoogleDrive()
@@ -310,7 +308,7 @@
             var backup = BackupService.CreateBackup(User, devices, deviceGroups);
             var json = BackupService.SerializeBackup(backup);
 
-            var fileName = $"remotely-backup-{DateTime.Now:yyyyMMdd-HHmmss}.json";
+            var fileName = $"remotely-backup-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json";
 
             using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
             await GoogleDriveService.UploadBackupAsync(User.Id, fileName, stream);
@@ -366,7 +364,7 @@
             }
 
             var existingDevices = DataService.GetDevicesForUser(UserName);
-            BackupService.RestoreBackup(backup, existingDevices, DataService);
+            await BackupService.RestoreBackupAsync(backup, existingDevices, DataService);
 
             _alertMessage = "Backup restored from Google Drive successfully.";
             ToastService.ShowToast("Backup restored from Google Drive.");

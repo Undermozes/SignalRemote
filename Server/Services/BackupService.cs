@@ -13,7 +13,7 @@ public interface IBackupService
     BackupData CreateBackup(RemotelyUser user, Device[] devices, DeviceGroup[] deviceGroups);
     string SerializeBackup(BackupData backup);
     BackupData? DeserializeBackup(string json);
-    void RestoreBackup(BackupData backup, Device[] existingDevices, IDataService dataService);
+    Task RestoreBackupAsync(BackupData backup, Device[] existingDevices, IDataService dataService);
 }
 
 public class BackupService : IBackupService
@@ -94,7 +94,7 @@ public class BackupService : IBackupService
         }
     }
 
-    public void RestoreBackup(BackupData backup, Device[] existingDevices, IDataService dataService)
+    public async Task RestoreBackupAsync(BackupData backup, Device[] existingDevices, IDataService dataService)
     {
         var existingDeviceIds = new HashSet<string>(
             existingDevices.Select(d => d.ID),
@@ -117,12 +117,12 @@ public class BackupService : IBackupService
                 continue;
             }
 
-            dataService.UpdateDevice(
+            await dataService.UpdateDevice(
                 deviceDto.ID,
                 deviceDto.Tags,
                 deviceDto.Alias,
                 deviceDto.DeviceGroupID,
-                deviceDto.Notes).Wait();
+                deviceDto.Notes);
 
             restoredCount++;
         }

@@ -43,6 +43,8 @@ public class GoogleDriveService : IGoogleDriveService
     private const string BackupMimeType = "application/json";
     private static readonly string[] Scopes = { DriveService.Scope.DriveFile };
 
+    // TODO: Tokens are stored in memory and will be lost on application restart.
+    // For production use, consider persisting tokens securely in the database.
     private readonly ConcurrentDictionary<string, TokenResponse> _userTokens = new();
     private readonly GoogleDriveOptions _options;
     private readonly ILogger<GoogleDriveService> _logger;
