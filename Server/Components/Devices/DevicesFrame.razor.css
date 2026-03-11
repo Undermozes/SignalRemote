@@ -8,9 +8,9 @@
     padding-top: 3px;
 }
 
-    #deviceControlsWrapper > :last-child {
-        text-align: right;
-    }
+#deviceControlsWrapper > :last-child {
+    text-align: right;
+}
 
 #deviceListDiv {
     overflow-y: auto;
