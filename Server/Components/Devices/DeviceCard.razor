@@ -1,57 +1,52 @@
 ﻿@attribute [Authorize]
 @inherits AuthComponentBase
 
-<div @ref="_card" class="card border-secondary my-3 me-3 device-card @_theme @GetCardStateClass()"
+<div @ref="_card" class="device-card @GetCardStateClass()"
      @onclick="ExpandCard"
      @onclick:stopPropagation
      @oncontextmenu="ContextMenuOpening"
      @oncontextmenu:preventDefault="_state == DeviceCardState.Normal"
      @oncontextmenu:stopPropagation="_state == DeviceCardState.Normal">
 
-    <div class="card-header" @onclick="HandleHeaderClick" 
+    <div class="card-header" @onclick="HandleHeaderClick"
          @onclick:stopPropagation="_state == DeviceCardState.Expanded"
          @onclick:preventDefault="_state == DeviceCardState.Expanded">
-        <div>
+        <div class="status-indicator">
             @if (Device.IsOnline)
             {
                 if (IsOutdated)
                 {
-                    <i class="oi oi-power-standby text-warning" title="Agent Outdated"></i>
+                    <span class="status-dot status-warning" title="Agent Outdated"></span>
                 }
                 else
                 {
-                    <i class="oi oi-power-standby text-success" title="Online"></i>
+                    <span class="status-dot status-online" title="Online"></span>
                 }
             }
             else
             {
-                <i class="oi oi-power-standby text-danger" title="Offline"></i>
+                <span class="status-dot status-offline" title="Offline"></span>
             }
         </div>
-        <div class="overflow-hidden ms-2">
-            <div class="d-inline-block">
-                <div>@Device.DeviceName</div>
-
-                <div class="small text-muted" style="height: 1rem">@Device.Alias</div>
-            </div>
-            
+        <div class="card-header-name">
+            <div class="device-name">@Device.DeviceName</div>
+            <div class="device-alias">@Device.Alias</div>
         </div>
-        <div class="text-end">
+        <div class="card-header-actions">
             @if (IsExpanded)
             {
-                <button class="btn btn-sm me-2" title="Open in New Tab"
+                <button class="icon-btn" title="Open in New Tab"
                         @onclick:stopPropagation
                         @onclick="OpenDeviceDetails">
-                    <i class="oi oi-external-link" style="font-size: 1.3em"></i>
+                    <i class="oi oi-external-link"></i>
                 </button>
             }
             <input type="checkbox"
-                   class="align-middle"
+                   class="device-checkbox"
                    checked="@IsSelected"
                    @onchange="ToggleIsSelected"
                    @onclick:stopPropagation />
         </div>
-
     </div>
 
     <div class="card-body">
@@ -59,16 +54,16 @@
         {
             foreach (var kvp in _fileUploadProgressLookup)
             {
-                <div class="alert alert-info">
+                <div class="upload-alert">
                     @(GetProgressMessage(kvp.Key))
                 </div>
             }
-        } 
+        }
         <div>
-            <div class="font-weight-bold text-info">
+            <div class="prop-label text-info">
                 <label>User</label>
             </div>
-            <div>
+            <div class="prop-value">
                 @Device.CurrentUser
             </div>
 
@@ -123,54 +118,52 @@
                 </DropdownButton>
             </div>
 
-            <div class="font-weight-bold text-info">
+            <div class="prop-label text-info">
                 <label>Platform</label>
             </div>
-            <div>
+            <div class="prop-value">
                 @Device.Platform
             </div>
 
-            <div class="font-weight-bold text-info">
+            <div class="prop-label text-info">
                 <label>Disk</label>
-                <button class="btn btn-link p-0 m-0 expanded-visible"
-                        style="font-size: 50%"
-                        @onclick="ShowAllDisks" 
+                <button class="view-all-btn expanded-visible"
+                        @onclick="ShowAllDisks"
                         @onclick:stopPropagation>
                     (View All)
                 </button>
             </div>
-            <div>
+            <div class="prop-value">
                 @(MathHelper.GetFormattedPercent(Device.UsedStoragePercent))
             </div>
 
-            <div class="font-weight-bold text-info expanded-visible">
+            <div class="prop-label text-info expanded-visible">
                 Total Storage
             </div>
-            <div class="expanded-visible">
+            <div class="prop-value expanded-visible">
                 @(Device.TotalStorage) GB
             </div>
 
-
-            <div class="font-weight-bold text-info">
+            <div class="prop-label text-info">
                 <label>Memory</label>
             </div>
-            <div>
+            <div class="prop-value">
                 @(MathHelper.GetFormattedPercent(Device.UsedMemoryPercent))
             </div>
 
-            <div class="font-weight-bold text-info expanded-visible">
+            <div class="prop-label text-info expanded-visible">
                 Total Memory
             </div>
-            <div class="expanded-visible">
+            <div class="prop-value expanded-visible">
                 @(Device.TotalMemory) GB
             </div>
 
             @if (IsExpanded)
             {
-                <div class="font-weight-bold text-info">
+                <div class="prop-label text-info">
                     <label>CPU</label>
                 </div>
-                <div>
+                <div class="prop-value">
                     @MathHelper.GetFormattedPercent(Device.CpuUtilization)
                 </div>
             }
@@ -180,60 +173,59 @@
             <div class="mt-2" style="grid-column: span 4">
                 @if (IsExpanded)
                 {
-                    <div class="font-weight-bold text-info mt-2">
+                    <div class="prop-label text-info mt-2">
                         Device ID
                     </div>
                     <div>
-                        <input class="form-control" readonly value="@Device.ID" />
+                        <input class="detail-input" readonly value="@Device.ID" />
                     </div>
 
-                    <div class="font-weight-bold text-info mt-2">
+                    <div class="prop-label text-info mt-2">
                         Agent Version
                     </div>
                     <div>
-                        <input class="form-control" readonly value="@Device.AgentVersion" />
+                        <input class="detail-input" readonly value="@Device.AgentVersion" />
                     </div>
 
-                    <div class="font-weight-bold text-info mt-2">
+                    <div class="prop-label text-info mt-2">
                         Last Online
                     </div>
                     <div>
-                        <input class="form-control" readonly value="@Device.LastOnline" />
+                        <input class="detail-input" readonly value="@Device.LastOnline" />
                     </div>
 
-                    <div class="font-weight-bold text-info mt-2">
+                    <div class="prop-label text-info mt-2">
                         Public IP
                     </div>
                     <div>
-                        <input class="form-control" readonly value="@Device.PublicIP" />
+                        <input class="detail-input" readonly value="@Device.PublicIP" />
                     </div>
 
-                    <div class="font-weight-bold text-info mt-2">
+                    <div class="prop-label text-info mt-2">
                         MAC Addresses
                     </div>
                     <div>
-                        <input 
-                            class="form-control" 
-                            readonly 
-                            value="@(string.Join(", ", Device.MacAddresses ?? Array.Empty<string>()))" />
+                        <input class="detail-input"
+                               readonly
+                               value="@(string.Join(", ", Device.MacAddresses ?? Array.Empty<string>()))" />
                     </div>
 
                     <EditForm Model="Device" OnValidSubmit="HandleValidSubmit">
                         <DataAnnotationsValidator />
 
-                        <div class="font-weight-bold text-info mt-2">
+                        <div class="prop-label text-info mt-2">
                             Device Alias
                         </div>
                         <div>
-                            <InputText class="form-control" @bind-Value="@Device.Alias" />
+                            <InputText class="detail-input" @bind-Value="@Device.Alias" />
                             <ValidationMessage For="() => Device.Alias" />
                         </div>
 
-                        <div class="font-weight-bold text-info mt-2">
+                        <div class="prop-label text-info mt-2">
                             Device Group
                         </div>
                         <div>
-                            <InputSelect @bind-Value="Device.DeviceGroupID" class="form-control">
+                            <InputSelect @bind-Value="Device.DeviceGroupID" class="detail-input">
                                 <option value="">None</option>
 
                                 @foreach (var group in _deviceGroups)
@@ -244,15 +236,15 @@
                             <ValidationMessage For="() => Device.DeviceGroupID" />
                         </div>
 
-                        <div class="font-weight-bold text-info mt-2">
+                        <div class="prop-label text-info mt-2">
                             Tags
                         </div>
                         <div>
-                            <InputText @bind-Value="Device.Tags" class="form-control" />
+                            <InputText @bind-Value="Device.Tags" class="detail-input" />
                             <ValidationMessage For="() => Device.Tags" />
                         </div>
 
-                        <div class="font-weight-bold text-info mt-2">
+                        <div class="prop-label text-info mt-2">
                             Notes
                         </div>
                         <div>

@@ -3,7 +3,7 @@
     grid-template-columns: 1fr 1fr;
     grid-column-gap: 20px;
     grid-row-gap: 10px;
-    margin-bottom: 5px;
+    margin-bottom: 16px;
     margin-right: 5px;
     padding-top: 3px;
 }
@@ -12,7 +12,7 @@
         text-align: right;
     }
 
-#deviceListDiv{
+#deviceListDiv {
     overflow-y: auto;
     overflow-x: hidden;
 }

@@ -1,16 +1,22 @@
 ﻿@inherits LayoutComponentBase
 @layout AccountLayout
 
-<h1>Manage your account</h1>
+<div class="py-2">
+    <div class="flex items-center gap-3 mb-6">
+        <div class="w-9 h-9 bg-indigo-600/20 rounded-lg flex items-center justify-center">
+            <i class="fas fa-user-gear text-indigo-400 text-sm"></i>
+        </div>
+        <div>
+            <h1 class="text-lg font-semibold text-slate-100 leading-tight">Manage Account</h1>
+            <p class="text-xs text-slate-400">Change your account settings</p>
+        </div>
+    </div>
 
-<div>
-    <h2>Change your account settings</h2>
-    <hr />
-    <div class="row">
-        <div class="col-md-3">
+    <div class="flex flex-col md:flex-row gap-6">
+        <div class="w-full md:w-48 flex-shrink-0">
             <ManageNavMenu />
         </div>
-        <div class="col-md-9">
+        <div class="flex-1 min-w-0">
             @Body
         </div>
     </div>
