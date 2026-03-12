@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.signalremote.agent.databinding.ActivityMainBinding
+import com.signalremote.agent.screen.ScreenCaptureService
 import com.signalremote.agent.service.AgentForegroundService
 import com.signalremote.agent.storage.ConnectionInfoStore
 import kotlinx.coroutines.launch

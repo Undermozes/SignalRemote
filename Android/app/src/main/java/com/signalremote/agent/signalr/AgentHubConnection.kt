@@ -482,21 +482,27 @@ class AgentHubConnection(
         withContext(Dispatchers.IO) {
             val url = java.net.URL("$host/API/FileSharing/$fileId")
             val conn = url.openConnection() as java.net.HttpURLConnection
-            conn.setRequestProperty("X-Expiring-Token", token)
-            conn.connect()
-            val fileName = conn.getHeaderField("Content-Disposition")
-                ?.substringAfter("filename=")
-                ?.trim('"')
-                ?: "file_$fileId"
+            try {
+                conn.setRequestProperty("X-Expiring-Token", token)
+                conn.connect()
+                val fileName = conn.getHeaderField("Content-Disposition")
+                    ?.substringAfter("filename=")
+                    ?.trim('"')
+                    ?: "file_$fileId"
 
-            val dest = context.getExternalFilesDir(null)?.let {
-                java.io.File(it, fileName)
-            } ?: return@withContext
+                val dest = context.getExternalFilesDir(null)?.let {
+                    java.io.File(it, fileName)
+                } ?: return@withContext
 
-            conn.inputStream.use { input ->
-                dest.outputStream().use { output -> input.copyTo(output) }
+                conn.inputStream.use { input ->
+                    dest.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                Log.i(TAG, "Downloaded file to ${dest.absolutePath}")
+            } finally {
+                conn.disconnect()
             }
-            Log.i(TAG, "Downloaded file to ${dest.absolutePath}")
         }
 
     // ── SignalR helpers ──────────────────────────────────────────────────────
