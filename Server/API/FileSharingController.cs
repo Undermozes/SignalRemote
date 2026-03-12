@@ -29,6 +29,18 @@ public class FileSharingController : ControllerBase
         }
 
         var sharedFile = sharedFileResult.Value;
+
+        // When the request is authenticated via an organization identity (user session or API key),
+        // enforce that the file belongs to the caller's organization to prevent IDOR.
+        // Expiring-token requests (used by internal agents) do not carry an org identity,
+        // so they are allowed to proceed without the ownership check.
+        if (Request.Headers.TryGetOrganizationId(out var requestOrgId) &&
+            !string.IsNullOrEmpty(requestOrgId) &&
+            !string.Equals(sharedFile.OrganizationID, requestOrgId, StringComparison.OrdinalIgnoreCase))
+        {
+            return NotFound();
+        }
+
         var contentType = sharedFile.ContentType ?? "application/octet-stream";
         return File(sharedFile.FileContents, contentType, sharedFile.FileName);
     }
