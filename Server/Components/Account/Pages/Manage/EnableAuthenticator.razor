@@ -15,64 +15,83 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<EnableAuthenticator> Logger
 
-<PageTitle>Configure authenticator app</PageTitle>
+<PageTitle>Configure Authenticator App &mdash; SignalRemote</PageTitle>
 
 @if (recoveryCodes is not null)
 {
-    <ShowRecoveryCodes RecoveryCodes="recoveryCodes.ToArray()" StatusMessage="@message" />
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 shadow-xl">
+        <ShowRecoveryCodes RecoveryCodes="recoveryCodes.ToArray()" StatusMessage="@message" />
+    </div>
 }
 else
 {
-    <StatusMessage Message="@message" />
-    <h3>Configure authenticator app</h3>
-    <div>
-        <p>To use an authenticator app go through the following steps:</p>
-        <ol class="list">
-            <li>
-                <p>
-                    Download a two-factor authenticator app like Microsoft Authenticator for
-                    <a href="https://go.microsoft.com/fwlink/?Linkid=825072">Android</a> and
-                    <a href="https://go.microsoft.com/fwlink/?Linkid=825073">iOS</a> or
-                    Google Authenticator for
-                    <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&amp;hl=en">Android</a> and
-                    <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>.
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 shadow-xl">
+        <h2 class="text-white text-lg font-semibold mb-1">Configure authenticator app</h2>
+        <p class="text-[#9b8eb5] text-sm mb-5">Follow the steps below to link your authenticator app.</p>
+
+        <StatusMessage Message="@message" />
+
+        <div class="space-y-6">
+            <div>
+                <p class="text-[#c4b8d8] text-sm font-medium mb-2">Step 1 &mdash; Download an authenticator app</p>
+                <p class="text-[#9b8eb5] text-sm">
+                    Download <a href="https://go.microsoft.com/fwlink/?Linkid=825072" class="text-[#8b6cf7] hover:text-[#a88cff] transition-colors">Microsoft Authenticator</a> or
+                    <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" class="text-[#8b6cf7] hover:text-[#a88cff] transition-colors">Google Authenticator</a>
+                    on your device.
                 </p>
-            </li>
-            <li>
-                <p>Scan the QR Code or enter this key <kbd>@sharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
-                <div>
+            </div>
+
+            <div>
+                <p class="text-[#c4b8d8] text-sm font-medium mb-2">Step 2 &mdash; Scan the QR code</p>
+                <p class="text-[#9b8eb5] text-sm mb-3">
+                    Scan the QR code below or enter the key manually into your app.
+                    Spaces and casing do not matter.
+                </p>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     @if (!string.IsNullOrWhiteSpace(_qrCodeDataUri))
                     {
-                        <img src="@_qrCodeDataUri" alt="QR code" class="img-fluid" />
+                        <div class="bg-white p-3 rounded-xl inline-block">
+                            <img src="@_qrCodeDataUri" alt="QR code" class="w-36 h-36" />
+                        </div>
                     }
                     else
                     {
-                        <div class="alert alert-warning">Failed to generate QR code.</div>
+                        <div class="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-200/80 text-sm rounded-lg px-4 py-3">
+                            <svg class="h-4 w-4 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                            Failed to generate QR code.
+                        </div>
                     }
-                </div>
-                <div data-url="@authenticatorUri"></div>
-            </li>
-            <li>
-                <p>
-                    Once you have scanned the QR code or input the key above, your two factor authentication app will provide you
-                    with a unique code. Enter the code in the confirmation box below.
-                </p>
-                <div class="row">
-                    <div class="col-md-6">
-                        <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post">
-                            <DataAnnotationsValidator />
-                            <div class="form-floating mb-3">
-                                <InputText @bind-Value="Input.Code" class="form-control" autocomplete="off" placeholder="Please enter the code." />
-                                <label for="code" class="control-label form-label">Verification Code</label>
-                                <ValidationMessage For="() => Input.Code" class="text-danger" />
-                            </div>
-                            <button type="submit" class="w-100 btn btn-lg btn-primary">Verify</button>
-                            <ValidationSummary class="text-danger" role="alert" />
-                        </EditForm>
+                    <div>
+                        <p class="text-[#9b8eb5] text-xs mb-1">Or enter this key manually:</p>
+                        <code class="text-[#c4b8d8] text-sm bg-[#291d38] border border-white/10 rounded-lg px-3 py-2 block font-mono tracking-widest">@sharedKey</code>
                     </div>
                 </div>
-            </li>
-        </ol>
+            </div>
+
+            <div>
+                <p class="text-[#c4b8d8] text-sm font-medium mb-2">Step 3 &mdash; Enter the verification code</p>
+                <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-4">
+                        <label for="code" class="block text-sm font-medium text-[#c4b8d8] mb-1.5">Verification code</label>
+                        <InputText @bind-Value="Input.Code"
+                                   id="code"
+                                   class="auth-input w-full sm:w-64 bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all font-mono tracking-widest placeholder-white/30"
+                                   autocomplete="off" placeholder="000 000" />
+                        <ValidationMessage For="() => Input.Code" class="block mt-1.5 text-xs text-red-400" />
+                    </div>
+
+                    <button type="submit" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors">
+                        Verify
+                    </button>
+
+                </EditForm>
+            </div>
+        </div>
+
     </div>
 }
 

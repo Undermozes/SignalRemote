@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/DeletePersonalData"
+@page "/Account/Manage/DeletePersonalData"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
@@ -10,31 +10,40 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<DeletePersonalData> Logger
 
-<PageTitle>Delete Personal Data</PageTitle>
+<PageTitle>Delete Account &mdash; SignalRemote</PageTitle>
 
-<StatusMessage Message="@message" />
+<div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 shadow-xl">
+    <h2 class="text-white text-lg font-semibold mb-1">Delete your account</h2>
+    <p class="text-[#9b8eb5] text-sm mb-5">Permanently delete your account and all associated data.</p>
 
-<h3>Delete Personal Data</h3>
+    <StatusMessage Message="@message" />
 
-<div class="alert alert-warning" role="alert">
-    <p>
-        <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-    </p>
-</div>
+    <div class="mb-5 flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg px-4 py-3">
+        <svg class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <p><strong class="font-semibold">This action is permanent and cannot be undone.</strong> Deleting your account will remove all your personal data from this service.</p>
+    </div>
 
-<div>
     <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post" Enhance>
         <DataAnnotationsValidator />
-        <ValidationSummary class="text-danger" role="alert" />
+
         @if (requirePassword)
         {
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Please enter your password." />
-                <label for="password" class="form-label">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-medium text-[#c4b8d8] mb-1.5">Confirm with your password</label>
+                <InputText type="password" @bind-Value="Input.Password"
+                           id="password"
+                           class="auth-input w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30"
+                           autocomplete="current-password" aria-required="true" placeholder="••••••••" />
+                <ValidationMessage For="() => Input.Password" class="block mt-1.5 text-xs text-red-400" />
             </div>
         }
-        <button class="w-100 btn btn-lg btn-danger" type="submit">Delete data and close my account</button>
+
+        <button class="bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors" type="submit">
+            Delete my account
+        </button>
+
     </EditForm>
 </div>
 

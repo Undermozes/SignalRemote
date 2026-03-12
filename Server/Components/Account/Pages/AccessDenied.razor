@@ -1,8 +1,21 @@
-﻿@page "/Account/AccessDenied"
+@page "/Account/AccessDenied"
+@layout AuthPagesLayout
 
-<PageTitle>Access denied</PageTitle>
+<PageTitle>Access Denied &mdash; SignalRemote</PageTitle>
 
-<header>
-    <h1 class="text-danger">Access denied</h1>
-    <p class="text-danger">You do not have access to this resource.</p>
-</header>
+<div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-2xl text-center">
+
+    <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+    </div>
+
+    <h1 class="text-white text-2xl font-semibold mb-2">Access denied</h1>
+    <p class="text-[#9b8eb5] text-sm mb-6">You do not have permission to access this resource.</p>
+
+    <a href="/" class="inline-block bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-6 text-sm transition-colors">
+        Return home
+    </a>
+
+</div>

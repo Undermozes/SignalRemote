@@ -1,4 +1,5 @@
-﻿@page "/Account/ConfirmEmailChange"
+@page "/Account/ConfirmEmailChange"
+@layout AuthPagesLayout
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -9,11 +10,25 @@
 @inject SignInManager<RemotelyUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Confirm email change</PageTitle>
+<PageTitle>Confirm Email Change &mdash; SignalRemote</PageTitle>
 
-<h1>Confirm email change</h1>
+<div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-2xl text-center">
 
-<StatusMessage Message="@message" />
+    <div class="w-12 h-12 rounded-xl bg-[#291d38] border border-white/10 flex items-center justify-center mx-auto mb-5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+    </div>
+
+    <h1 class="text-white text-2xl font-semibold mb-4">Confirm email change</h1>
+
+    <StatusMessage Message="@message" />
+
+    <a href="/Account/Manage/Email" class="inline-block mt-2 text-[#8b6cf7] hover:text-[#a88cff] font-medium text-sm transition-colors">
+        Manage email settings →
+    </a>
+
+</div>
 
 @code {
     private string? message;
