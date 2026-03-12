@@ -14,6 +14,10 @@ services:
     image: immybot/remotely:latest
     container_name: remotely
     volumes:
+      # All application data (database, logs, and automatic db-backups) is stored here.
+      # To restore on a new instance, copy this directory to the new host before starting the container.
+      # To restore from an automatic database backup, stop the container, replace Remotely.db with
+      # the desired backup file from AppData/db-backups/, then restart the container.
       - /var/www/remotely:/app/AppData
     restart: unless-stopped
     ports:
