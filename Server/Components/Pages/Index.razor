@@ -3,20 +3,75 @@
  
 <AuthorizeView>
     <NotAuthorized>
-        <div class="jumbotron">
-            <h3 class="display-4">Remotely</h3>
-            <p class="lead">
-                An open-source remote support solution.
-            </p>
-            <hr class="my-4">
-            <p class="lead">
-                <a class="btn btn-primary btn-lg me-2" href="Account/Login" role="button">Log In</a>
+        <div class="min-h-screen bg-[#160c22] flex flex-col items-center justify-center px-6 py-16 text-center">
 
+            <!-- Logo -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#8b6cf7] to-[#5b3fa6] flex items-center justify-center shadow-lg flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="26" height="26">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1C5.9 1 1 5.9 1 12s4.9 11 11 11 11-4.9 11-11S18.1 1 12 1zm0 20c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4 9-9 9z"/>
+                        <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z"/>
+                    </svg>
+                </div>
+                <span class="text-white text-3xl font-bold tracking-tight">SignalRemote</span>
+            </div>
+
+            <!-- Hero text -->
+            <h1 class="text-white text-4xl sm:text-5xl font-bold leading-tight mb-4 max-w-2xl">
+                Remote access &amp;<br class="hidden sm:block" /> monitoring, <span class="text-[#8b6cf7]">simplified</span>
+            </h1>
+            <p class="text-[#9b8eb5] text-lg mb-10 max-w-lg leading-relaxed">
+                An open-source remote support solution. Manage devices, run scripts, and provide support — all from your browser.
+            </p>
+
+            <!-- CTA buttons -->
+            <div class="flex flex-wrap items-center justify-center gap-4 mb-16">
+                <a href="/Account/Login"
+                   class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-xl py-3 px-8 text-base transition-colors shadow-lg shadow-[#6c5fc7]/30">
+                    Sign in
+                </a>
                 @if (_isRegistrationEnabled)
                 {
-                    <a class="btn btn-primary btn-lg" href="Account/Register" role="button">Register</a>
+                    <a href="/Account/Register"
+                       class="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold rounded-xl py-3 px-8 text-base transition-colors">
+                        Create account
+                    </a>
                 }
-            </p>
+            </div>
+
+            <!-- Feature cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl w-full">
+                <div class="bg-[#1d1330] border border-white/10 rounded-xl p-5 text-left">
+                    <div class="w-9 h-9 rounded-lg bg-[#291d38] flex items-center justify-center mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-white text-sm font-semibold mb-1">Remote Control</h3>
+                    <p class="text-[#9b8eb5] text-xs leading-relaxed">Full desktop control directly from your browser, no plugins required.</p>
+                </div>
+                <div class="bg-[#1d1330] border border-white/10 rounded-xl p-5 text-left">
+                    <div class="w-9 h-9 rounded-lg bg-[#291d38] flex items-center justify-center mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-white text-sm font-semibold mb-1">Script Execution</h3>
+                    <p class="text-[#9b8eb5] text-xs leading-relaxed">Run scripts across multiple devices simultaneously with ease.</p>
+                </div>
+                <div class="bg-[#1d1330] border border-white/10 rounded-xl p-5 text-left">
+                    <div class="w-9 h-9 rounded-lg bg-[#291d38] flex items-center justify-center mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-white text-sm font-semibold mb-1">Secure &amp; Open Source</h3>
+                    <p class="text-[#9b8eb5] text-xs leading-relaxed">Self-hosted, transparent, and fully under your control.</p>
+                </div>
+            </div>
+
+            <p class="mt-10 text-[#5e4d73] text-xs">&copy; @_copyrightYear SignalRemote</p>
         </div>
     </NotAuthorized>
     <Authorized>
@@ -27,6 +82,7 @@
 @code 
 {
     private bool _isRegistrationEnabled;
+    private static readonly int _copyrightYear = DateTime.UtcNow.Year;
 
     protected override async Task OnInitializedAsync()
     {
