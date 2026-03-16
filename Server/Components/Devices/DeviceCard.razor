@@ -1,14 +1,15 @@
 ﻿@attribute [Authorize]
 @inherits AuthComponentBase
 
-<div @ref="_card" class="card border-secondary my-3 me-3 device-card @_theme @GetCardStateClass()"
+<div @ref="_card" class="device-card @_theme @GetCardStateClass() my-3 me-3 border rounded-xl overflow-hidden bg-[#1d1330] border-white/10 shadow-md"
      @onclick="ExpandCard"
      @onclick:stopPropagation
      @oncontextmenu="ContextMenuOpening"
      @oncontextmenu:preventDefault="_state == DeviceCardState.Normal"
      @oncontextmenu:stopPropagation="_state == DeviceCardState.Normal">
 
-    <div class="card-header" @onclick="HandleHeaderClick" 
+    <div class="card-header bg-[#291d38] border-b border-white/10 flex items-center gap-2 px-3 py-2 text-sm"
+         @onclick="HandleHeaderClick"
          @onclick:stopPropagation="_state == DeviceCardState.Expanded"
          @onclick:preventDefault="_state == DeviceCardState.Expanded">
         <div>
@@ -16,33 +17,41 @@
             {
                 if (IsOutdated)
                 {
-                    <i class="oi oi-power-standby text-warning" title="Agent Outdated"></i>
+                    <svg class="h-3.5 w-3.5 text-amber-400" fill="currentColor" viewBox="0 0 8 8" title="Agent Outdated">
+                        <circle cx="4" cy="4" r="4"/>
+                    </svg>
                 }
                 else
                 {
-                    <i class="oi oi-power-standby text-success" title="Online"></i>
+                    <svg class="h-3.5 w-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 8 8" title="Online">
+                        <circle cx="4" cy="4" r="4"/>
+                    </svg>
                 }
             }
             else
             {
-                <i class="oi oi-power-standby text-danger" title="Offline"></i>
+                <svg class="h-3.5 w-3.5 text-red-400" fill="currentColor" viewBox="0 0 8 8" title="Offline">
+                    <circle cx="4" cy="4" r="4"/>
+                </svg>
             }
         </div>
-        <div class="overflow-hidden ms-2">
-            <div class="d-inline-block">
+        <div class="overflow-hidden ml-2">
+            <div class="inline-block">
                 <div>@Device.DeviceName</div>
 
-                <div class="small text-muted" style="height: 1rem">@Device.Alias</div>
+                <div class="text-xs text-[#9b8eb5]" style="height: 1rem">@Device.Alias</div>
             </div>
-            
+
         </div>
-        <div class="text-end">
+        <div class="text-right">
             @if (IsExpanded)
             {
-                <button class="btn btn-sm me-2" title="Open in New Tab"
+                <button class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] rounded-lg px-2 py-1 text-xs transition-colors mr-2" title="Open in New Tab"
                         @onclick:stopPropagation
                         @onclick="OpenDeviceDetails">
-                    <i class="oi oi-external-link" style="font-size: 1.3em"></i>
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
                 </button>
             }
             <input type="checkbox"
@@ -54,18 +63,18 @@
 
     </div>
 
-    <div class="card-body">
+    <div class="card-body bg-[#1d1330] p-3">
         @if (_fileUploadProgressLookup.Any())
         {
             foreach (var kvp in _fileUploadProgressLookup)
             {
-                <div class="alert alert-info">
+                <div class="bg-[#6c5fc7]/10 border border-[#6c5fc7]/20 text-[#a88cff] text-xs rounded-lg px-3 py-2 mb-2">
                     @(GetProgressMessage(kvp.Key))
                 </div>
             }
-        } 
+        }
         <div>
-            <div class="font-weight-bold text-info">
+            <div class="font-semibold text-[#8b6cf7]">
                 <label>User</label>
             </div>
             <div>
@@ -74,67 +83,82 @@
 
             <div style="grid-row: span 2" class="expanded-visible"></div>
             <div style="grid-row: span 2" class="expanded-visible">
-                <DropdownButton DropDownMenuClass="dropdown-menu-end mb-2" ButtonClass="btn-primary">
+                <DropdownButton DropDownMenuClass="dropdown-menu-end mb-2" ButtonClass="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white rounded-lg px-2 py-1 text-xs transition-colors">
                     <ButtonContent>
-                        <i class="oi oi-bolt"></i>
-                        <span class="ms-2">Actions</span>
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        <span class="ml-2">Actions</span>
                     </ButtonContent>
                     <ChildListItems>
                         <li>
-                            <button class="dropdown-item" @onclick="StartChat">
-                                <i class="oi oi-chat" title="Chat"></i>
-                                <span class="ms-2">Chat</span>
+                            <button class="block w-full text-left px-3 py-1.5 text-sm text-[#c4b8d8] hover:bg-white/10 transition-colors" @onclick="StartChat">
+                                <svg class="h-4 w-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Chat">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                </svg>
+                                <span class="ml-2">Chat</span>
                             </button>
                         </li>
                         <li>
-                            <button class="dropdown-item" @onclick="() => StartRemoteControl(false)">
-                                <i class="oi oi-laptop" title="Remote Control"></i>
-                                <span class="ms-2">Remote Control</span>
+                            <button class="block w-full text-left px-3 py-1.5 text-sm text-[#c4b8d8] hover:bg-white/10 transition-colors" @onclick="() => StartRemoteControl(false)">
+                                <svg class="h-4 w-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Remote Control">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <span class="ml-2">Remote Control</span>
                             </button>
                         </li>
                         <li>
-                            <button class="dropdown-item" @onclick="() => StartRemoteControl(true)">
-                                <i class="oi oi-eye" title="View Only"></i>
-                                <span class="ms-2">View Only</span>
+                            <button class="block w-full text-left px-3 py-1.5 text-sm text-[#c4b8d8] hover:bg-white/10 transition-colors" @onclick="() => StartRemoteControl(true)">
+                                <svg class="h-4 w-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="View Only">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                <span class="ml-2">View Only</span>
                             </button>
                         </li>
                         <li>
-                            <button class="dropdown-item" @onclick="() => WakeDevice()">
-                                <i class="oi oi-power-standby" title="Wake Device"></i>
-                                <span class="ms-2">Wake</span>
+                            <button class="block w-full text-left px-3 py-1.5 text-sm text-[#c4b8d8] hover:bg-white/10 transition-colors" @onclick="() => WakeDevice()">
+                                <svg class="h-4 w-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Wake Device">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 18.364A9 9 0 1118.364 5.636M12 3v9"/>
+                                </svg>
+                                <span class="ml-2">Wake</span>
                             </button>
                         </li>
                         <li>
-                            <FileInputButton ClassNames="dropdown-item btn btn-primary"
+                            <FileInputButton ClassNames="block w-full text-left px-3 py-1.5 text-sm text-[#c4b8d8] hover:bg-white/10 transition-colors"
                                              OnChanged="OnFileInputChanged">
                                 <ButtonContent>
-                                    <i class="oi oi-data-transfer-upload" title="Upload File"></i>
-                                    <span class="ms-2">Upload File</span>
+                                    <svg class="h-4 w-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Upload File">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                    </svg>
+                                    <span class="ml-2">Upload File</span>
                                 </ButtonContent>
                             </FileInputButton>
                         </li>
                         <li>
-                            <button class="dropdown-item bg-danger" @onclick="UninstallAgent">
-                                <i class="oi oi-delete" title="Uninstall"></i>
-                                <span class="ms-2">Uninstall</span>
+                            <button class="block w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors" @onclick="UninstallAgent">
+                                <svg class="h-4 w-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Uninstall">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                <span class="ml-2">Uninstall</span>
                             </button>
                         </li>
                     </ChildListItems>
                 </DropdownButton>
             </div>
 
-            <div class="font-weight-bold text-info">
+            <div class="font-semibold text-[#8b6cf7]">
                 <label>Platform</label>
             </div>
             <div>
                 @Device.Platform
             </div>
 
-            <div class="font-weight-bold text-info">
+            <div class="font-semibold text-[#8b6cf7]">
                 <label>Disk</label>
-                <button class="btn btn-link p-0 m-0 expanded-visible"
+                <button class="text-[#8b6cf7] hover:text-[#a88cff] text-xs p-0 m-0 expanded-visible"
                         style="font-size: 50%"
-                        @onclick="ShowAllDisks" 
+                        @onclick="ShowAllDisks"
                         @onclick:stopPropagation>
                     (View All)
                 </button>
@@ -143,7 +167,7 @@
                 @(MathHelper.GetFormattedPercent(Device.UsedStoragePercent))
             </div>
 
-            <div class="font-weight-bold text-info expanded-visible">
+            <div class="font-semibold text-[#8b6cf7] expanded-visible">
                 Total Storage
             </div>
             <div class="expanded-visible">
@@ -151,14 +175,14 @@
             </div>
 
 
-            <div class="font-weight-bold text-info">
+            <div class="font-semibold text-[#8b6cf7]">
                 <label>Memory</label>
             </div>
             <div>
                 @(MathHelper.GetFormattedPercent(Device.UsedMemoryPercent))
             </div>
 
-            <div class="font-weight-bold text-info expanded-visible">
+            <div class="font-semibold text-[#8b6cf7] expanded-visible">
                 Total Memory
             </div>
             <div class="expanded-visible">
@@ -167,7 +191,7 @@
 
             @if (IsExpanded)
             {
-                <div class="font-weight-bold text-info">
+                <div class="font-semibold text-[#8b6cf7]">
                     <label>CPU</label>
                 </div>
                 <div>
@@ -180,60 +204,60 @@
             <div class="mt-2" style="grid-column: span 4">
                 @if (IsExpanded)
                 {
-                    <div class="font-weight-bold text-info mt-2">
+                    <div class="font-semibold text-[#8b6cf7] mt-2">
                         Device ID
                     </div>
                     <div>
-                        <input class="form-control" readonly value="@Device.ID" />
+                        <input class="w-full bg-[#291d38] border border-white/10 text-[#c4b8d8] rounded-lg px-3 py-1.5 text-sm" readonly value="@Device.ID" />
                     </div>
 
-                    <div class="font-weight-bold text-info mt-2">
+                    <div class="font-semibold text-[#8b6cf7] mt-2">
                         Agent Version
                     </div>
                     <div>
-                        <input class="form-control" readonly value="@Device.AgentVersion" />
+                        <input class="w-full bg-[#291d38] border border-white/10 text-[#c4b8d8] rounded-lg px-3 py-1.5 text-sm" readonly value="@Device.AgentVersion" />
                     </div>
 
-                    <div class="font-weight-bold text-info mt-2">
+                    <div class="font-semibold text-[#8b6cf7] mt-2">
                         Last Online
                     </div>
                     <div>
-                        <input class="form-control" readonly value="@Device.LastOnline" />
+                        <input class="w-full bg-[#291d38] border border-white/10 text-[#c4b8d8] rounded-lg px-3 py-1.5 text-sm" readonly value="@Device.LastOnline" />
                     </div>
 
-                    <div class="font-weight-bold text-info mt-2">
+                    <div class="font-semibold text-[#8b6cf7] mt-2">
                         Public IP
                     </div>
                     <div>
-                        <input class="form-control" readonly value="@Device.PublicIP" />
+                        <input class="w-full bg-[#291d38] border border-white/10 text-[#c4b8d8] rounded-lg px-3 py-1.5 text-sm" readonly value="@Device.PublicIP" />
                     </div>
 
-                    <div class="font-weight-bold text-info mt-2">
+                    <div class="font-semibold text-[#8b6cf7] mt-2">
                         MAC Addresses
                     </div>
                     <div>
-                        <input 
-                            class="form-control" 
-                            readonly 
+                        <input
+                            class="w-full bg-[#291d38] border border-white/10 text-[#c4b8d8] rounded-lg px-3 py-1.5 text-sm"
+                            readonly
                             value="@(string.Join(", ", Device.MacAddresses ?? Array.Empty<string>()))" />
                     </div>
 
                     <EditForm Model="Device" OnValidSubmit="HandleValidSubmit">
                         <DataAnnotationsValidator />
 
-                        <div class="font-weight-bold text-info mt-2">
+                        <div class="font-semibold text-[#8b6cf7] mt-2">
                             Device Alias
                         </div>
                         <div>
-                            <InputText class="form-control" @bind-Value="@Device.Alias" />
+                            <InputText class="w-full bg-[#291d38] border border-white/10 text-[#c4b8d8] rounded-lg px-3 py-1.5 text-sm" @bind-Value="@Device.Alias" />
                             <ValidationMessage For="() => Device.Alias" />
                         </div>
 
-                        <div class="font-weight-bold text-info mt-2">
+                        <div class="font-semibold text-[#8b6cf7] mt-2">
                             Device Group
                         </div>
                         <div>
-                            <InputSelect @bind-Value="Device.DeviceGroupID" class="form-control">
+                            <InputSelect @bind-Value="Device.DeviceGroupID" class="w-full bg-[#291d38] border border-white/10 text-[#c4b8d8] rounded-lg px-3 py-1.5 text-sm">
                                 <option value="">None</option>
 
                                 @foreach (var group in _deviceGroups)
@@ -244,15 +268,15 @@
                             <ValidationMessage For="() => Device.DeviceGroupID" />
                         </div>
 
-                        <div class="font-weight-bold text-info mt-2">
+                        <div class="font-semibold text-[#8b6cf7] mt-2">
                             Tags
                         </div>
                         <div>
-                            <InputText @bind-Value="Device.Tags" class="form-control" />
+                            <InputText @bind-Value="Device.Tags" class="w-full bg-[#291d38] border border-white/10 text-[#c4b8d8] rounded-lg px-3 py-1.5 text-sm" />
                             <ValidationMessage For="() => Device.Tags" />
                         </div>
 
-                        <div class="font-weight-bold text-info mt-2">
+                        <div class="font-semibold text-[#8b6cf7] mt-2">
                             Notes
                         </div>
                         <div>
@@ -264,8 +288,8 @@
                             <ValidationSummary />
                         </div>
 
-                        <div class="text-end mt-2">
-                            <button type="submit" class="btn btn-primary">Save</button>
+                        <div class="text-right mt-2">
+                            <button type="submit" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white rounded-lg px-2 py-1 text-xs transition-colors">Save</button>
                         </div>
                     </EditForm>
 
