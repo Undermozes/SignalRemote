@@ -2,14 +2,18 @@
 @inject IJsInterop JsInterop
 @inject IJSRuntime JsRuntime
 
-<div @ref="_modalRef" id="defaultModal" class="modal fade" style="background-color: rgba(0,0,0,0.35)">
+<div @ref="_modalRef" id="defaultModal" class="modal fade" style="background-color: rgba(0,0,0,0.6)">
     <div class="modal-dialog modal-dialog-scrollable" role="document" @onclick:stopPropagation>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">@ModalService.Title</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content bg-[#1d1330] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                <h5 class="text-white text-base font-semibold">@ModalService.Title</h5>
+                <button type="button" class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#9b8eb5] hover:text-white rounded-lg p-1.5 transition-colors" data-bs-dismiss="modal" aria-label="Close">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
-            <div class="modal-body" >
+            <div class="modal-body px-6 py-5 text-[#9b8eb5] text-sm leading-relaxed">
                 @if (ModalService.RenderBody is not null)
                 {
                     @ModalService.RenderBody
@@ -18,19 +22,18 @@
                 {
                     @foreach (var line in ModalService.Body ?? Array.Empty<string>())
                     {
-                        <p>
-                            @line
-                        </p>
+                        <p class="mb-2">@line</p>
                     }
                 }
-
             </div>
-            <div class="modal-footer">
+            <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-white/10">
                 @foreach (var button in ModalService.Buttons)
                 {
-                    <button @key="button" type="button" data-bs-dismiss="modal" class="@button.Class" @onclick="() => ExecuteButtonAction(button.OnClick)">@button.Text</button>
+                    <button @key="button" type="button" data-bs-dismiss="modal"
+                            class="@button.Class bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors"
+                            @onclick="() => ExecuteButtonAction(button.OnClick)">@button.Text</button>
                 }
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2 px-4 text-sm transition-colors" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

@@ -1,4 +1,5 @@
 ﻿@page "/Account/Login"
+@layout AuthPagesLayout
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
@@ -10,62 +11,87 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Log in</PageTitle>
+<PageTitle>Sign In &mdash; SignalRemote</PageTitle>
 
-<h1>Log in</h1>
-<div class="row">
-    <div class="col-md-4">
-        <section>
-            <StatusMessage Message="@errorMessage" />
-            <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
-                <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
-                <hr />
-                <ValidationSummary class="text-danger" role="alert" />
-                <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label for="email" class="form-label">Email</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger" />
-                </div>
-                <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="password" class="form-label">Password</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger" />
-                </div>
-                <div class="checkbox mb-3">
-                    <label class="form-label">
-                        <InputCheckbox 
-                            @bind-Value="Input.RememberMe" 
-                            class="darker-border-checkbox form-check-input ms-0 d-inline-block position-relative align-middle mt-0" />
-                        <span class="align-middle">
-                            Remember me
-                        </span>
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
-            </EditForm>
-        </section>
+<div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-2xl">
+
+    <div class="mb-6">
+        <h1 class="text-white text-2xl font-semibold mb-1">Welcome back</h1>
+        <p class="text-[#9b8eb5] text-sm">Sign in to your SignalRemote account</p>
     </div>
-@*     <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
-    </div> *@
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="mb-5 flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg px-4 py-3" role="alert">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <span>@errorMessage</span>
+        </div>
+    }
+
+    <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+        <DataAnnotationsValidator />
+
+        <div class="space-y-4">
+
+            <div>
+                <label for="email" class="block text-sm font-medium text-[#c4b8d8] mb-1.5">Email address</label>
+                <InputText
+                    @bind-Value="Input.Email"
+                    id="email"
+                    class="auth-input w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30"
+                    autocomplete="username"
+                    aria-required="true"
+                    placeholder="you@example.com" />
+                <ValidationMessage For="() => Input.Email" class="block mt-1.5 text-xs text-red-400" />
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="password" class="block text-sm font-medium text-[#c4b8d8]">Password</label>
+                    <a href="/Account/ForgotPassword" class="text-xs text-[#8b6cf7] hover:text-[#a88cff] transition-colors">Forgot password?</a>
+                </div>
+                <InputText
+                    type="password"
+                    @bind-Value="Input.Password"
+                    id="password"
+                    class="auth-input w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30"
+                    autocomplete="current-password"
+                    aria-required="true"
+                    placeholder="••••••••" />
+                <ValidationMessage For="() => Input.Password" class="block mt-1.5 text-xs text-red-400" />
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <InputCheckbox
+                    @bind-Value="Input.RememberMe"
+                    id="rememberMe"
+                    class="w-4 h-4 rounded border-white/20 bg-[#291d38] accent-[#7c5cbf] cursor-pointer" />
+                <label for="rememberMe" class="text-sm text-[#9b8eb5] cursor-pointer select-none">Remember me</label>
+            </div>
+
+        </div>
+
+        <button type="submit" class="mt-6 w-full bg-[#6c5fc7] hover:bg-[#7c6fd7] active:bg-[#5c4fb7] text-white font-semibold rounded-lg py-2.5 px-4 text-sm transition-colors shadow-lg shadow-[#6c5fc7]/20">
+            Sign in
+        </button>
+
+    </EditForm>
+
+    <div class="mt-6 pt-5 border-t border-white/10 flex flex-col items-center gap-2 text-sm text-[#9b8eb5]">
+        <span>
+            Don't have an account?
+            <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))"
+               class="text-[#8b6cf7] hover:text-[#a88cff] font-medium transition-colors">
+                Create an account
+            </a>
+        </span>
+        <a href="/Account/ResendEmailConfirmation" class="text-[#5e4d73] hover:text-[#9b8eb5] text-xs transition-colors">
+            Resend email confirmation
+        </a>
+    </div>
+
 </div>
 
 @code {

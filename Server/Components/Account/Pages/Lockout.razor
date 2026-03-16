@@ -1,8 +1,21 @@
-﻿@page "/Account/Lockout"
+@page "/Account/Lockout"
+@layout AuthPagesLayout
 
-<PageTitle>Locked out</PageTitle>
+<PageTitle>Account Locked &mdash; SignalRemote</PageTitle>
 
-<header>
-    <h1 class="text-danger">Locked out</h1>
-    <p class="text-danger">This account has been locked out, please try again later.</p>
-</header>
+<div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-2xl text-center">
+
+    <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+    </div>
+
+    <h1 class="text-white text-2xl font-semibold mb-2">Account locked out</h1>
+    <p class="text-[#9b8eb5] text-sm mb-6">This account has been temporarily locked. Please try again later.</p>
+
+    <a href="/Account/Login" class="inline-block text-[#8b6cf7] hover:text-[#a88cff] font-medium text-sm transition-colors">
+        ← Back to sign in
+    </a>
+
+</div>

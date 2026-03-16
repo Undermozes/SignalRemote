@@ -1,25 +1,34 @@
-﻿@page "/Account/Manage/PersonalData"
+@page "/Account/Manage/PersonalData"
 
 @inject IdentityUserAccessor UserAccessor
 
-<PageTitle>Personal Data</PageTitle>
+<PageTitle>Personal Data &mdash; SignalRemote</PageTitle>
 
-<StatusMessage />
-<h3>Personal Data</h3>
+<div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 shadow-xl">
+    <h2 class="text-white text-lg font-semibold mb-1">Personal data</h2>
+    <p class="text-[#9b8eb5] text-sm mb-5">Download or delete the personal data associated with your account.</p>
 
-<div class="row">
-    <div class="col-md-6">
-        <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
-        <p>
-            <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-        </p>
-        <form action="Account/Manage/DownloadPersonalData" method="post">
-            <AntiforgeryToken />
-            <button class="btn btn-primary" type="submit">Download</button>
-        </form>
-        <p>
-            <a href="Account/Manage/DeletePersonalData" class="btn btn-danger">Delete</a>
-        </p>
+    <StatusMessage />
+
+    <div class="space-y-4">
+        <div class="bg-[#291d38] border border-white/10 rounded-lg p-4">
+            <h3 class="text-[#c4b8d8] text-sm font-semibold mb-1">Download your data</h3>
+            <p class="text-[#9b8eb5] text-xs mb-3">Get a copy of all the personal data we hold about you.</p>
+            <form action="Account/Manage/DownloadPersonalData" method="post">
+                <AntiforgeryToken />
+                <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors" type="submit">
+                    Download
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-red-950/30 border border-red-500/20 rounded-lg p-4">
+            <h3 class="text-red-300 text-sm font-semibold mb-1">Delete your account</h3>
+            <p class="text-[#9b8eb5] text-xs mb-3">Permanently delete your account and all associated data. This action cannot be undone.</p>
+            <a href="Account/Manage/DeletePersonalData" class="inline-block bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors">
+                Delete account
+            </a>
+        </div>
     </div>
 </div>
 

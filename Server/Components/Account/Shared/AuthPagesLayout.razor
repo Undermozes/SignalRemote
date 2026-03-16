@@ -1,0 +1,52 @@
+@inherits LayoutComponentBase
+
+<HeadContent>
+    <style>
+        body {
+            background-color: #160c22 !important;
+        }
+        .auth-input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+        .auth-input:-webkit-autofill,
+        .auth-input:-webkit-autofill:hover,
+        .auth-input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #fff;
+            -webkit-box-shadow: 0 0 0px 1000px #291d38 inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+    </style>
+</HeadContent>
+
+<div class="min-h-screen bg-[#160c22] flex flex-col items-center justify-center px-4 py-12">
+
+    <!-- Logo / Branding -->
+    <div class="mb-8 flex flex-col items-center">
+        <div class="flex items-center gap-3 mb-1">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#8b6cf7] to-[#5b3fa6] flex items-center justify-center shadow-lg flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="22" height="22">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1C5.9 1 1 5.9 1 12s4.9 11 11 11 11-4.9 11-11S18.1 1 12 1zm0 20c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4 9-9 9z"/>
+                    <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z"/>
+                </svg>
+            </div>
+            <span class="text-white text-2xl font-bold tracking-tight">SignalRemote</span>
+        </div>
+        <p class="text-[#9b8eb5] text-sm mt-1">Remote access &amp; monitoring platform</p>
+    </div>
+
+    <!-- Page Content -->
+    <div class="w-full max-w-[420px]">
+        @Body
+    </div>
+
+    <!-- Footer -->
+    <p class="mt-10 text-[#5e4d73] text-xs text-center">
+        &copy; @_currentYear SignalRemote &mdash; All rights reserved.
+    </p>
+
+</div>
+
+@code {
+    private static readonly int _currentYear = DateTime.UtcNow.Year;
+}

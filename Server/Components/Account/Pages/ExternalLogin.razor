@@ -1,4 +1,5 @@
-﻿@page "/Account/ExternalLogin"
+@page "/Account/ExternalLogin"
+@layout AuthPagesLayout
 
 @using System.ComponentModel.DataAnnotations
 @using System.Security.Claims
@@ -16,32 +17,44 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<ExternalLogin> Logger
 
-<PageTitle>Register</PageTitle>
+<PageTitle>Register &mdash; SignalRemote</PageTitle>
 
-<StatusMessage Message="@message" />
-<h1>Register</h1>
-<h2>Associate your @ProviderDisplayName account.</h2>
-<hr />
+<div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-2xl">
 
-<div  class="alert alert-info">
-    You've successfully authenticated with <strong>@ProviderDisplayName</strong>.
-    Please enter an email address for this site below and click the Register button to finish
-    logging in.
-</div>
-
-<div class="row">
-    <div class="col-md-4">
-        <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" class="form-control" autocomplete="email" placeholder="Please enter your email." />
-                <label for="email" class="form-label">Email</label>
-                <ValidationMessage For="() => Input.Email" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </EditForm>
+    <div class="mb-6">
+        <div class="w-12 h-12 rounded-xl bg-[#291d38] border border-white/10 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+        </div>
+        <h1 class="text-white text-2xl font-semibold mb-1">Complete registration</h1>
+        <p class="text-[#9b8eb5] text-sm">
+            You've signed in with <span class="text-[#c4b8d8] font-medium">@ProviderDisplayName</span>.
+            Please enter an email address to complete your account setup.
+        </p>
     </div>
+
+    <StatusMessage Message="@message" />
+
+    <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post">
+        <DataAnnotationsValidator />
+
+        <div class="mb-4">
+            <label for="email" class="block text-sm font-medium text-[#c4b8d8] mb-1.5">Email address</label>
+            <InputText @bind-Value="Input.Email"
+                       id="email"
+                       class="auth-input w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30"
+                       autocomplete="email"
+                       placeholder="you@example.com" />
+            <ValidationMessage For="() => Input.Email" class="block mt-1.5 text-xs text-red-400" />
+        </div>
+
+        <button type="submit" class="w-full bg-[#6c5fc7] hover:bg-[#7c6fd7] active:bg-[#5c4fb7] text-white font-semibold rounded-lg py-2.5 px-4 text-sm transition-colors shadow-lg shadow-[#6c5fc7]/20">
+            Register
+        </button>
+
+    </EditForm>
+
 </div>
 
 @code {

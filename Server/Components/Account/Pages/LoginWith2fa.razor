@@ -1,4 +1,5 @@
 ﻿@page "/Account/LoginWith2fa"
+@layout AuthPagesLayout
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
@@ -9,40 +10,70 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<LoginWith2fa> Logger
 
-<PageTitle>Two-factor authentication</PageTitle>
+<PageTitle>Two-Factor Authentication &mdash; SignalRemote</PageTitle>
 
-<h1>Two-factor authentication</h1>
-<hr />
-<StatusMessage Message="@message" />
-<p>Your login is protected with an authenticator app. Enter your authenticator code below.</p>
-<div class="row">
-    <div class="col-md-4">
-        <EditForm Model="Input" FormName="login-with-2fa" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
-            <input type="hidden" name="RememberMe" value="@RememberMe" />
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.TwoFactorCode" class="form-control" autocomplete="off" />
-                <label for="two-factor-code" class="form-label">Authenticator code</label>
-                <ValidationMessage For="() => Input.TwoFactorCode" class="text-danger" />
-            </div>
-            <div class="checkbox mb-3">
-                <label for="remember-machine" class="form-label">
-                    <InputCheckbox @bind-Value="Input.RememberMachine" />
-                    Remember this machine
-                </label>
-            </div>
-            <div>
-                <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-            </div>
-        </EditForm>
+<div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-2xl">
+
+    <div class="mb-6">
+        <div class="w-12 h-12 rounded-xl bg-[#291d38] border border-white/10 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        </div>
+        <h1 class="text-white text-2xl font-semibold mb-1">Two-factor authentication</h1>
+        <p class="text-[#9b8eb5] text-sm">Enter the code from your authenticator app to continue.</p>
     </div>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="mb-5 flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg px-4 py-3" role="alert">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <span>@message</span>
+        </div>
+    }
+
+    <EditForm Model="Input" FormName="login-with-2fa" OnValidSubmit="OnValidSubmitAsync" method="post">
+        <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+        <input type="hidden" name="RememberMe" value="@RememberMe" />
+        <DataAnnotationsValidator />
+
+        <div class="space-y-4">
+            <div>
+                <label for="two-factor-code" class="block text-sm font-medium text-[#c4b8d8] mb-1.5">Authenticator code</label>
+                <InputText
+                    @bind-Value="Input.TwoFactorCode"
+                    id="two-factor-code"
+                    class="auth-input w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30 tracking-widest"
+                    autocomplete="off"
+                    placeholder="000 000" />
+                <ValidationMessage For="() => Input.TwoFactorCode" class="block mt-1.5 text-xs text-red-400" />
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <InputCheckbox
+                    @bind-Value="Input.RememberMachine"
+                    id="remember-machine"
+                    class="w-4 h-4 rounded border-white/20 bg-[#291d38] accent-[#7c5cbf] cursor-pointer" />
+                <label for="remember-machine" class="text-sm text-[#9b8eb5] cursor-pointer select-none">Remember this machine</label>
+            </div>
+        </div>
+
+        <button type="submit" class="mt-6 w-full bg-[#6c5fc7] hover:bg-[#7c6fd7] active:bg-[#5c4fb7] text-white font-semibold rounded-lg py-2.5 px-4 text-sm transition-colors shadow-lg shadow-[#6c5fc7]/20">
+            Verify &amp; sign in
+        </button>
+
+    </EditForm>
+
+    <div class="mt-6 pt-5 border-t border-white/10 text-center text-sm text-[#9b8eb5]">
+        Don't have your authenticator?
+        <a href="/Account/LoginWithRecoveryCode?ReturnUrl=@ReturnUrl" class="text-[#8b6cf7] hover:text-[#a88cff] font-medium transition-colors">
+            Use a recovery code
+        </a>
+    </div>
+
 </div>
-<p>
-    Don't have access to your authenticator device? You can
-    <a href="Account/LoginWithRecoveryCode?ReturnUrl=@ReturnUrl">log in with a recovery code</a>.
-</p>
 
 @code {
     private string? message;

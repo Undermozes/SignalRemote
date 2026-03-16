@@ -1,4 +1,5 @@
 ﻿@page "/Account/RegisterConfirmation"
+@layout AuthPagesLayout
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -10,23 +11,42 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register confirmation</PageTitle>
+<PageTitle>Register Confirmation &mdash; SignalRemote</PageTitle>
 
-<h1>Register confirmation</h1>
+<div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-2xl text-center">
 
-<StatusMessage Message="@statusMessage" />
+    <div class="w-16 h-16 rounded-full bg-[#6c5fc7]/10 border border-[#6c5fc7]/30 flex items-center justify-center mx-auto mb-5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+    </div>
 
-@if (emailConfirmationLink is not null)
-{
-    <p>
-        This app does not currently have a real email sender registered, see <a href="https://aka.ms/aspaccountconf">these docs</a> for how to configure a real email sender.
-        Normally this would be emailed: <a href="@emailConfirmationLink">Click here to confirm your account</a>
-    </p>
-}
-else
-{
-    <p>Please check your email to confirm your account.</p>
-}
+    <h1 class="text-white text-2xl font-semibold mb-3">Check your email</h1>
+
+    <StatusMessage Message="@statusMessage" />
+
+    @if (emailConfirmationLink is not null)
+    {
+        <div class="mb-4 text-left bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-3 text-amber-200/80 text-sm">
+            <p class="mb-1 font-medium">Development mode</p>
+            <p class="mb-2 text-amber-200/60">No email sender is configured. Use the link below to confirm your account:</p>
+            <a href="@emailConfirmationLink" class="text-[#8b6cf7] hover:text-[#a88cff] underline break-all text-xs transition-colors">
+                Click here to confirm your account
+            </a>
+        </div>
+    }
+    else
+    {
+        <p class="text-[#9b8eb5] text-sm mb-6">
+            We've sent a confirmation email to your inbox. Please click the link in the email to activate your account.
+        </p>
+    }
+
+    <a href="/Account/Login" class="inline-block bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-6 text-sm transition-colors">
+        Sign in
+    </a>
+
+</div>
 
 @code {
     private string? emailConfirmationLink;

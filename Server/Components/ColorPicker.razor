@@ -1,20 +1,26 @@
 ﻿@using Remotely.Server.Models
  
-<div>
-    <div>Color Sample:</div>
+<div class="space-y-3">
+    <div class="text-[#9b8eb5] text-xs font-medium">Color preview</div>
     <div class="color-sample mb-2" style="background-color:@($"rgb({Red},{Green},{Blue})")"></div>
 
-    <div>Red</div>
-    <input type="range" min="0" max="255" class="form-control red-picker" @bind="Red" />
-    <input type="number" min="0" max="255" class="form-control mb-4" style="width: 150px" @bind="Red" />
+    <div>
+        <div class="text-xs font-medium text-red-400 mb-1">Red</div>
+        <input type="range" min="0" max="255" class="red-picker w-full accent-red-500 cursor-pointer" @bind="Red" />
+        <input type="number" min="0" max="255" class="bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm outline-none focus:border-[#7c5cbf] transition-all mt-1 mb-3 w-28" @bind="Red" />
+    </div>
 
-    <div>Green</div>
-    <input type="range" min="0" max="255" class="form-control green-picker" @bind="Green" />
-    <input type="number" min="0" max="255" class="form-control mb-4" style="width: 150px" @bind="Green" />
+    <div>
+        <div class="text-xs font-medium text-emerald-400 mb-1">Green</div>
+        <input type="range" min="0" max="255" class="green-picker w-full accent-emerald-500 cursor-pointer" @bind="Green" />
+        <input type="number" min="0" max="255" class="bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm outline-none focus:border-[#7c5cbf] transition-all mt-1 mb-3 w-28" @bind="Green" />
+    </div>
 
-    <div>Blue</div>
-    <input type="range" min="0" max="255" class="form-control blue-picker" @bind="Blue" />
-    <input type="number" min="0" max="255" class="form-control mb-4" style="width: 150px" @bind="Blue" />
+    <div>
+        <div class="text-xs font-medium text-blue-400 mb-1">Blue</div>
+        <input type="range" min="0" max="255" class="blue-picker w-full accent-blue-500 cursor-pointer" @bind="Blue" />
+        <input type="number" min="0" max="255" class="bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm outline-none focus:border-[#7c5cbf] transition-all mt-1 mb-3 w-28" @bind="Blue" />
+    </div>
 </div>
 
 

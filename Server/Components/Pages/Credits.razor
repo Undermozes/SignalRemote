@@ -1,42 +1,41 @@
-﻿@page "/credits"
+@page "/credits"
 
-<h4>Credits and Open-Source Licenses</h4>
+<PageTitle>Credits &mdash; SignalRemote</PageTitle>
 
-<div class="row">
-    <div class="col-sm-12 text-info mb-1">
-        The below open-source projects are used in Remotely.
-    </div>
-    <div class="col-sm-12 text-info mb-3">
-        If you've contributed to any of these projects, thank you!
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <h1 class="text-white text-2xl font-semibold mb-2">Credits &amp; Open-Source Licenses</h1>
+    <p class="text-[#9b8eb5] text-sm mb-8">The following open-source projects are used in SignalRemote. If you've contributed to any of these, thank you!</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        @foreach (var credit in _credits)
+        {
+            <div class="bg-[#1d1330] border border-white/10 rounded-xl p-5 hover:border-[#6c5fc7]/30 transition-colors">
+                <h3 class="text-[#c4b8d8] text-sm font-semibold mb-3">@credit.Name</h3>
+                <div class="space-y-1.5">
+                    <a href="@credit.License" target="_blank" class="flex items-center gap-1.5 text-[#8b6cf7] hover:text-[#a88cff] text-xs transition-colors">
+                        <svg class="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        License
+                    </a>
+                    <a href="@credit.Project" target="_blank" class="flex items-center gap-1.5 text-[#8b6cf7] hover:text-[#a88cff] text-xs transition-colors">
+                        <svg class="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Project
+                    </a>
+                </div>
+            </div>
+        }
     </div>
 </div>
-<div class="row">
-    <div class="col-sm-6 col-md-4">
-        <h5>Bootswatch (Bootstrap Themes)</h5>
-        <ul>
-            <li>License: <a href="https://github.com/thomaspark/bootswatch/blob/master/LICENSE">https://github.com/thomaspark/bootswatch/blob/master/LICENSE</a></li>
-            <li>Project: <a href="https://github.com/thomaspark/bootswatch">https://github.com/thomaspark/bootswatch</a></li>
-        </ul>
-    </div>
-    <div class="col-sm-6 col-md-4">
-        <h5>NAudio</h5>
-        <ul>
-            <li>License: <a href="https://github.com/naudio/NAudio/blob/master/license.txt">https://github.com/naudio/NAudio/blob/master/license.txt</a></li>
-            <li>Project: <a href="https://github.com/naudio/NAudio">https://github.com/naudio/NAudio</a></li>
-        </ul>
-    </div>
-    <div class="col-sm-6 col-md-4">
-        <h5>SharpDX</h5>
-        <ul>
-            <li>License: <a href="https://github.com/sharpdx/SharpDX/blob/master/LICENSE">https://github.com/sharpdx/SharpDX/blob/master/LICENSE</a></li>
-            <li>Project: <a href="https://github.com/sharpdx/SharpDX">https://github.com/sharpdx/SharpDX</a></li>
-        </ul>
-    </div>
-    <div class="col-sm-6 col-md-4">
-        <h5>QRCoder</h5>
-        <ul>
-            <li>License: <a href="https://github.com/codebude/QRCoder/blob/master/LICENSE.txt">https://github.com/codebude/QRCoder/blob/master/LICENSE.txt</a></li>
-            <li>Project: <a href="https://github.com/codebude/QRCoder/">https://github.com/codebude/QRCoder/</a></li>
-        </ul>
-    </div>
-</div>
+
+@code {
+    private static readonly (string Name, string License, string Project)[] _credits =
+    [
+        ("Bootswatch (Bootstrap Themes)", "https://github.com/thomaspark/bootswatch/blob/master/LICENSE", "https://github.com/thomaspark/bootswatch"),
+        ("NAudio", "https://github.com/naudio/NAudio/blob/master/license.txt", "https://github.com/naudio/NAudio"),
+        ("SharpDX", "https://github.com/sharpdx/SharpDX/blob/master/LICENSE", "https://github.com/sharpdx/SharpDX"),
+        ("QRCoder", "https://github.com/codebude/QRCoder/blob/master/LICENSE.txt", "https://github.com/codebude/QRCoder/"),
+    ];
+}

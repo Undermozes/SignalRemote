@@ -9,59 +9,87 @@
 @inject ILogsManager LogsManager
 @inject ILoaderService LoaderService
 
-<h3 class="mb-3">Server Logs</h3>
+<div class="max-w-6xl px-4 py-8">
+    <h3 class="text-2xl font-bold text-white mb-6">Server Logs</h3>
 
-<div class="buttons-row mb-3">
-    <div>
-        <button class="btn btn-danger" type="button" @onclick="ClearAllLogs">
-            Delete Logs
-        </button>
-    </div>
-    <div>
-        <button class="btn btn-primary"
-                onclick="window.open('/API/ServerLogs/Download', '_blank')">
-            Download Logs
-        </button>
-    </div>
-    <div>
-        <button class="btn btn-primary"
-                onclick="window.open('/API/ScriptResults', '_blank')">
-            Download Script History
-        </button>
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl shadow-xl overflow-hidden">
+
+        <div class="flex flex-wrap gap-2 p-4 border-b border-white/10">
+            <button class="bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors"
+                    type="button" @onclick="ClearAllLogs">
+                Delete Logs
+            </button>
+            <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors"
+                    onclick="window.open('/API/ServerLogs/Download', '_blank')">
+                Download Logs
+            </button>
+            <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors"
+                    onclick="window.open('/API/ScriptResults', '_blank')">
+                Download Script History
+            </button>
+        </div>
+
+        <div class="flex flex-wrap gap-3 items-end p-4 border-b border-white/10">
+            <div>
+                <label class="block text-xs font-medium text-[#9b8eb5] mb-1">Type</label>
+                <select class="bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm outline-none focus:border-[#7c5cbf] transition-all"
+                        @bind="LogLevel">
+                    <option value="">All</option>
+                    @foreach (var eventType in Enum.GetValues(typeof(LogLevel)))
+                    {
+                        <option @key="eventType" value="@eventType">@eventType</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-[#9b8eb5] mb-1">Filter</label>
+                <input type="text"
+                       class="bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm outline-none focus:border-[#7c5cbf] transition-all"
+                       @bind="MessageFilter" @bind:event="oninput" />
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-[#9b8eb5] mb-1">From</label>
+                <input type="date"
+                       class="bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm outline-none focus:border-[#7c5cbf] transition-all"
+                       @bind="FromDate" />
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-[#9b8eb5] mb-1">To</label>
+                <input type="date"
+                       class="bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm outline-none focus:border-[#7c5cbf] transition-all"
+                       @bind="ToDate" />
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead class="border-b border-white/10">
+                    <tr>
+                        <th class="text-left font-semibold text-[#9b8eb5] px-4 py-3">Log Entry</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in _filteredLogs)
+                    {
+                        <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                            <td class="px-4 py-2.5 @(log.Contains("Error") ? "text-red-400" :
+                                                       log.Contains("Warning") ? "text-amber-400" :
+                                                       log.Contains("Debug") ? "text-[#9b8eb5]" :
+                                                       "text-[#c4b8d8]") font-mono whitespace-pre-wrap break-all">@log</td>
+                        </tr>
+                    }
+                    @if (!_filteredLogs.Any())
+                    {
+                        <tr>
+                            <td class="px-4 py-8 text-center text-[#9b8eb5]">No log entries found.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
     </div>
 </div>
-<div class="filters-row mb-3">
-    <div style="display:inline-block">
-        <strong>Type:</strong>
-        <br />
-        <select class="form-control-sm" @bind="LogLevel">
-            <option value="">All</option>
-            @foreach (var eventType in Enum.GetValues(typeof(LogLevel)))
-            {
-                <option @key="eventType" value="@eventType">@eventType</option>
-            }
-        </select>
-    </div>
-    <div style="display:inline-block">
-        <strong>Filter:</strong>
-        <br />
-        <input type="text" @bind="MessageFilter" @bind:event="oninput" />
-    </div>
-    <div style="display:inline-block">
-        <strong>From:</strong>
-        <br />
-        <input type="date" @bind="FromDate" />
-    </div>
-    <div style="display:inline-block">
-        <strong>To:</strong>
-        <br />
-        <input type="date" @bind="ToDate" />
-    </div>
-</div>
-
-<textarea readonly class="logs-content bg-dark text-white">
-    @(string.Join(Environment.NewLine, _filteredLogs))
-</textarea>
 
 @code {
     private readonly string _messageDebounceKey = Guid.NewGuid().ToString();

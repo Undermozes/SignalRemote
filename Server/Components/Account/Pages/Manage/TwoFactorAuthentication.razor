@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/TwoFactorAuthentication"
+@page "/Account/Manage/TwoFactorAuthentication"
 
 @using Microsoft.AspNetCore.Http.Features
 @using Microsoft.AspNetCore.Identity
@@ -9,66 +9,108 @@
 @inject IdentityUserAccessor UserAccessor
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Two-factor authentication (2FA)</PageTitle>
+<PageTitle>Two-Factor Authentication &mdash; SignalRemote</PageTitle>
 
-<StatusMessage />
-<h3>Two-factor authentication (2FA)</h3>
-@if (canTrack)
-{
-    if (is2faEnabled)
+<div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 shadow-xl">
+    <h2 class="text-white text-lg font-semibold mb-1">Two-factor authentication</h2>
+    <p class="text-[#9b8eb5] text-sm mb-5">Add an extra layer of security to your account.</p>
+
+    <StatusMessage />
+
+    @if (canTrack)
     {
-        if (recoveryCodesLeft == 0)
+        @if (is2faEnabled)
         {
-            <div class="alert alert-danger">
-                <strong>You have no recovery codes left.</strong>
-                <p>You must <a href="Account/Manage/GenerateRecoveryCodes">generate a new set of recovery codes</a> before you can log in with a recovery code.</p>
-            </div>
-        }
-        else if (recoveryCodesLeft == 1)
-        {
-            <div class="alert alert-danger">
-                <strong>You have 1 recovery code left.</strong>
-                <p>You can <a href="Account/Manage/GenerateRecoveryCodes">generate a new set of recovery codes</a>.</p>
-            </div>
-        }
-        else if (recoveryCodesLeft <= 3)
-        {
-            <div class="alert alert-warning">
-                <strong>You have @recoveryCodesLeft recovery codes left.</strong>
-                <p>You should <a href="Account/Manage/GenerateRecoveryCodes">generate a new set of recovery codes</a>.</p>
+            @if (recoveryCodesLeft == 0)
+            {
+                <div class="mb-4 flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg px-4 py-3">
+                    <svg class="h-4 w-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    </svg>
+                    <div>
+                        <p class="font-semibold">No recovery codes left.</p>
+                        <p class="mt-0.5 text-red-300/70">You must <a href="Account/Manage/GenerateRecoveryCodes" class="underline hover:text-red-200">generate a new set of recovery codes</a> before you can log in with a recovery code.</p>
+                    </div>
+                </div>
+            }
+            else if (recoveryCodesLeft == 1)
+            {
+                <div class="mb-4 flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg px-4 py-3">
+                    <svg class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <div>
+                        <p class="font-semibold">Only 1 recovery code left.</p>
+                        <p class="mt-0.5 text-red-300/70">You can <a href="Account/Manage/GenerateRecoveryCodes" class="underline hover:text-red-200">generate a new set of recovery codes</a>.</p>
+                    </div>
+                </div>
+            }
+            else if (recoveryCodesLeft <= 3)
+            {
+                <div class="mb-4 flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 text-amber-200/80 text-sm rounded-lg px-4 py-3">
+                    <svg class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <div>
+                        <p class="font-semibold">@recoveryCodesLeft recovery codes left.</p>
+                        <p class="mt-0.5 text-amber-200/60">You should <a href="Account/Manage/GenerateRecoveryCodes" class="underline hover:text-amber-200">generate a new set of recovery codes</a>.</p>
+                    </div>
+                </div>
+            }
+
+            <div class="flex flex-wrap gap-2 mb-6">
+                @if (isMachineRemembered)
+                {
+                    <form style="display: inline-block" @formname="forget-browser" @onsubmit="OnSubmitForgetBrowserAsync" method="post">
+                        <AntiforgeryToken />
+                        <button type="submit" class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2 px-4 text-sm transition-colors">
+                            Forget this browser
+                        </button>
+                    </form>
+                }
+                <a href="Account/Manage/Disable2fa" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-medium rounded-lg py-2 px-4 text-sm transition-colors">
+                    Disable 2FA
+                </a>
+                <a href="Account/Manage/GenerateRecoveryCodes" class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2 px-4 text-sm transition-colors">
+                    Reset recovery codes
+                </a>
             </div>
         }
 
-        if (isMachineRemembered)
-        {
-            <form style="display: inline-block" @formname="forget-browser" @onsubmit="OnSubmitForgetBrowserAsync" method="post">
-                <AntiforgeryToken />
-                <button type="submit" class="btn btn-primary">Forget this browser</button>
-            </form>
-        }
-
-        <a href="Account/Manage/Disable2fa" class="btn btn-primary">Disable 2FA</a>
-        <a href="Account/Manage/GenerateRecoveryCodes" class="btn btn-primary">Reset recovery codes</a>
-    }
-
-    <h4>Authenticator app</h4>
-    @if (!hasAuthenticator)
-    {
-        <a href="Account/Manage/EnableAuthenticator" class="btn btn-primary">Add authenticator app</a>
+        <div class="border-t border-white/10 pt-5">
+            <h3 class="text-white text-sm font-semibold mb-3">Authenticator app</h3>
+            <div class="flex flex-wrap gap-2">
+                @if (!hasAuthenticator)
+                {
+                    <a href="Account/Manage/EnableAuthenticator" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors">
+                        Add authenticator app
+                    </a>
+                }
+                else
+                {
+                    <a href="Account/Manage/EnableAuthenticator" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors">
+                        Set up authenticator app
+                    </a>
+                    <a href="Account/Manage/ResetAuthenticator" class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2.5 px-4 text-sm transition-colors">
+                        Reset authenticator app
+                    </a>
+                }
+            </div>
+        </div>
     }
     else
     {
-        <a href="Account/Manage/EnableAuthenticator" class="btn btn-primary">Set up authenticator app</a>
-        <a href="Account/Manage/ResetAuthenticator" class="btn btn-primary">Reset authenticator app</a>
+        <div class="flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg px-4 py-3">
+            <svg class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <div>
+                <p class="font-semibold">Privacy policy not accepted.</p>
+                <p class="mt-0.5 text-red-300/70">You must accept the privacy and cookie policy before you can enable two-factor authentication.</p>
+            </div>
+        </div>
     }
-}
-else
-{
-    <div class="alert alert-danger">
-        <strong>Privacy and cookie policy have not been accepted.</strong>
-        <p>You must accept the policy before you can enable two factor authentication.</p>
-    </div>
-}
+</div>
 
 @code {
     private bool canTrack;

@@ -2,193 +2,277 @@
 @attribute [Authorize(Policy = PolicyNames.OrganizationAdminRequired)]
 @inherits AuthComponentBase
 
-<h3 class="mb-3">Manage Organization</h3>
+<h1 class="text-white text-2xl font-semibold mb-1">Manage Organization</h1>
+<p class="text-[#9b8eb5] text-sm mb-6">Configure your organization settings, device groups, users, and invitations.</p>
 
 @if (_isLoading)
 {
-    <h5>Loading...</h5>
+    <p class="text-[#9b8eb5] text-sm animate-pulse">Loading...</p>
 }
 else if (User is not null)
 {
-    <div class="row">
-        <div class="col-sm-8">
-            @* Organization ID *@
-            <div class="form-group mw">
-                <label class="mb-1">Organization ID</label>
-                <input readonly class="form-control" value="@_organization?.ID" />
-            </div>
+    @* Organization Settings Card *@
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 mb-6">
+        <h2 class="text-[#c4b8d8] text-sm font-semibold mb-4">Organization Settings</h2>
+
+        @* Organization ID *@
+        <div class="mb-4">
+            <label class="text-[#c4b8d8] text-sm font-medium block mb-1.5">Organization ID</label>
+            <input readonly
+                   class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none placeholder-white/30"
+                   value="@_organization?.ID" />
         </div>
+
+        @* Organization Name *@
+        <div class="mb-4">
+            <label class="text-[#c4b8d8] text-sm font-medium block mb-1.5">Organization Name</label>
+            <input @onchange="OrganizationNameChanged"
+                   value="@_organization?.OrganizationName"
+                   maxlength="25"
+                   placeholder="Enter a name for your organization"
+                   autocomplete="off"
+                   class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30" />
+            <p class="text-[#9b8eb5] text-xs mt-1.5">* Requires browser refresh.</p>
+        </div>
+
+        @if (User.IsServerAdmin)
+        {
+            @* Default Organization *@
+            <div class="flex items-center gap-3">
+                <input type="checkbox"
+                       checked="@_organization?.IsDefaultOrganization"
+                       @onchange="DefaultOrgCheckChanged"
+                       class="accent-[#7c5cbf] cursor-pointer w-4 h-4" />
+                <label class="text-[#c4b8d8] text-sm font-medium">Default Organization For Server</label>
+                <button class="w-6 h-6 rounded-full bg-[#291d38] border border-white/10 flex items-center justify-center text-[#9b8eb5] hover:text-white text-xs transition-colors"
+                        @onclick="ShowDefaultOrgHelp"
+                        title="Help">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </button>
+            </div>
+        }
     </div>
 
+    @* Device Groups Card *@
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 mb-6">
+        <div class="flex items-center gap-2 mb-4">
+            <h2 class="text-[#c4b8d8] text-sm font-semibold">Device Groups</h2>
+            <button class="w-6 h-6 rounded-full bg-[#291d38] border border-white/10 flex items-center justify-center text-[#9b8eb5] hover:text-white text-xs transition-colors"
+                    @onclick="ShowDeviceGroupHelp"
+                    title="Help">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </button>
+        </div>
 
-    <div class="row">
-        <div class="col-sm-8">
-            @* Organization Name *@
-            <div class="form-group mw">
-                <label class="mb-1">Organization Name</label>
-
-                <div class="input-group">
-                    <input @onchange="OrganizationNameChanged"
-                           value="@_organization?.OrganizationName"
-                           maxlength="25"
-                           placeholder="Enter a name for your organization" 
-                           class="form-control" 
-                           autocomplete="off" />
-                </div>
-                <div class="text-info small">
-                    * Requires browser refresh.
-                </div>
-            </div>
-            @if (User.IsServerAdmin)
+        <select class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all mb-3"
+                @bind="_selectedDeviceGroupId"
+                size="4">
+            @foreach (var deviceGroup in _deviceGroups)
             {
-                <div class="form-group">
-                    <label class="mb-1">Default Organization For Server</label>
-                    <button class="btn btn-sm btn-secondary ms-2" @onclick="ShowDefaultOrgHelp">
-                        <span class="oi oi-question-mark"></span>
-                    </button>
-                    <br />
-                    <input type="checkbox" checked="@_organization?.IsDefaultOrganization" @onchange="DefaultOrgCheckChanged" />
-                </div>
+                <option @key="deviceGroup.ID" value="@deviceGroup.ID">@deviceGroup.Name</option>
             }
+        </select>
+
+        <div class="flex justify-end mb-4">
+            <button type="button"
+                    class="bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors"
+                    @onclick="DeleteSelectedDeviceGroup">
+                Delete
+            </button>
+        </div>
+
+        <div class="flex gap-2">
+            <input placeholder="Add new device group"
+                   maxlength="200"
+                   @bind="_newDeviceGroupName"
+                   @bind:event="oninput"
+                   @onkeypress="EvaluateNewDeviceGroupKeyPress"
+                   class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30" />
+            <button type="submit"
+                    class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2 px-4 text-sm transition-colors whitespace-nowrap"
+                    @onclick="CreateNewDeviceGroup">
+                Add
+            </button>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-sm-8">
-            @* Device Groups *@
-            <div class="form-group">
-                <label class="mb-1">Device Groups</label>
-                <button class="btn btn-sm btn-secondary ms-2" @onclick="ShowDeviceGroupHelp">
-                    <span class="oi oi-question-mark"></span>
-                </button>
+    @* Users Card *@
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 mb-6">
+        <div class="flex items-center gap-2 mb-4">
+            <h2 class="text-[#c4b8d8] text-sm font-semibold">Users</h2>
+            <button class="w-6 h-6 rounded-full bg-[#291d38] border border-white/10 flex items-center justify-center text-[#9b8eb5] hover:text-white text-xs transition-colors"
+                    @onclick="ShowUsersHelp"
+                    title="Help">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </button>
+        </div>
 
-                <select class="form-control mb-1" @bind="_selectedDeviceGroupId" size="4">
-                    @foreach (var deviceGroup in _deviceGroups)
+        <div class="bg-[#1d1330] border border-white/10 rounded-xl overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="border-b border-white/10">
+                    <tr>
+                        <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3">User Name</th>
+                        <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3">Administrator</th>
+                        <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3">Device Groups</th>
+                        <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3">Reset Password</th>
+                        <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3">Delete User</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var orgUser in _orgUsers)
                     {
-                        <option @key="deviceGroup.ID" value="@deviceGroup.ID">@deviceGroup.Name</option>
-                    }
-                </select>
-
-                <div class="text-end mb-3">
-                    <button type="button" class="btn btn-danger" @onclick="DeleteSelectedDeviceGroup">Delete</button>
-                </div>
-
-                <div class="input-group">
-                    <input placeholder="Add new device group" class="form-control" maxlength="200"
-                           @bind="_newDeviceGroupName"
-                           @bind:event="oninput"
-                           @onkeypress="EvaluateNewDeviceGroupKeyPress" />
-                    <button type="submit" class="btn btn-secondary" @onclick="CreateNewDeviceGroup">Add</button>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-sm-12">
-            @* Users *@
-            <div class="form-group">
-                <label class="control-label">Users</label>
-                <button class="btn btn-sm btn-secondary ms-2" @onclick="ShowUsersHelp">
-                    <span class="oi oi-question-mark"></span>
-                </button>
-                <table class="table table-dark table-striped table-hover" style="max-height: 400px">
-                    <thead>
-                        <tr>
-                            <th>User Name</th>
-                            <th>Administrator</th>
-                            <th>Device Groups</th>
-                            <th>Reset Password</th>
-                            <th>Delete User</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var orgUser in _orgUsers)
-                        {
-                            <tr @key="orgUser.Id">
-                                <td class="middle-aligned"><label class="control-label">@orgUser.UserName</label></td>
-                                @if (User.Id == orgUser.Id)
-                                {
-                                    <td><input type="checkbox" readonly disabled checked="@orgUser.IsAdministrator" /></td>
-                                    <td><button type="button" class="btn btn-secondary" title="Edit" @onclick="() => EditDeviceGroups(orgUser)">Edit</button></td>
-                                    <td></td>
-                                    <td><button type="button" class="btn btn-danger delete-user-button" disabled>Delete</button></td>
-                                }
-                                else
-                                {
-                                    <td><input type="checkbox" @onchange="(ev) => SetUserIsAdmin(ev, orgUser)" checked="@orgUser.IsAdministrator" /></td>
-                                    <td><button type="button" class="btn btn-secondary" title="Edit" @onclick="() => EditDeviceGroups(orgUser)">Edit</button></td>
-                                    <td><button type="button" class="btn btn-danger" title="Reset Password" @onclick="() => ResetPassword(orgUser)">Reset</button></td>
-                                    <td><button type="button" class="btn btn-danger" title="Delete User" @onclick="() => DeleteUser(orgUser)">Delete</button></td>
-                                }
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-
-    @* Invitations *@
-    <div class="row">
-        <div class="col-sm-12">
-            <div class="form-group">
-                <label class="control-label">Invitations</label>
-                <button class="btn btn-sm btn-secondary ms-2" @onclick="ShowInvitesHelp">
-                    <span class="oi oi-question-mark"></span>
-                </button>
-                <table id="invitesTable" class="table table-dark table-striped table-hover" style="max-height: 400px">
-                    <thead>
-                        <tr>
-                            <th>Invited User</th>
-                            <th>Administrator</th>
-                            <th>Link(s)</th>
-                            <th>Delete</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var invite in _invites)
-                        {
-                            <tr @key="invite.ID">
-                                <td class="middle-aligned"><label class="control-label">@invite.InvitedUser</label></td>
-                                <td class="middle-aligned"><input type="checkbox" checked="@invite.IsAdmin" disabled /></td>
-                                <td class="middle-aligned">
-                                    <label class="control-label">
-                                        <a href="@(NavManager.BaseUri)Invite/@invite.ID">Join Link</a>
-                                    </label>
+                        <tr @key="orgUser.Id" class="border-b border-white/5 hover:bg-white/[0.02]">
+                            <td class="text-[#c4b8d8] px-4 py-3">@orgUser.UserName</td>
+                            @if (User.Id == orgUser.Id)
+                            {
+                                <td class="text-[#c4b8d8] px-4 py-3">
+                                    <input type="checkbox" readonly disabled checked="@orgUser.IsAdministrator" class="accent-[#7c5cbf] cursor-pointer" />
                                 </td>
-                                <td><button type="button" class="btn btn-danger" invite="@invite.ID" @onclick="() => DeleteInvite(invite)">Delete</button></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                                <td class="text-[#c4b8d8] px-4 py-3">
+                                    <button type="button"
+                                            class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2 px-4 text-sm transition-colors"
+                                            title="Edit"
+                                            @onclick="() => EditDeviceGroups(orgUser)">
+                                        Edit
+                                    </button>
+                                </td>
+                                <td class="text-[#c4b8d8] px-4 py-3"></td>
+                                <td class="text-[#c4b8d8] px-4 py-3">
+                                    <button type="button"
+                                            class="bg-red-500/90 text-white font-semibold rounded-lg py-2 px-4 text-sm opacity-50 cursor-not-allowed"
+                                            disabled>
+                                        Delete
+                                    </button>
+                                </td>
+                            }
+                            else
+                            {
+                                <td class="text-[#c4b8d8] px-4 py-3">
+                                    <input type="checkbox" @onchange="(ev) => SetUserIsAdmin(ev, orgUser)" checked="@orgUser.IsAdministrator" class="accent-[#7c5cbf] cursor-pointer" />
+                                </td>
+                                <td class="text-[#c4b8d8] px-4 py-3">
+                                    <button type="button"
+                                            class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2 px-4 text-sm transition-colors"
+                                            title="Edit"
+                                            @onclick="() => EditDeviceGroups(orgUser)">
+                                        Edit
+                                    </button>
+                                </td>
+                                <td class="text-[#c4b8d8] px-4 py-3">
+                                    <button type="button"
+                                            class="bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors"
+                                            title="Reset Password"
+                                            @onclick="() => ResetPassword(orgUser)">
+                                        Reset
+                                    </button>
+                                </td>
+                                <td class="text-[#c4b8d8] px-4 py-3">
+                                    <button type="button"
+                                            class="bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors"
+                                            title="Delete User"
+                                            @onclick="() => DeleteUser(orgUser)">
+                                        Delete
+                                    </button>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 
+    @* Invitations Card *@
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 mb-6">
+        <div class="flex items-center gap-2 mb-4">
+            <h2 class="text-[#c4b8d8] text-sm font-semibold">Invitations</h2>
+            <button class="w-6 h-6 rounded-full bg-[#291d38] border border-white/10 flex items-center justify-center text-[#9b8eb5] hover:text-white text-xs transition-colors"
+                    @onclick="ShowInvitesHelp"
+                    title="Help">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </button>
+        </div>
 
-    @* Send Invites *@
-    <div class="row">
-        <div class="col-sm-8">
-            <div class="text-danger"></div>
-            <div class="form-group">
-                <label class="control-label">Add User</label>
-                <div class="input-group">
-                    <input @bind="_inviteEmail" @bind:event="oninput"
-                           placeholder="Email of user to add"
-                           type="email"
-                           required
-                           class="form-control" />
+        <div class="bg-[#1d1330] border border-white/10 rounded-xl overflow-hidden">
+            <table id="invitesTable" class="w-full text-sm">
+                <thead class="border-b border-white/10">
+                    <tr>
+                        <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3">Invited User</th>
+                        <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3">Administrator</th>
+                        <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3">Link(s)</th>
+                        <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3">Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var invite in _invites)
+                    {
+                        <tr @key="invite.ID" class="border-b border-white/5 hover:bg-white/[0.02]">
+                            <td class="text-[#c4b8d8] px-4 py-3">@invite.InvitedUser</td>
+                            <td class="text-[#c4b8d8] px-4 py-3">
+                                <input type="checkbox" checked="@invite.IsAdmin" disabled class="accent-[#7c5cbf] cursor-pointer" />
+                            </td>
+                            <td class="text-[#c4b8d8] px-4 py-3">
+                                <a href="@(NavManager.BaseUri)Invite/@invite.ID"
+                                   class="text-[#7c5cbf] hover:text-[#9b8eb5] transition-colors underline underline-offset-2">
+                                    Join Link
+                                </a>
+                            </td>
+                            <td class="text-[#c4b8d8] px-4 py-3">
+                                <button type="button"
+                                        class="bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors"
+                                        invite="@invite.ID"
+                                        @onclick="() => DeleteInvite(invite)">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-                    <span class="input-group-text pe-1">Admin?</span>
-                    <div class="input-group-text ps-1">
-                        <input @bind="_inviteAsAdmin" type="checkbox" @onkeypress="EvaluateInviteInputKeypress" />
-                    </div>
-                    <button type="button" class="btn btn-primary" @onclick="SendInvite">Add</button>
-                </div>
-            </div>
+    @* Add User Card *@
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 mb-6">
+        <h2 class="text-[#c4b8d8] text-sm font-semibold mb-4">Add User</h2>
+
+        <div class="flex gap-2 flex-wrap items-center">
+            <input @bind="_inviteEmail"
+                   @bind:event="oninput"
+                   placeholder="Email of user to add"
+                   type="email"
+                   required
+                   class="flex-1 min-w-0 bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30" />
+
+            <label class="flex items-center gap-2 text-[#c4b8d8] text-sm font-medium whitespace-nowrap">
+                <input @bind="_inviteAsAdmin"
+                       type="checkbox"
+                       @onkeypress="EvaluateInviteInputKeypress"
+                       class="accent-[#7c5cbf] cursor-pointer w-4 h-4" />
+                Admin?
+            </label>
+
+            <button type="button"
+                    class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors"
+                    @onclick="SendInvite">
+                Add
+            </button>
         </div>
     </div>
 

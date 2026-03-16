@@ -1,38 +1,67 @@
-﻿@page "/invite/{inviteId?}"
+@page "/invite/{inviteId?}"
 @inject IDataService DataService
 @inject AuthenticationStateProvider AuthProvider
 @inject IToastService Toasts
 
-<h3>Organization Invite</h3>
-<hr />
+<PageTitle>Organization Invite &mdash; SignalRemote</PageTitle>
 
-<div class="row">
-    <div class="col-sm-12">
+<div class="max-w-lg mx-auto px-4 py-12">
+    <div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-xl">
+
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-[#6c5fc7]/15 border border-[#6c5fc7]/30 flex items-center justify-center flex-shrink-0">
+                <svg class="h-5 w-5 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </div>
+            <h1 class="text-white text-xl font-semibold">Organization Invite</h1>
+        </div>
+
         @if (_joinSuccessful)
         {
-            <h5>Congratulations!</h5>
-            <p class="text-info">
-                You've successfully joined the organization!
-            </p>
+            <div class="flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm rounded-lg px-4 py-3 mb-4">
+                <svg class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <div>
+                    <p class="font-semibold">Congratulations!</p>
+                    <p class="text-emerald-300/70 mt-0.5">You've successfully joined the organization.</p>
+                </div>
+            </div>
+            <a href="/" class="inline-block bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors">
+                Go to dashboard →
+            </a>
         }
         else if (string.IsNullOrWhiteSpace(InviteId))
         {
-            <div>
-                <strong class="text-danger">Invitation ID is missing from the request.</strong>
+            <div class="flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg px-4 py-3">
+                <svg class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <span>Invitation ID is missing from the request.</span>
             </div>
         }
         else
         {
-            <div>
+            <div class="flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 text-amber-200/80 text-sm rounded-lg px-4 py-3 mb-6">
+                <svg class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
                 <div>
-                    <strong class="text-danger">WARNING: </strong>
-                    <p class="text-danger">You will leave your current organization and lose access to its agents unless someone is able to invite you back in.</p>
-                    <p>Are you sure you want to leave your current organization and join this one?</p>
+                    <p class="font-semibold">Warning</p>
+                    <p class="mt-1 text-amber-200/60">You will leave your current organization and lose access to its agents unless someone is able to invite you back in.</p>
+                    <p class="mt-1.5 text-amber-200/80">Are you sure you want to leave your current organization and join this one?</p>
                 </div>
-                <div class="form-group">
-                    <button type="button" class="btn btn-secondary me-3" onclick="location.assign(location.origin)">Cancel</button>
-                    <button type="button" class="btn btn-danger" @onclick="Confirm">Confirm</button>
-                </div>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2.5 px-5 text-sm transition-colors"
+                        onclick="location.assign(location.origin)">
+                    Cancel
+                </button>
+                <button type="button" class="bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors"
+                        @onclick="Confirm">
+                    Yes, join organization
+                </button>
             </div>
         }
 

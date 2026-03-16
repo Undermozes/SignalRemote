@@ -1,13 +1,40 @@
-﻿@page "/about"
+@page "/about"
 
-<h3>About Remotely</h3>
+<PageTitle>About &mdash; SignalRemote</PageTitle>
 
-<p>
-    Project Repo: <a href="https://github.com/immense/Remotely">https://github.com/immense/Remotely</a>
-</p>
-<p>
-    Open-Source Licenses: <a href="/credits">Credits</a>
-</p>
-<p>
-    Version: @(AppVersionHelper.GetAppVersion())
-</p>
+<div class="max-w-lg mx-auto px-4 py-10">
+    <div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-xl">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#8b6cf7] to-[#5b3fa6] flex items-center justify-center shadow-lg flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="20" height="20">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1C5.9 1 1 5.9 1 12s4.9 11 11 11 11-4.9 11-11S18.1 1 12 1zm0 20c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4 9-9 9z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-white text-xl font-semibold">About SignalRemote</h1>
+                <p class="text-[#9b8eb5] text-xs mt-0.5">Remote access &amp; monitoring platform</p>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div class="flex items-center justify-between py-3 border-b border-white/10">
+                <span class="text-[#9b8eb5] text-sm">Version</span>
+                <span class="text-[#c4b8d8] text-sm font-mono">@(AppVersionHelper.GetAppVersion())</span>
+            </div>
+            <div class="flex items-center justify-between py-3 border-b border-white/10">
+                <span class="text-[#9b8eb5] text-sm">Project Repository</span>
+                <a href="https://github.com/immense/Remotely" target="_blank"
+                   class="text-[#8b6cf7] hover:text-[#a88cff] text-sm transition-colors">
+                    github.com/immense/Remotely
+                </a>
+            </div>
+            <div class="flex items-center justify-between py-3">
+                <span class="text-[#9b8eb5] text-sm">Open-Source Licenses</span>
+                <a href="/credits" class="text-[#8b6cf7] hover:text-[#a88cff] text-sm transition-colors">
+                    View Credits →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

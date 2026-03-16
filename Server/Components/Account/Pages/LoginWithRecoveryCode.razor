@@ -1,4 +1,5 @@
 ﻿@page "/Account/LoginWithRecoveryCode"
+@layout AuthPagesLayout
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
@@ -9,28 +10,63 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<LoginWithRecoveryCode> Logger
 
-<PageTitle>Recovery code verification</PageTitle>
+<PageTitle>Recovery Code Login &mdash; SignalRemote</PageTitle>
 
-<h1>Recovery code verification</h1>
-<hr />
-<StatusMessage Message="@message" />
-<p>
-    You have requested to log in with a recovery code. This login will not be remembered until you provide
-    an authenticator app code at log in or disable 2FA and log in again.
-</p>
-<div class="row">
-    <div class="col-md-4">
-        <EditForm Model="Input" FormName="login-with-recovery-code" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.RecoveryCode" class="form-control" autocomplete="off" placeholder="RecoveryCode" />
-                <label for="recovery-code" class="form-label">Recovery Code</label>
-                <ValidationMessage For="() => Input.RecoveryCode" class="text-danger" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-        </EditForm>
+<div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-2xl">
+
+    <div class="mb-6">
+        <div class="w-12 h-12 rounded-xl bg-[#291d38] border border-white/10 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+        </div>
+        <h1 class="text-white text-2xl font-semibold mb-1">Recovery code verification</h1>
+        <p class="text-[#9b8eb5] text-sm">Enter one of your saved recovery codes to access your account.</p>
     </div>
+
+    <div class="mb-5 flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 text-amber-300/80 text-xs rounded-lg px-4 py-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <span>This login won't be remembered until you provide an authenticator code or disable 2FA.</span>
+    </div>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="mb-5 flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg px-4 py-3" role="alert">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+            <span>@message</span>
+        </div>
+    }
+
+    <EditForm Model="Input" FormName="login-with-recovery-code" OnValidSubmit="OnValidSubmitAsync" method="post">
+        <DataAnnotationsValidator />
+
+        <div>
+            <label for="recovery-code" class="block text-sm font-medium text-[#c4b8d8] mb-1.5">Recovery code</label>
+            <InputText
+                @bind-Value="Input.RecoveryCode"
+                id="recovery-code"
+                class="auth-input w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all font-mono placeholder-white/30"
+                autocomplete="off"
+                placeholder="XXXX-XXXX" />
+            <ValidationMessage For="() => Input.RecoveryCode" class="block mt-1.5 text-xs text-red-400" />
+        </div>
+
+        <button type="submit" class="mt-6 w-full bg-[#6c5fc7] hover:bg-[#7c6fd7] active:bg-[#5c4fb7] text-white font-semibold rounded-lg py-2.5 px-4 text-sm transition-colors shadow-lg shadow-[#6c5fc7]/20">
+            Sign in with recovery code
+        </button>
+
+    </EditForm>
+
+    <div class="mt-6 pt-5 border-t border-white/10 text-center">
+        <a href="/Account/Login" class="text-[#8b6cf7] hover:text-[#a88cff] text-sm font-medium transition-colors">
+            &larr; Back to sign in
+        </a>
+    </div>
+
 </div>
 
 @code {

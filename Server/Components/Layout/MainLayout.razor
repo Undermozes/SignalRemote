@@ -5,33 +5,35 @@
 
 <AuthorizeView Policy="@PolicyNames.TwoFactorRequired">
     <Authorized>
-            <div class="page">
-                <div class="sidebar">
-                    <NavMenu />
-                </div>
-
-                <div class="main">
-                    <div class="content px-4">
-                        @Body
-                    </div>
-                </div>
+        <div class="page">
+            <div class="sidebar">
+                <NavMenu />
             </div>
-    </Authorized>
-    <NotAuthorized>
-        <div class="container mt-5">
-            <h3>Two-Factor Authentication Required</h3>
 
-            <hr />
-            <div class="row">
-                <div class="col-sm-12">
-                    <p>Two-factor authentication is required.  Click the button below to set up your authenticator app.</p>
-                    <p>
-                        <button class="btn btn-primary" @onclick="NavigateToTwoFactor">Enable 2FA</button>
-                    </p>
+            <div class="main">
+                <div class="content px-4">
+                    @Body
                 </div>
             </div>
         </div>
-
+    </Authorized>
+    <NotAuthorized>
+        <div class="min-h-screen bg-[#160c22] flex items-center justify-center px-4">
+            <div class="bg-[#1d1330] border border-white/10 rounded-2xl p-8 shadow-2xl max-w-md w-full text-center">
+                <div class="w-14 h-14 rounded-full bg-[#6c5fc7]/15 border border-[#6c5fc7]/30 flex items-center justify-center mx-auto mb-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h3 class="text-white text-xl font-semibold mb-2">Two-Factor Authentication Required</h3>
+                <p class="text-[#9b8eb5] text-sm mb-6 leading-relaxed">
+                    Your organization requires two-factor authentication. Set up an authenticator app to continue.
+                </p>
+                <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-6 text-sm transition-colors" @onclick="NavigateToTwoFactor">
+                    Enable 2FA
+                </button>
+            </div>
+        </div>
     </NotAuthorized>
 </AuthorizeView>
 

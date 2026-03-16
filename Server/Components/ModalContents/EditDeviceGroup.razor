@@ -1,19 +1,21 @@
 ﻿@attribute [Authorize]
 @inherits AuthComponentBase 
 
-<h5 class="text-info">
+<h5 class="text-[#c4b8d8] text-sm font-semibold mb-3">
     Editing @EditUser?.UserName
 </h5>
 
+<div class="space-y-2">
 @foreach (var group in DeviceGroups ?? Array.Empty<DeviceGroup>())
 {
-    <div @key="group.ID">
+    <div @key="group.ID" class="flex items-center gap-2">
         <input 
             id="@group.ID" 
             type="checkbox" 
-            class="align-middle me-2" 
+            class="accent-[#7c5cbf] cursor-pointer w-4 h-4"
             checked="@(DoesGroupContainUser(group))" 
             @onchange="ev => GroupCheckChanged(ev, group)" />
-        <label class="align-middle mb-0" for="@group.ID">@group.Name</label>
+        <label class="text-[#9b8eb5] text-sm cursor-pointer select-none" for="@group.ID">@group.Name</label>
     </div>
 }
+</div>

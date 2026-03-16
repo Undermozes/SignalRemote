@@ -4,42 +4,56 @@
 @inherits AuthComponentBase
 
 
+<div class="max-w-4xl px-4 py-8">
+
 @if (string.IsNullOrWhiteSpace(DeviceId))
 {
-    <div class="row mt-5">
-        <div class="col-md-8 col-lg-6">
-
-            <h3>Device ID:</h3>
-            <div class="input-group mb-2">
-                <input type="text" class="form-control" placeholder="Enter a device ID to see its details"
-                       @bind="_inputDeviceId"
-                       @bind:event="oninput"
-                       @onkeydown="EvaluateDeviceIdInputKeyDown">
-                <div class="input-group-append">
-                    <button class="btn btn-primary" @onclick="NavigateToDeviceId">Go</button>
-                </div>
-            </div>
-            <div class="text-muted">
-                You can also go directly to a device's details by:
-                <ul>
-                    <li>Right-clicking a device card on the main page while it's collapsed</li>
-                    <li>Clicking the "Open in New Tab" button in a device card's header while it's expanded</li>
-                </ul>
-            </div>
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-8">
+        <label class="block text-sm font-medium text-[#c4b8d8] mb-3">Device ID</label>
+        <div class="flex gap-3">
+            <input type="text"
+                   class="flex-1 bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30"
+                   placeholder="Enter a device ID to see its details"
+                   @bind="_inputDeviceId"
+                   @bind:event="oninput"
+                   @onkeydown="EvaluateDeviceIdInputKeyDown">
+            <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors"
+                    @onclick="NavigateToDeviceId">Go</button>
+        </div>
+        <div class="mt-4 text-sm text-white/40">
+            You can also go directly to a device's details by:
+            <ul class="list-disc list-inside mt-1 space-y-1">
+                <li>Right-clicking a device card on the main page while it's collapsed</li>
+                <li>Clicking the "Open in New Tab" button in a device card's header while it's expanded</li>
+            </ul>
         </div>
     </div>
 }
 else if (_isLoading)
 {
-    <h5>Loading...</h5>
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-8 text-center text-[#c4b8d8]">
+        Loading...
+    </div>
 }
 else if (_device is null)
 {
-    <h3>Device not found.</h3>
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-8 flex items-center gap-4">
+        <svg class="w-8 h-8 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        </svg>
+        <span class="text-red-400 font-medium">Device not found.</span>
+    </div>
 }
 else if (!_userHasAccess)
 {
-    <h3>Unauthorized.</h3>
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-8 flex items-center gap-4">
+        <svg class="w-8 h-8 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+        <span class="text-red-400 font-medium">Unauthorized.</span>
+    </div>
 }
 else
 {
@@ -58,10 +72,8 @@ else
 
         <TabContents>
             <TabContent Name="device">
-                <div class="col-sm-8 mb-2">
-                    <h3 class="mb-3 mt-3">
-                        Device Details
-                    </h3>
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">Device Details</h3>
 
                     <EditForm Model="_device" OnValidSubmit="HandleValidSubmit" @onkeydown="EditFormKeyDown">
                         <DataAnnotationsValidator />
@@ -72,106 +84,89 @@ else
                             <AlertBanner Message="@_alertMessage" />
                         }
 
+                        <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 space-y-4">
 
-                        <div class="form-group row">
-                            <label for="device-name" class="col-sm-2 col-form-label">Device:</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="device-name" readonly value="@_device.DeviceName" />
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Device</label>
+                                <input type="text" name="device-name" readonly value="@_device.DeviceName"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="device-id" class="col-sm-2 col-form-label">Device ID:</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="device-id" readonly value="@_device.ID" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Device ID</label>
+                                <input type="text" name="device-id" readonly value="@_device.ID"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="agent-version" class="col-sm-2 col-form-label">Agent Version:</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="agent-version" readonly value="@_device.AgentVersion" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Agent Version</label>
+                                <input type="text" name="agent-version" readonly value="@_device.AgentVersion"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="agent-platform" class="col-sm-2 col-form-label">Platform:</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="agent-platform" readonly value="@_device.Platform" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Platform</label>
+                                <input type="text" name="agent-platform" readonly value="@_device.Platform"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="agent-os-description" class="col-sm-2 col-form-label">Platform:</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="agent-os-description" readonly value="@_device.OSDescription" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">OS</label>
+                                <input type="text" name="agent-os-description" readonly value="@_device.OSDescription"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="agent-storage-percent" class="col-sm-2 col-form-label">
-                                Disk:
-                                <button type="button" class="btn btn-link p-0 m-0" @onclick="ShowAllDisks" style="font-size: 50%">
-                                    (View All)
-                                </button>
-                            </label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="agent-storage-percent" readonly value="@(MathHelper.GetFormattedPercent(_device.UsedStoragePercent))" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">
+                                    Disk
+                                    <button type="button" class="ml-2 text-xs text-[#7c5cbf] hover:text-[#9b8eb5] transition-colors" @onclick="ShowAllDisks">(View All)</button>
+                                </label>
+                                <input type="text" name="agent-storage-percent" readonly value="@(MathHelper.GetFormattedPercent(_device.UsedStoragePercent))"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="agent-storage-total" class="col-sm-2 col-form-label">
-                                Total Storage:
-                            </label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="agent-storage-total" readonly value="@(_device.TotalStorage)" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Total Storage</label>
+                                <input type="text" name="agent-storage-total" readonly value="@(_device.TotalStorage)"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="agent-memory-percent" class="col-sm-2 col-form-label">
-                                Memory:
-                            </label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="agent-memory-percent" readonly value="@(MathHelper.GetFormattedPercent(_device.UsedMemoryPercent))" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Memory</label>
+                                <input type="text" name="agent-memory-percent" readonly value="@(MathHelper.GetFormattedPercent(_device.UsedMemoryPercent))"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="agent-memory-total" class="col-sm-2 col-form-label">
-                                Total Memory:
-                            </label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="agent-memory-total" readonly value="@(_device.TotalMemory)" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Total Memory</label>
+                                <input type="text" name="agent-memory-total" readonly value="@(_device.TotalMemory)"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="agent-memory-total" class="col-sm-2 col-form-label">
-                                Public IP:
-                            </label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="agent-memory-total" readonly value="@(_device.PublicIP)" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Public IP</label>
+                                <input type="text" readonly value="@(_device.PublicIP)"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="agent-memory-total" class="col-sm-2 col-form-label">
-                                MAC Addresses:
-                            </label>
-                            <div class="col-sm-10">
-                                <input 
-                                    type="text" 
-                                    class="form-control" 
-                                    name="agent-memory-total" 
-                                    readonly
-                                       value="@(string.Join(", ", _device.MacAddresses ?? Array.Empty<string>()))" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">MAC Addresses</label>
+                                <input type="text" readonly value="@(string.Join(", ", _device.MacAddresses ?? Array.Empty<string>()))"
+                                       class="w-full bg-[#291d38]/50 border border-white/10 text-[#9b8eb5] rounded-lg px-4 py-2.5 text-sm outline-none" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="device-alias" class="col-sm-2 col-form-label">Device Alias:</label>
-                            <div class="col-sm-10">
-                                <InputText class="form-control" @bind-Value="@_device.Alias" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Device Alias</label>
+                                <InputText @bind-Value="@_device.Alias"
+                                           class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30" />
                                 <ValidationMessage For="() => _device.Alias" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="device-groups" class="col-sm-2 col-form-label">Device Group:</label>
-                            <div class="col-sm-10">
-                                <InputSelect @bind-Value="_device.DeviceGroupID" class="form-control">
-                                    <option value="">None</option>
 
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Device Group</label>
+                                <InputSelect @bind-Value="_device.DeviceGroupID"
+                                             class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all">
+                                    <option value="">None</option>
                                     @foreach (var group in _deviceGroups)
                                     {
                                         <option @key="group.ID" value="@group.ID">@group.Name</option>
@@ -179,44 +174,50 @@ else
                                 </InputSelect>
                                 <ValidationMessage For="() => _device.DeviceGroupID" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="tags" class="col-sm-2 col-form-label">Tags:</label>
-                            <div class="col-sm-10">
-                                <InputText @bind-Value="_device.Tags" class="form-control" />
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Tags</label>
+                                <InputText @bind-Value="_device.Tags"
+                                           class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30" />
                                 <ValidationMessage For="() => _device.Tags" />
                             </div>
-                        </div>
-                        <div class="form-group row">
-                            <label for="notes" class="col-sm-2 col-form-label">Notes:</label>
-                            <div class="col-sm-10">
-                                <InputTextArea @bind-Value="_device.Notes" style="width:100%; height: 10em;"></InputTextArea>
+
+                            <div>
+                                <label class="block text-sm font-medium text-[#c4b8d8] mb-1">Notes</label>
+                                <InputTextArea @bind-Value="_device.Notes"
+                                               class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30 h-40 resize-y"></InputTextArea>
                                 <ValidationMessage For="() => _device.Notes" />
                             </div>
+
                         </div>
-                        <div class="text-end">
-                            <button type="submit" class="btn btn-primary">Save</button>
+
+                        <div class="flex justify-end mt-4">
+                            <button type="submit" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors">Save</button>
                         </div>
                     </EditForm>
                 </div>
             </TabContent>
 
             <TabContent Name="remote-logs">
-                <div class="py-3">
+                <div class="py-4">
                     @if (!_device.IsOnline)
                     {
-                        <h5 class="text-center mt-5">Device must be online to retrieve logs.</h5>
+                        <div class="bg-[#1d1330] border border-white/10 rounded-xl p-8 text-center text-[#c4b8d8]">
+                            Device must be online to retrieve logs.
+                        </div>
                     }
                     else
                     {
-                        <div class="mb-2">
-                            <button class="btn btn-primary me-2" @onclick="GetRemoteLogs">Refresh</button>
-                            <button class="btn btn-danger" @onclick="DeleteLogs">Delete Logs</button>
+                        <div class="flex gap-3 mb-4">
+                            <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors"
+                                    @onclick="GetRemoteLogs">Refresh</button>
+                            <button class="bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors"
+                                    @onclick="DeleteLogs">Delete Logs</button>
                         </div>
 
                         @if (_logLines.Any())
                         {
-                            <div style="white-space: pre;">
+                            <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 text-sm text-[#c4b8d8] font-mono whitespace-pre overflow-x-auto">
                                 @foreach (var line in _logLines)
                                 {
                                     @line
@@ -228,49 +229,50 @@ else
                             <LoadingSignal />
                         }
                     }
-
                 </div>
-
             </TabContent>
 
             <TabContent Name="script-history">
-
-                <h3 class="mb-3 mt-3">
-                    Script History
-                </h3>
-                <table class="table table-dark table-hover table-striped">
-                    <thead>
-                        <tr>
-                            <th>Shell</th>
-                            <th>Timestamp</th>
-                            <th>User</th>
-                            <th>Duration</th>
-                            <th>Input</th>
-                            <th>Output</th>
-                            <th>Error</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var scriptResult in _scriptResults)
-                        {
-                            <tr>
-                                <td>@scriptResult.Shell</td>
-                                <td>@scriptResult.TimeStamp</td>
-                                <td>@scriptResult.SenderUserName</td>
-                                <td>@scriptResult.RunTime</td>
-                                <td>@GetTrimmedText(scriptResult.ScriptInput, 25)</td>
-                                <td>@GetTrimmedText(scriptResult.StandardOutput, 25)</td>
-                                <td>@GetTrimmedText(scriptResult.ErrorOutput, 25)</td>
-                                <td>
-                                    <button class="btn btn-sm btn-primary" @onclick="() => ShowFullScriptOutput(scriptResult)">Show Full</button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">Script History</h3>
+                    <div class="bg-[#1d1330] border border-white/10 rounded-xl overflow-hidden w-full text-sm">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-white/10">
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-[#9b8eb5] uppercase tracking-wider">Shell</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-[#9b8eb5] uppercase tracking-wider">Timestamp</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-[#9b8eb5] uppercase tracking-wider">User</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-[#9b8eb5] uppercase tracking-wider">Duration</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-[#9b8eb5] uppercase tracking-wider">Input</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-[#9b8eb5] uppercase tracking-wider">Output</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-[#9b8eb5] uppercase tracking-wider">Error</th>
+                                    <th class="px-4 py-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5">
+                                @foreach (var scriptResult in _scriptResults)
+                                {
+                                    <tr class="hover:bg-white/5 transition-colors">
+                                        <td class="px-4 py-3 text-[#c4b8d8]">@scriptResult.Shell</td>
+                                        <td class="px-4 py-3 text-[#c4b8d8]">@scriptResult.TimeStamp</td>
+                                        <td class="px-4 py-3 text-[#c4b8d8]">@scriptResult.SenderUserName</td>
+                                        <td class="px-4 py-3 text-[#c4b8d8]">@scriptResult.RunTime</td>
+                                        <td class="px-4 py-3 text-[#c4b8d8]">@GetTrimmedText(scriptResult.ScriptInput, 25)</td>
+                                        <td class="px-4 py-3 text-[#c4b8d8]">@GetTrimmedText(scriptResult.StandardOutput, 25)</td>
+                                        <td class="px-4 py-3 text-[#c4b8d8]">@GetTrimmedText(scriptResult.ErrorOutput, 25)</td>
+                                        <td class="px-4 py-3">
+                                            <button class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2.5 px-4 text-sm transition-colors"
+                                                    @onclick="() => ShowFullScriptOutput(scriptResult)">Show Full</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </TabContent>
         </TabContents>
     </TabControl>
 }
+
+</div>
