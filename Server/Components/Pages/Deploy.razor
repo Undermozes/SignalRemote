@@ -15,170 +15,177 @@
     <LoadingSignal StatusMessage="@_loadingMessage" />
 }
 
-<h4 class="text-success mt-3">
-    Persistent Agents
-</h4>
-<p class="text-info mb-3">
-    Copy and paste on a remote computer to install the agent.
-</p>
+<div class="max-w-3xl px-4 py-8">
 
-<div class="row">
+    <h1 class="text-white text-2xl font-bold mb-1">Deploy</h1>
+    <p class="text-[#9b8eb5] text-sm mb-8">Manage agent installation scripts and attended support binaries.</p>
 
-    <div class="col-sm-12 mb-3">
-        <div class="mb-1">
-            <strong>Windows 10/11 (32-Bit and 64-Bit)</strong>
-        </div>
+    @* Persistent Agents *@
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 mb-6 shadow-xl">
+        <h2 class="text-white text-lg font-semibold mb-2">Persistent Agents</h2>
+        <p class="text-[#9b8eb5] text-sm mb-4">Copy and paste on a remote computer to install the agent.</p>
 
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_windowsScript" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyScriptToClipboard(_windowsScript)">
-                <i class="oi oi-clipboard"></i>
-            </button>
-        </div>
-    </div>
+        <div class="grid grid-cols-1 gap-4">
 
-    <div class="col-sm-12 mb-3">
-        <div class="mb-1">
-            <strong>Ubuntu (64-Bit)</strong>
-        </div>
-
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_ubuntuScript" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyScriptToClipboard(_ubuntuScript)">
-                <i class="oi oi-clipboard"></i>
-            </button>
-        </div>
-    </div>
-
-    <div class="col-sm-12 mb-3">
-        <div class="mb-1">
-            <strong>Manjaro (64-Bit)</strong>
-        </div>
-
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_manjaroScript" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyScriptToClipboard(_manjaroScript)">
-                <i class="oi oi-clipboard"></i>
-            </button>
-        </div>
-    </div>
-
-    <div class="col-sm-12 mb-3">
-        <div class="mb-1">
-            <strong>Linux ARM64 (e.g., Raspberry Pi)</strong>
-        </div>
-
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_linuxArm64Script" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyScriptToClipboard(_linuxArm64Script)">
-                <i class="oi oi-clipboard"></i>
-            </button>
-        </div>
-    </div>
-</div>
-
-<h4 class="text-success mt-3">
-    Attended Support
-</h4>
-<p class="text-info">
-    You can upload custom versions of the attended support client (i.e. "Remotely_Desktop.exe")
-    and send the download link to end-users when they need support. For example, you could sign
-    the EXE with a commercial certificate so the end-user (hopefully) doesn't see a SmartScreen
-    warning about the file.
-</p>
-<p class="mb-3 text-warning">
-    NOTE: These binaries must be manually updated each time a new Docker image is pulled.
-</p>
-
-<div class="row">
-    <div class="col-sm-12 mb-4">
-        <div class="mb-1">
-            <strong>Windows 10/11 (64-Bit)</strong>
-        </div>
-
-        @if (_winX64File?.Exists != true)
-        {
-            <div class="text-danger mb-2">
-                Note: A custom binary for this file hasn't been uploaded yet.
-            </div>
-        }
-        else if (_winX64File?.PhysicalPath is not null)
-        {
-            <div class="text-info mb-2">
-                Created Date: @(_winX64CreatedDate) UTC
-            </div>
-        }
-
-        @if (_isServerAdmin)
-        {
-            <div class="mb-2">
-                <FileInputButton ClassNames="btn btn-primary"
-                                 OnChanged="HandleWin64FileChanged">
-                    <ButtonContent>
-                        <i class="oi oi-data-transfer-upload" title="Upload File"></i>
-                        <span class="ms-2">Upload File</span>
-                    </ButtonContent>
-                </FileInputButton>
-                <div class="mt-1">
-                    <span class="text-primary">
-                        Note: Only server admins will have this button.
-                    </span>
+            <div>
+                <div class="text-[#c4b8d8] text-sm font-semibold mb-2">Windows 10/11 (32-Bit and 64-Bit)</div>
+                <div class="flex items-center gap-2">
+                    <input type="text" class="flex-1 bg-[#0e0819] border border-white/10 text-[#c4b8d8] font-mono text-xs rounded-lg px-4 py-2.5 outline-none" readonly value="@_windowsScript" />
+                    <button type="button" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white rounded-lg px-3 py-2.5 transition-colors flex items-center gap-1.5 text-sm" @onclick="() => CopyScriptToClipboard(_windowsScript)">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M8 5a2 2 0 002 2h4a2 2 0 002-2M8 5a2 2 0 012-2h4a2 2 0 012 2" />
+                        </svg>
+                        Copy
+                    </button>
                 </div>
             </div>
-        }
 
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_winX64Uri" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyUriToClipboard(_winX64Uri)">
-                <i class="oi oi-clipboard"></i>
-            </button>
-        </div>
-
-    </div>
-
-    <div class="col-sm-12 mb-4">
-        <div class="mb-1">
-            <strong>Windows 10/11 (32-Bit)</strong>
-        </div>
-
-        @if (_winX86File?.Exists != true)
-        {
-            <div class="text-danger mb-2">
-                Note: A custom binary for this file hasn't been uploaded yet.
-            </div>
-        }
-        else if (_winX86File?.PhysicalPath is not null)
-        {
-            <div class="text-info mb-2">
-                Created Date: @(_winX86CreatedDate) UTC
-            </div>
-        }
-
-        @if (_isServerAdmin)
-        {
-            <div class="mb-2">
-                <FileInputButton ClassNames="btn btn-primary"
-                                 OnChanged="HandleWin86FileChanged">
-                    <ButtonContent>
-                        <i class="oi oi-data-transfer-upload" title="Upload File"></i>
-                        <span class="ms-2">Upload File</span>
-                    </ButtonContent>
-                </FileInputButton>
-                <div class="mt-1">
-                    <span class="text-primary">
-                        Note: Only server admins will have this button.
-                    </span>
+            <div>
+                <div class="text-[#c4b8d8] text-sm font-semibold mb-2">Ubuntu (64-Bit)</div>
+                <div class="flex items-center gap-2">
+                    <input type="text" class="flex-1 bg-[#0e0819] border border-white/10 text-[#c4b8d8] font-mono text-xs rounded-lg px-4 py-2.5 outline-none" readonly value="@_ubuntuScript" />
+                    <button type="button" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white rounded-lg px-3 py-2.5 transition-colors flex items-center gap-1.5 text-sm" @onclick="() => CopyScriptToClipboard(_ubuntuScript)">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M8 5a2 2 0 002 2h4a2 2 0 002-2M8 5a2 2 0 012-2h4a2 2 0 012 2" />
+                        </svg>
+                        Copy
+                    </button>
                 </div>
             </div>
-        }
 
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_winX86Uri" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyUriToClipboard(_winX86Uri)">
-                <i class="oi oi-clipboard"></i>
-            </button>
+            <div>
+                <div class="text-[#c4b8d8] text-sm font-semibold mb-2">Manjaro (64-Bit)</div>
+                <div class="flex items-center gap-2">
+                    <input type="text" class="flex-1 bg-[#0e0819] border border-white/10 text-[#c4b8d8] font-mono text-xs rounded-lg px-4 py-2.5 outline-none" readonly value="@_manjaroScript" />
+                    <button type="button" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white rounded-lg px-3 py-2.5 transition-colors flex items-center gap-1.5 text-sm" @onclick="() => CopyScriptToClipboard(_manjaroScript)">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M8 5a2 2 0 002 2h4a2 2 0 002-2M8 5a2 2 0 012-2h4a2 2 0 012 2" />
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <div class="text-[#c4b8d8] text-sm font-semibold mb-2">Linux ARM64 (e.g., Raspberry Pi)</div>
+                <div class="flex items-center gap-2">
+                    <input type="text" class="flex-1 bg-[#0e0819] border border-white/10 text-[#c4b8d8] font-mono text-xs rounded-lg px-4 py-2.5 outline-none" readonly value="@_linuxArm64Script" />
+                    <button type="button" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white rounded-lg px-3 py-2.5 transition-colors flex items-center gap-1.5 text-sm" @onclick="() => CopyScriptToClipboard(_linuxArm64Script)">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M8 5a2 2 0 002 2h4a2 2 0 002-2M8 5a2 2 0 012-2h4a2 2 0 012 2" />
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
+
+    @* Attended Support *@
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 mb-6 shadow-xl">
+        <h2 class="text-white text-lg font-semibold mb-2">Attended Support</h2>
+        <p class="text-[#9b8eb5] text-sm mb-2">
+            You can upload custom versions of the attended support client (i.e. "Remotely_Desktop.exe")
+            and send the download link to end-users when they need support. For example, you could sign
+            the EXE with a commercial certificate so the end-user (hopefully) doesn't see a SmartScreen
+            warning about the file.
+        </p>
+        <p class="text-amber-400/70 text-xs mb-4">
+            NOTE: These binaries must be manually updated each time a new Docker image is pulled.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+            <div>
+                <div class="text-[#c4b8d8] text-sm font-semibold mb-2">Windows 10/11 (64-Bit)</div>
+
+                @if (_winX64File?.Exists != true)
+                {
+                    <div class="text-red-400/80 text-xs mb-2">
+                        Note: A custom binary for this file hasn't been uploaded yet.
+                    </div>
+                }
+                else if (_winX64File?.PhysicalPath is not null)
+                {
+                    <div class="text-[#9b8eb5] text-xs mb-2">
+                        Created Date: @(_winX64CreatedDate) UTC
+                    </div>
+                }
+
+                @if (_isServerAdmin)
+                {
+                    <div class="mb-3">
+                        <FileInputButton ClassNames="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-medium rounded-lg py-2 px-4 text-sm transition-colors"
+                                         OnChanged="HandleWin64FileChanged">
+                            <ButtonContent>
+                                <i class="oi oi-data-transfer-upload" title="Upload File"></i>
+                                <span class="ms-2">Upload File</span>
+                            </ButtonContent>
+                        </FileInputButton>
+                        <div class="mt-1">
+                            <span class="text-[#9b8eb5] text-xs">Note: Only server admins will have this button.</span>
+                        </div>
+                    </div>
+                }
+
+                <div class="flex items-center gap-2">
+                    <input type="text" class="flex-1 bg-[#0e0819] border border-white/10 text-[#c4b8d8] font-mono text-xs rounded-lg px-4 py-2.5 outline-none" readonly value="@_winX64Uri" />
+                    <button type="button" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white rounded-lg px-3 py-2.5 transition-colors flex items-center gap-1.5 text-sm" @onclick="() => CopyUriToClipboard(_winX64Uri)">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M8 5a2 2 0 002 2h4a2 2 0 002-2M8 5a2 2 0 012-2h4a2 2 0 012 2" />
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <div class="text-[#c4b8d8] text-sm font-semibold mb-2">Windows 10/11 (32-Bit)</div>
+
+                @if (_winX86File?.Exists != true)
+                {
+                    <div class="text-red-400/80 text-xs mb-2">
+                        Note: A custom binary for this file hasn't been uploaded yet.
+                    </div>
+                }
+                else if (_winX86File?.PhysicalPath is not null)
+                {
+                    <div class="text-[#9b8eb5] text-xs mb-2">
+                        Created Date: @(_winX86CreatedDate) UTC
+                    </div>
+                }
+
+                @if (_isServerAdmin)
+                {
+                    <div class="mb-3">
+                        <FileInputButton ClassNames="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-medium rounded-lg py-2 px-4 text-sm transition-colors"
+                                         OnChanged="HandleWin86FileChanged">
+                            <ButtonContent>
+                                <i class="oi oi-data-transfer-upload" title="Upload File"></i>
+                                <span class="ms-2">Upload File</span>
+                            </ButtonContent>
+                        </FileInputButton>
+                        <div class="mt-1">
+                            <span class="text-[#9b8eb5] text-xs">Note: Only server admins will have this button.</span>
+                        </div>
+                    </div>
+                }
+
+                <div class="flex items-center gap-2">
+                    <input type="text" class="flex-1 bg-[#0e0819] border border-white/10 text-[#c4b8d8] font-mono text-xs rounded-lg px-4 py-2.5 outline-none" readonly value="@_winX86Uri" />
+                    <button type="button" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white rounded-lg px-3 py-2.5 transition-colors flex items-center gap-1.5 text-sm" @onclick="() => CopyUriToClipboard(_winX86Uri)">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M8 5a2 2 0 002 2h4a2 2 0 002-2M8 5a2 2 0 012-2h4a2 2 0 012 2" />
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </div>
 
 @code {
