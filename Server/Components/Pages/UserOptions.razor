@@ -8,84 +8,100 @@
 @inject IToastService ToastService
 @inject IModalService ModalService
 
-<h3 class="mb-3">User Options</h3>
+<PageTitle>User Options &mdash; SignalRemote</PageTitle>
 
-<div class="row">
-    <div class="col-md-6">
-        <partial name="_StatusMessage" for="Message" />
-        <EditForm Model="_options" OnValidSubmit="HandleValidSubmit" @onkeydown="EditFormKeyDown">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
+<div class="max-w-xl px-4 py-8">
+    <h1 class="text-white text-2xl font-semibold mb-1">User Options</h1>
+    <p class="text-[#9b8eb5] text-sm mb-6">Manage your display preferences and keyboard shortcuts.</p>
 
-            @if (!string.IsNullOrWhiteSpace(_alertMessage))
-            {
-                <AlertBanner Message="@_alertMessage" />
-            }
+    @if (!string.IsNullOrWhiteSpace(_alertMessage))
+    {
+        <AlertBanner Message="@_alertMessage" OnClose="() => _alertMessage = string.Empty" />
+    }
 
-            <div class="form-group">
-                <label class="control-label">Your Name</label>
-                <br />
-                <InputText @bind-Value="_options.DisplayName" class="form-control" placeholder="Shown to clients instead of your email" />
-                <br />
-                <ValidationMessage For="() => _options.DisplayName" />
+    <EditForm Model="_options" OnValidSubmit="HandleValidSubmit" @onkeydown="EditFormKeyDown">
+        <DataAnnotationsValidator />
+
+        <div class="space-y-6">
+            <div class="bg-[#1d1330] border border-white/10 rounded-xl p-5">
+                <h2 class="text-[#c4b8d8] text-sm font-semibold mb-4">Display</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-[#c4b8d8] mb-1.5">Display name</label>
+                        <InputText @bind-Value="_options.DisplayName"
+                                   class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30"
+                                   placeholder="Shown to clients instead of your email" />
+                        <ValidationMessage For="() => _options.DisplayName" class="block mt-1.5 text-xs text-red-400" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-[#c4b8d8] mb-1.5">Theme</label>
+                        <InputSelect @bind-Value="_options.Theme"
+                                     class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all">
+                            @foreach (var setting in Enum.GetValues(typeof(Theme)))
+                            {
+                                <option @key="setting" value="@setting">@setting</option>
+                            }
+                        </InputSelect>
+                        <p class="text-[#5e4d73] text-xs mt-1.5">* Requires browser refresh to apply.</p>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label class="control-label">Theme</label>
-                <br />
-                <InputSelect @bind-Value="_options.Theme" class="form-control">
-                    @foreach (var setting in Enum.GetValues(typeof(Theme)))
-                    {
-                        <option @key="setting" value="@setting">@setting</option>
-                    }
-                </InputSelect>
-                <div class="text-info small mt-1">* Requires browser refresh.</div>
-                <ValidationMessage For="() => _options.Theme" />
-            </div>
-
-            <div class="form-group mt-5">
-                <label class="control-label">
-                    <span class="text-info">Command Shortcuts</span>
-                    <button type="button" class="btn btn-secondary btn-sm ms-2" @onclick="ShowShortcutHelp">
-                        <span class="oi oi-question-mark pointer"></span>
+            <div class="bg-[#1d1330] border border-white/10 rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-4">
+                    <h2 class="text-[#c4b8d8] text-sm font-semibold">Command shortcuts</h2>
+                    <button type="button"
+                            class="w-5 h-5 rounded-full bg-[#291d38] border border-white/10 flex items-center justify-center text-[#9b8eb5] hover:text-white transition-colors"
+                            @onclick="ShowShortcutHelp"
+                            title="Help">
+                        <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                        </svg>
                     </button>
-                </label>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    @foreach (var (label, expr, forExpr) in new (string Label, Func<string?> Value, System.Linq.Expressions.Expression<Func<string?>> ForExpr)[]
+                    {
+                        ("PowerShell Core", () => _options.CommandModeShortcutPSCore, () => _options.CommandModeShortcutPSCore),
+                        ("Windows PowerShell", () => _options.CommandModeShortcutWinPS, () => _options.CommandModeShortcutWinPS),
+                        ("CMD", () => _options.CommandModeShortcutCMD, () => _options.CommandModeShortcutCMD),
+                        ("Bash", () => _options.CommandModeShortcutBash, () => _options.CommandModeShortcutBash),
+                    })
+                    {
+                        <div>
+                            <label class="block text-xs font-medium text-[#9b8eb5] mb-1">@label</label>
+                            @if (label == "PowerShell Core")
+                            {
+                                <InputText @bind-Value="_options.CommandModeShortcutPSCore" class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-[#7c5cbf] transition-all font-mono" />
+                                <ValidationMessage For="() => _options.CommandModeShortcutPSCore" class="block mt-1 text-xs text-red-400" />
+                            }
+                            else if (label == "Windows PowerShell")
+                            {
+                                <InputText @bind-Value="_options.CommandModeShortcutWinPS" class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-[#7c5cbf] transition-all font-mono" />
+                                <ValidationMessage For="() => _options.CommandModeShortcutWinPS" class="block mt-1 text-xs text-red-400" />
+                            }
+                            else if (label == "CMD")
+                            {
+                                <InputText @bind-Value="_options.CommandModeShortcutCMD" class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-[#7c5cbf] transition-all font-mono" />
+                                <ValidationMessage For="() => _options.CommandModeShortcutCMD" class="block mt-1 text-xs text-red-400" />
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_options.CommandModeShortcutBash" class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-[#7c5cbf] transition-all font-mono" />
+                                <ValidationMessage For="() => _options.CommandModeShortcutBash" class="block mt-1 text-xs text-red-400" />
+                            }
+                        </div>
+                    }
+                </div>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label class="control-label">PowerShell Core</label>
-                <br />
-                <InputText @bind-Value="_options.CommandModeShortcutPSCore" class="form-control" />
-                <br />
-                <ValidationMessage For="() => _options.CommandModeShortcutPSCore" />
-            </div>
-            <div class="form-group">
-                <label class="control-label">Windows PowerShell</label>
-                <br />
-                <InputText @bind-Value="_options.CommandModeShortcutWinPS" class="form-control" />
-                <br />
-                <ValidationMessage For="() => _options.CommandModeShortcutWinPS" />
-            </div>
-            <div class="form-group">
-                <label class="control-label">CMD</label>
-                <br />
-                <InputText @bind-Value="_options.CommandModeShortcutCMD" class="form-control" />
-                <br />
-                <ValidationMessage For="() => _options.CommandModeShortcutCMD" />
-            </div>
-            <div class="form-group">
-                <label class="control-label">Bash</label>
-                <br />
-                <InputText @bind-Value="_options.CommandModeShortcutBash" class="form-control" />
-                <br />
-                <ValidationMessage For="() => _options.CommandModeShortcutBash" />
-            </div>
-
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">Save</button>
-            </div>
-        </EditForm>
-    </div>
+        <div class="mt-6">
+            <button type="submit" class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-6 text-sm transition-colors shadow-lg shadow-[#6c5fc7]/20">
+                Save changes
+            </button>
+        </div>
+    </EditForm>
 </div>
 
 

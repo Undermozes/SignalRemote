@@ -7,41 +7,56 @@
 @using Remotely.Server.Models
 @using System.ComponentModel.DataAnnotations
 
-<h3 class="mb-3">Branding</h3>
+<PageTitle>Branding &mdash; SignalRemote</PageTitle>
 
-<AlertBanner Message="@_alertMessage" />
+<div class="max-w-xl px-4 py-8">
+    <h1 class="text-white text-2xl font-semibold mb-1">Branding</h1>
+    <p class="text-[#9b8eb5] text-sm mb-6">Customize the product name and icon shown to your clients.</p>
 
-<div class="row">
-    <div class="col-sm-8 col-lg-6 col-xl-5">
+    <AlertBanner Message="@_alertMessage" OnClose="() => _alertMessage = null" />
+
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 shadow-xl">
         <EditForm OnValidSubmit="HandleValidSubmit" Model="_inputModel">
             <DataAnnotationsValidator />
 
-            <div class="form-group mb-5">
-                <label class="text-info font-weight-bold">Product Name</label>
-                <InputText class="form-control" @bind-Value="_inputModel.ProductName" />
-                <ValidationMessage For="() => _inputModel.ProductName" />
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-[#c4b8d8] mb-1.5">Product name</label>
+                    <InputText class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30"
+                               @bind-Value="_inputModel.ProductName" placeholder="Your product name" />
+                    <ValidationMessage For="() => _inputModel.ProductName" class="block mt-1.5 text-xs text-red-400" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#c4b8d8] mb-3">Current icon</label>
+                    <div class="inline-block bg-[#291d38] border border-white/10 rounded-xl p-3">
+                        @if (!string.IsNullOrWhiteSpace(_base64Icon))
+                        {
+                            <img class="w-16 h-16 object-contain" src="data:image/png;base64,@_base64Icon" alt="Brand icon" />
+                        }
+                        else
+                        {
+                            <img class="w-16 h-16 object-contain" src="/images/Remotely_Icon.png" alt="Default icon" />
+                        }
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#c4b8d8] mb-1.5">Upload new icon <span class="text-[#5e4d73]">(PNG, max 1 MB)</span></label>
+                    <InputFile type="file" accept="image/png"
+                               class="block w-full text-sm text-[#9b8eb5] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#6c5fc7] file:text-white hover:file:bg-[#7c6fd7] file:cursor-pointer cursor-pointer"
+                               OnChange="IconUploadInputChanged" />
+                </div>
             </div>
 
-            <div class="form-group mb-4">
-                <label class="text-info font-weight-bold d-block">Current Icon</label>
-                <br />
-                @if (!string.IsNullOrWhiteSpace(_base64Icon))
-                {
-                    <img class="branding-icon" src="data:image/png;base64,@_base64Icon" />
-                }
-                else
-                {
-                    <img class="branding-icon" src="/images/Remotely_Icon.png" />
-                }
-            </div>
-
-            <div class="form-group mb-5">
-                <label class="text-info font-weight-bold">New Icon</label>
-                <InputFile type="file" accept="image/png" class="form-control" OnChange="IconUploadInputChanged" />
-            </div>
-            <div class="form-group text-end">
-                <button class="btn btn-secondary me-3" type="button" @onclick="ResetBranding">Reset</button>
-                <button class="btn btn-primary" type="submit">Submit</button>
+            <div class="flex items-center gap-3 mt-6 pt-5 border-t border-white/10">
+                <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors" type="submit">
+                    Save branding
+                </button>
+                <button class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2.5 px-5 text-sm transition-colors"
+                        type="button" @onclick="ResetBranding">
+                    Reset to default
+                </button>
             </div>
         </EditForm>
     </div>

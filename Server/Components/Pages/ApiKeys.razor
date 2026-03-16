@@ -10,71 +10,108 @@
 @inject IModalService ModalService
 @inject IToastService ToastService
 
+<PageTitle>API Keys &mdash; SignalRemote</PageTitle>
 
-<h3>API Keys</h3>
-
-@if (!string.IsNullOrWhiteSpace(_alertMessage))
-{
-    <AlertBanner Message="@_alertMessage" />
-}
-
-@if (_isLoading)
-{
-    <h5>Loading...</h5>
-}
-else if (User is not null)
-{
-    if (!string.IsNullOrWhiteSpace(_newKeySecret))
-    {
-        <h5 class="text-warning font-weight-bold mb-2 mt-4">Warning: The key's secret will only be shown once.  Save it now.</h5>
-        <h5 class="mb-4">
-            <label class="me-1">Key Secret:</label>
-            <input class="form-control custom-control-inline" readonly value="@_newKeySecret" style="width:400px" />
-        </h5>
-    }
-
-
-    <div class="mb-2 mt-4">
-        <label class="me-1">New Token Name:</label>
-        <input @bind="_createKeyName" @bind:event="oninput"
-               class="form-control form-control-sm custom-control-inline me-1 d-inline-block"
-               style="width:200px" />
-
-        <button class="btn btn-primary" type="button" @onclick="CreateNewKey">Create</button>
-
-        <button class="btn btn-sm btn-secondary ms-2" @onclick="ShowApiKeyHelp">
-            <span class="oi oi-question-mark"></span>
+<div class="max-w-4xl px-4 py-8">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-white text-2xl font-semibold mb-1">API Keys</h1>
+            <p class="text-[#9b8eb5] text-sm">Create and manage API tokens for programmatic access.</p>
+        </div>
+        <button class="w-7 h-7 rounded-full bg-[#291d38] border border-white/10 flex items-center justify-center text-[#9b8eb5] hover:text-white transition-colors"
+                type="button" @onclick="ShowApiKeyHelp" title="API key help">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+            </svg>
         </button>
     </div>
 
-    <table class="table table-dark table-hover table-striped">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>ID</th>
-                <th>Last Used</th>
-                <th></th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var apiToken in _apiTokens)
-            {
-                <tr @key="apiToken.ID">
-                    <td>@apiToken.Name</td>
-                    <td>@apiToken.ID</td>
-                    <td>@apiToken.LastUsed</td>
-                    <td>
-                        <button type="button" class="btn btn-primary" @onclick="() => RenameKey(apiToken.ID)">Rename</button>
-                    </td>
-                    <td>
-                        <button type="submit" class="btn btn-danger" @onclick="() => DeleteKey(apiToken.ID)">Delete</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+    @if (!string.IsNullOrWhiteSpace(_alertMessage))
+    {
+        <AlertBanner Message="@_alertMessage" OnClose="() => _alertMessage = string.Empty" />
+    }
+
+    @if (_isLoading)
+    {
+        <div class="text-[#9b8eb5] text-sm animate-pulse">Loading...</div>
+    }
+    else if (User is not null)
+    {
+        @if (!string.IsNullOrWhiteSpace(_newKeySecret))
+        {
+            <div class="mb-6 bg-amber-500/10 border border-amber-500/20 rounded-xl px-5 py-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="h-4 w-4 text-amber-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <p class="text-amber-300 text-sm font-semibold">Save this secret now — it won't be shown again.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input class="flex-1 bg-[#291d38] border border-amber-500/20 text-[#c4b8d8] rounded-lg px-3 py-2 text-xs font-mono outline-none"
+                           readonly value="@_newKeySecret" />
+                </div>
+            </div>
+        }
+
+        <div class="flex items-center gap-3 mb-6">
+            <input @bind="_createKeyName" @bind:event="oninput"
+                   class="bg-[#291d38] border border-white/10 text-white rounded-lg px-4 py-2 text-sm outline-none focus:border-[#7c5cbf] focus:ring-2 focus:ring-[#7c5cbf]/30 transition-all placeholder-white/30 w-56"
+                   placeholder="New token name" />
+            <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors" type="button" @onclick="CreateNewKey">
+                Create token
+            </button>
+        </div>
+
+        @if (_apiTokens.Count == 0)
+        {
+            <div class="bg-[#1d1330] border border-white/10 rounded-xl p-8 text-center">
+                <svg class="h-8 w-8 text-[#5e4d73] mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                <p class="text-[#9b8eb5] text-sm">No API tokens yet. Create one above.</p>
+            </div>
+        }
+        else
+        {
+            <div class="bg-[#1d1330] border border-white/10 rounded-xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3">Name</th>
+                            <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3 hidden sm:table-cell">ID</th>
+                            <th class="text-left text-xs font-semibold text-[#9b8eb5] px-4 py-3 hidden md:table-cell">Last used</th>
+                            <th class="px-4 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var apiToken in _apiTokens)
+                        {
+                            <tr @key="apiToken.ID" class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                                <td class="text-[#c4b8d8] px-4 py-3 font-medium">@apiToken.Name</td>
+                                <td class="text-[#9b8eb5] px-4 py-3 font-mono text-xs hidden sm:table-cell">@apiToken.ID</td>
+                                <td class="text-[#9b8eb5] px-4 py-3 text-xs hidden md:table-cell">@apiToken.LastUsed</td>
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button type="button"
+                                                class="text-[#8b6cf7] hover:text-[#a88cff] text-xs font-medium transition-colors"
+                                                @onclick="() => RenameKey(apiToken.ID)">
+                                            Rename
+                                        </button>
+                                        <button type="button"
+                                                class="text-red-400 hover:text-red-300 text-xs font-medium transition-colors"
+                                                @onclick="() => DeleteKey(apiToken.ID)">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>
 
 @code {
     private readonly List<ApiToken> _apiTokens = new();
