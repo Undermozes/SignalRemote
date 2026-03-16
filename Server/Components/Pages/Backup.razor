@@ -9,158 +9,199 @@
 @inject IJsInterop JsInterop
 @inject NavigationManager NavigationManager
 
-<h3 class="mb-3">Backup &amp; Restore</h3>
+<div class="max-w-2xl px-4 py-8">
 
-@if (!string.IsNullOrWhiteSpace(_alertMessage))
-{
-    <AlertBanner Message="@_alertMessage" />
-}
+    <div class="mb-6">
+        <h1 class="text-white text-2xl font-bold tracking-tight">Backup &amp; Restore</h1>
+        <p class="text-[#9b8eb5] text-sm mt-1">Manage your account data backups and restore points.</p>
+    </div>
 
-<div class="row">
-    <div class="col-lg-8">
-        @* ───────── Create Backup Section ───────── *@
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <span class="oi oi-cloud-download me-2"></span>Create Backup
-                </h5>
+    @if (!string.IsNullOrWhiteSpace(_alertMessage))
+    {
+        <AlertBanner Message="@_alertMessage" />
+    }
+
+    @* ───────── Create Backup Section ───────── *@
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 mb-5 shadow-xl">
+        <h2 class="text-white text-base font-semibold mb-1">Create Backup</h2>
+        <p class="text-[#9b8eb5] text-sm mb-4">
+            Create a backup of your account data including your devices and device groups.
+            The backup will be downloaded as a JSON file.
+        </p>
+        <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors inline-flex items-center gap-2"
+                @onclick="CreateAndDownloadBackup"
+                disabled="@_isProcessing">
+            @if (_isProcessing)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+            }
+            else
+            {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            }
+            Download Backup
+        </button>
+    </div>
+
+    @* ───────── Restore Backup Section ───────── *@
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 mb-5 shadow-xl">
+        <h2 class="text-white text-base font-semibold mb-1">Restore Backup</h2>
+        <p class="text-[#9b8eb5] text-sm mb-4">
+            Upload a previously created backup file to restore device metadata
+            (aliases, tags, notes, and device group assignments).
+        </p>
+        <div class="mb-4">
+            <InputFile OnChange="OnRestoreFileSelected"
+                       class="block w-full text-sm text-[#9b8eb5] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#6c5fc7] file:text-white hover:file:bg-[#7c6fd7] file:cursor-pointer cursor-pointer"
+                       accept=".json" />
+        </div>
+        @if (_restoreFileContent is not null)
+        {
+            <p class="text-[#a88cff] text-xs mb-3 flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                </svg>
+                File loaded: @_restoreFileName
+            </p>
+            <button class="bg-amber-500/90 hover:bg-amber-500 text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors inline-flex items-center gap-2"
+                    @onclick="RestoreFromFile"
+                    disabled="@_isProcessing">
+                @if (_isProcessing)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                }
+                else
+                {
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                    </svg>
+                }
+                Restore Backup
+            </button>
+        }
+    </div>
+
+    @* ───────── Google Drive Section ───────── *@
+    <div class="bg-[#1d1330] border border-white/10 rounded-xl p-6 mb-5 shadow-xl">
+        <h2 class="text-white text-base font-semibold mb-1">Google Drive</h2>
+
+        @if (!GoogleDriveService.IsConfigured)
+        {
+            <div class="flex items-start gap-3 bg-[#6c5fc7]/10 border border-[#6c5fc7]/20 text-[#a88cff] text-sm rounded-lg px-4 py-3 mt-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                <div>
+                    <p class="font-semibold text-white mb-0.5">Google Drive is not configured.</p>
+                    <p class="text-[#9b8eb5]">
+                        Ask your server administrator to configure Google Drive OAuth credentials
+                        (Client ID and Client Secret) in the server settings.
+                    </p>
+                </div>
             </div>
-            <div class="card-body">
-                <p class="text-muted">
-                    Create a backup of your account data including your devices and device groups.
-                    The backup will be downloaded as a JSON file.
-                </p>
-                <button class="btn btn-primary" @onclick="CreateAndDownloadBackup" disabled="@_isProcessing">
+        }
+        else if (!_isGoogleDriveConnected)
+        {
+            <p class="text-[#9b8eb5] text-sm mb-4">
+                Connect your Google Drive account to store and retrieve backups in the cloud.
+            </p>
+            <button class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2.5 px-4 text-sm transition-colors inline-flex items-center gap-2"
+                    @onclick="ConnectGoogleDrive">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd" />
+                </svg>
+                Connect to Google Drive
+            </button>
+        }
+        else
+        {
+            <div class="flex justify-between items-center mb-4 mt-2">
+                <span class="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium rounded-full px-3 py-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Connected to Google Drive
+                </span>
+                <button class="bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors inline-flex items-center gap-1.5"
+                        @onclick="DisconnectGoogleDrive">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Disconnect
+                </button>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mb-5">
+                <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2.5 px-5 text-sm transition-colors inline-flex items-center gap-2"
+                        @onclick="UploadToGoogleDrive"
+                        disabled="@_isProcessing">
                     @if (_isProcessing)
                     {
                         <span class="spinner-border spinner-border-sm me-1" role="status"></span>
                     }
-                    <span class="oi oi-data-transfer-download me-1"></span> Download Backup
+                    else
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    }
+                    Upload Backup to Drive
+                </button>
+                <button class="bg-[#291d38] hover:bg-white/10 border border-white/10 text-[#c4b8d8] font-medium rounded-lg py-2.5 px-4 text-sm transition-colors inline-flex items-center gap-2"
+                        @onclick="RefreshDriveBackups"
+                        disabled="@_isProcessing">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                    </svg>
+                    Refresh
                 </button>
             </div>
-        </div>
 
-        @* ───────── Restore Backup Section ───────── *@
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <span class="oi oi-cloud-upload me-2"></span>Restore Backup
-                </h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted">
-                    Upload a previously created backup file to restore device metadata
-                    (aliases, tags, notes, and device group assignments).
-                </p>
-                <div class="mb-3">
-                    <InputFile OnChange="OnRestoreFileSelected" class="form-control" accept=".json" />
-                </div>
-                @if (_restoreFileContent is not null)
-                {
-                    <p class="text-info small">
-                        File loaded: @_restoreFileName
-                    </p>
-                    <button class="btn btn-warning" @onclick="RestoreFromFile" disabled="@_isProcessing">
-                        @if (_isProcessing)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                        }
-                        <span class="oi oi-loop-circular me-1"></span> Restore Backup
-                    </button>
-                }
-            </div>
-        </div>
-
-        @* ───────── Google Drive Section ───────── *@
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <span class="oi oi-hard-drive me-2"></span>Google Drive
-                </h5>
-            </div>
-            <div class="card-body">
-                @if (!GoogleDriveService.IsConfigured)
-                {
-                    <div class="alert alert-info">
-                        <strong>Google Drive is not configured.</strong>
-                        <p class="mb-0 mt-1">
-                            Ask your server administrator to configure Google Drive OAuth credentials
-                            (Client ID and Client Secret) in the server settings.
-                        </p>
-                    </div>
-                }
-                else if (!_isGoogleDriveConnected)
-                {
-                    <p class="text-muted">
-                        Connect your Google Drive account to store and retrieve backups in the cloud.
-                    </p>
-                    <button class="btn btn-outline-primary" @onclick="ConnectGoogleDrive">
-                        <span class="oi oi-link-intact me-1"></span> Connect to Google Drive
-                    </button>
-                }
-                else
-                {
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-success">
-                            <span class="oi oi-check me-1"></span> Connected to Google Drive
-                        </span>
-                        <button class="btn btn-outline-danger btn-sm" @onclick="DisconnectGoogleDrive">
-                            <span class="oi oi-link-broken me-1"></span> Disconnect
-                        </button>
-                    </div>
-
-                    <div class="d-flex gap-2 mb-3">
-                        <button class="btn btn-success" @onclick="UploadToGoogleDrive" disabled="@_isProcessing">
-                            @if (_isProcessing)
+            @if (_driveBackups.Count > 0)
+            {
+                <p class="text-white text-sm font-semibold mb-3">Backups on Google Drive</p>
+                <div class="bg-[#1d1330] border border-white/10 rounded-xl overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-white/10 text-[#9b8eb5] text-xs uppercase tracking-wide">
+                                <th class="px-4 py-3 text-left font-medium">Name</th>
+                                <th class="px-4 py-3 text-left font-medium">Created</th>
+                                <th class="px-4 py-3 text-left font-medium">Size</th>
+                                <th class="px-4 py-3 text-left font-medium">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            @foreach (var file in _driveBackups)
                             {
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            }
-                            <span class="oi oi-cloud-upload me-1"></span> Upload Backup to Drive
-                        </button>
-                        <button class="btn btn-outline-secondary" @onclick="RefreshDriveBackups" disabled="@_isProcessing">
-                            <span class="oi oi-reload me-1"></span> Refresh
-                        </button>
-                    </div>
-
-                    @if (_driveBackups.Count > 0)
-                    {
-                        <h6>Backups on Google Drive</h6>
-                        <table class="table table-striped table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Created</th>
-                                    <th>Size</th>
-                                    <th>Actions</th>
+                                <tr class="hover:bg-white/5 transition-colors">
+                                    <td class="px-4 py-3 text-[#c4b8d8] font-mono text-xs truncate max-w-[200px]">@file.Name</td>
+                                    <td class="px-4 py-3 text-[#9b8eb5] whitespace-nowrap">@file.CreatedTime?.LocalDateTime.ToString("g")</td>
+                                    <td class="px-4 py-3 text-[#9b8eb5] whitespace-nowrap">@FormatFileSize(file.Size)</td>
+                                    <td class="px-4 py-3">
+                                        <button class="bg-red-500/90 hover:bg-red-500 text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors inline-flex items-center gap-1.5"
+                                                @onclick="() => RestoreFromGoogleDrive(file.Id)"
+                                                disabled="@_isProcessing">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                                            </svg>
+                                            Restore
+                                        </button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var file in _driveBackups)
-                                {
-                                    <tr>
-                                        <td>@file.Name</td>
-                                        <td>@file.CreatedTime?.LocalDateTime.ToString("g")</td>
-                                        <td>@FormatFileSize(file.Size)</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary"
-                                                    @onclick="() => RestoreFromGoogleDrive(file.Id)"
-                                                    disabled="@_isProcessing">
-                                                <span class="oi oi-loop-circular"></span> Restore
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else if (_driveBackupsLoaded)
-                    {
-                        <p class="text-muted">No backups found on Google Drive.</p>
-                    }
-                }
-            </div>
-        </div>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else if (_driveBackupsLoaded)
+            {
+                <p class="text-[#9b8eb5] text-sm">No backups found on Google Drive.</p>
+            }
+        }
     </div>
+
 </div>
 
 @code {
