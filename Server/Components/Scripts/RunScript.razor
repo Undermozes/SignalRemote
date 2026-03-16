@@ -3,16 +3,16 @@
 
 <div class="main-grid mt-3 auto-height">
     <div style="grid-column: span 3">
-        <button class="btn btn-primary align-middle me-4" @onclick="ExecuteScript">Run</button>
-        <input type="checkbox" class="me-1 align-middle" @bind="_runOnNextConnect" />
-        <span class="align-middle">If offline, run immediately when next connected</span>
+        <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors align-middle me-4" @onclick="ExecuteScript">Run</button>
+        <input type="checkbox" class="accent-[#7c5cbf] cursor-pointer w-4 h-4 mr-1 align-middle" @bind="_runOnNextConnect" />
+        <span class="text-[#c4b8d8] text-sm align-middle">If offline, run immediately when next connected</span>
     </div>
     <div class="column-wrapper h-100 pb-3">
         <div>
-            <h5>Saved Scripts</h5>
+            <h5 class="text-[#c4b8d8] text-sm font-semibold mb-2">Saved Scripts</h5>
             <div>
-                <input type="checkbox" @bind="ParentPage.ShowOnlyMyScripts" />
-                <span class="align-top">Show only mine</span>
+                <input type="checkbox" class="accent-[#7c5cbf] cursor-pointer w-4 h-4 mr-1" @bind="ParentPage.ShowOnlyMyScripts" />
+                <span class="text-[#c4b8d8] text-sm align-top">Show only mine</span>
             </div>
         </div>
         <TreeView DataSource="ParentPage.TreeNodes"
@@ -26,32 +26,32 @@
                   T="ScriptTreeNode" />
     </div>
     <div class="column-wrapper h-100 pb-3">
-        <h5>Device Groups</h5>
+        <h5 class="text-[#c4b8d8] text-sm font-semibold mb-2">Device Groups</h5>
         <div class="item-list-border h-100">
             @foreach (var deviceGroup in _deviceGroups)
             {
                 <div @key="@deviceGroup.ID">
-                    <input class="me-1" type="checkbox" 
+                    <input class="accent-[#7c5cbf] cursor-pointer w-4 h-4 mr-1" type="checkbox"
                            checked="@(_selectedDeviceGroups.Contains(deviceGroup.ID))"
                            @onchange="ev => DeviceGroupSelectedChanged(ev, deviceGroup)" />
 
-                    <span class="align-top">@deviceGroup.Name</span>
+                    <span class="text-[#9b8eb5] text-sm align-top">@deviceGroup.Name</span>
                 </div>
             }
         </div>
     </div>
 
     <div class="column-wrapper h-100 pb-3">
-        <h5>Devices</h5>
+        <h5 class="text-[#c4b8d8] text-sm font-semibold mb-2">Devices</h5>
         <div class="item-list-border h-100">
             @foreach (var device in _devices)
             {
                 <div @key="@device.ID">
-                    <input class="me-1" type="checkbox"
+                    <input class="accent-[#7c5cbf] cursor-pointer w-4 h-4 mr-1" type="checkbox"
                            checked="@(_selectedDeviceGroups.Contains(device.ID))"
                            @onchange="ev => DeviceSelectedChanged(ev, device)" />
 
-                    <span class="align-top">@device.DeviceName</span>
+                    <span class="text-[#9b8eb5] text-sm align-top">@device.DeviceName</span>
                 </div>
             }
         </div>

@@ -1,12 +1,12 @@
-﻿<select class="form-control mb-3" @bind="_selectedScriptId">
+﻿<select class="w-full bg-[#291d38] border border-white/10 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-[#7c5cbf] transition-all mb-3" @bind="_selectedScriptId">
     @foreach (var script in QuickScripts)
     {
         <option @key="script.Id" value="@script.Id">@script.Name</option>
     }
 </select>
 
-<div class="text-end">
-    <button class="btn btn-primary" @onclick="RunScriptClicked">Run</button>
+<div class="text-right">
+    <button class="bg-[#6c5fc7] hover:bg-[#7c6fd7] text-white font-semibold rounded-lg py-2 px-4 text-sm transition-colors" @onclick="RunScriptClicked">Run</button>
 </div>
 
 @code {

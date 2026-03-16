@@ -1,18 +1,25 @@
 ﻿@attribute [Authorize]
 @inherits AuthComponentBase
 
-<div class="chat-card border border-secondary bg-secondary @Session.ExpandedClass">
-    <div class="chat-header bg-primary text-white p-2" @onclick="HeaderClicked">
-        <h6 class="mt-3">
-            <i class="oi oi-chat me-1"></i>
-            <span class="badge bg-info rounded-pill me-1">
-                @Session.MissedChats
-            </span>
-            @Session.DeviceName
+<div class="chat-card border border-white/10 bg-[#1d1330] @Session.ExpandedClass">
+    <div class="chat-header bg-[#291d38] border-b border-white/10 text-white" @onclick="HeaderClicked">
+        <h6 class="flex items-center gap-2 text-sm font-medium">
+            <svg class="h-4 w-4 text-[#8b6cf7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            @if (Session.MissedChats > 0)
+            {
+                <span class="inline-flex items-center justify-center bg-[#6c5fc7] text-white text-xs font-bold rounded-full w-5 h-5">
+                    @Session.MissedChats
+                </span>
+            }
+            <span class="text-[#c4b8d8]">@Session.DeviceName</span>
         </h6>
-        <div class="text-end">
-            <button class="btn btn-sm btn-secondary" title="Close" @onclick="CloseChatCard" @onclick:stopPropagation>
-                <i class="oi oi-x pointer"></i>
+        <div class="text-right">
+            <button class="bg-transparent hover:bg-white/10 text-[#9b8eb5] hover:text-white rounded-lg p-1 transition-colors" title="Close" @onclick="CloseChatCard" @onclick:stopPropagation>
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
             </button>
         </div>
     </div>
@@ -22,50 +29,39 @@
             @if (item.Origin == ChatHistoryItemOrigin.System)
             {
                 <div @key="item" class="mt-1">
-                    <div class="chat-bubble d-inline-block text-white bg-warning">
-                        <div class="small">
-                            @item.Timestamp
-                        </div>
-                        <div class="font-weight-bold">
-                            @item.Message
-                        </div>
+                    <div class="chat-bubble inline-block text-white bg-amber-500/80">
+                        <div class="text-xs opacity-80">@item.Timestamp</div>
+                        <div class="font-semibold text-sm">@item.Message</div>
                     </div>
                 </div>
             }
             else if (item.Origin == ChatHistoryItemOrigin.Self)
             {
-                <div @key="item" class="text-end mt-1">
-                    <div class="chat-bubble d-inline-block bg-dark text-white">
-                        <div class="small">
-                            You
-                            <span class="mx-1">@@</span>
-                            @item.Timestamp
+                <div @key="item" class="text-right mt-1">
+                    <div class="chat-bubble inline-block bg-[#6c5fc7] text-white">
+                        <div class="text-xs opacity-70">
+                            You <span class="mx-1">@</span> @item.Timestamp
                         </div>
-                        <div class="font-weight-bold">
-                            @item.Message
-                        </div>
+                        <div class="font-semibold text-sm">@item.Message</div>
                     </div>
                 </div>
             }
             else if (item.Origin == ChatHistoryItemOrigin.Device)
             {
                 <div @key="item" class="mt-1">
-                    <div class="chat-bubble d-inline-block bg-primary text-white">
-                        <div class="small">
-                            @Session.DeviceName
-                            <span class="mx-1">@@</span>
-                            @item.Timestamp
+                    <div class="chat-bubble inline-block bg-[#291d38] border border-white/10 text-[#c4b8d8]">
+                        <div class="text-xs opacity-70">
+                            @Session.DeviceName <span class="mx-1">@</span> @item.Timestamp
                         </div>
-                        <div class="font-weight-bold">
-                            @item.Message
-                        </div>
+                        <div class="font-semibold text-sm">@item.Message</div>
                     </div>
                 </div>
             }
         }
     </div>
-    <input class="chat-input"
-              @bind="_inputText"
-              @bind:event="oninput"
-              @onkeypress="EvaluateInputKeypress" />
+    <input class="chat-input bg-[#291d38] border-t border-white/10 text-white text-sm placeholder-white/30 px-3 outline-none focus:border-[#7c5cbf]"
+           placeholder="Type a message..."
+           @bind="_inputText"
+           @bind:event="oninput"
+           @onkeypress="EvaluateInputKeypress" />
 </div>
