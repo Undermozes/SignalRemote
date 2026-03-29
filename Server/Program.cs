@@ -340,6 +340,7 @@ void ConfigureStaticFiles()
     provider.Mappings[".appimage"] = "application/octet-stream";
     provider.Mappings[".zip"] = "application/octet-stream";
     provider.Mappings[".config"] = "application/octet-stream";
+    provider.Mappings[".apk"] = "application/vnd.android.package-archive";
     app.UseStaticFiles();
     var contentPath = Path.Combine(app.Environment.WebRootPath, "Content");
 
