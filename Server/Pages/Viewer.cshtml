@@ -214,6 +214,13 @@
                 </div>
 
                 <div class="menu-column menu-column-right">
+                    @if (!string.IsNullOrWhiteSpace(Model.AssistantDeviceId))
+                    {
+                        <button id="assistantButton" title="Ask Claude to investigate this computer.">
+                            <i class="fas fa-robot"></i>
+                        </button>
+                    }
+
                     <button id="disconnectButton"
                             title="Disconnect from the current session.">
                         x
@@ -263,6 +270,19 @@
 
     </div>
 
+    @if (!string.IsNullOrWhiteSpace(Model.AssistantDeviceId))
+    {
+        <div id="assistantPanel" hidden>
+            <div class="assistant-panel-header">
+                <span><i class="fas fa-robot me-1"></i> Claude</span>
+                <button id="assistantCloseButton" title="Close the assistant.">x</button>
+            </div>
+            <iframe id="assistantFrame"
+                    title="Claude assistant"
+                    data-src="/assistant/@(Uri.EscapeDataString(Model.AssistantDeviceId))/embed"></iframe>
+        </div>
+    }
+
     <div id="toastsWrapper">
     </div>
 
@@ -279,6 +299,10 @@
     </footer>
 
     <script src="/src/App.js" type="module"></script>
+    @if (!string.IsNullOrWhiteSpace(Model.AssistantDeviceId))
+    {
+        <script src="/viewer-assistant.js" asp-append-version="true"></script>
+    }
     <script>
         window.addEventListener("load", () => {
             ViewerApp.Init();

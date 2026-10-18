@@ -4,9 +4,9 @@
 @implements IDisposable
 @using Remotely.Server.Services.ClaudeAssistant
 
-<div class="assistant-page mt-3">
+<div class="assistant-page @(Embedded ? "embedded" : "mt-3")">
     <div class="d-flex align-items-baseline mb-3">
-        <h3 class="mb-0">Claude Assistant</h3>
+        <h3 class="mb-0 @(Embedded ? "fs-5" : "")">Claude Assistant</h3>
         @if (_session is not null)
         {
             <span class="ms-3 text-muted">
@@ -34,6 +34,10 @@
             @(_autoRunReadOnly ? "run automatically" : "need your approval")
             ; anything that could change the system always needs your approval.
             Every command is logged and appears in the device's script history.
+            @if (_session.ScreenshotProvider is not null)
+            {
+                <span>Claude can see the remote screen.</span>
+            }
         </div>
 
         <div class="assistant-log border rounded p-3 mb-3">
@@ -77,7 +81,7 @@
 
                                 @if (entry.State == CommandState.AwaitingApproval)
                                 {
-                                    <div class="d-flex gap-2 align-items-center">
+                                    <div class="d-flex flex-wrap gap-2 align-items-center">
                                         <button class="btn btn-sm btn-success" @onclick="() => Approve(entry)">Approve and run</button>
                                         <input class="form-control form-control-sm"
                                                placeholder="Optional note for Claude"
@@ -117,7 +121,7 @@
         <div class="d-flex gap-2">
             <textarea class="form-control"
                       rows="2"
-                      placeholder="Describe the problem, e.g. &quot;The user says Outlook is slow since this morning.&quot;"
+                      placeholder="@(Embedded ? "Describe the problem, e.g. \"Find out why this website is slow in Chrome.\"" : "Describe the problem, e.g. \"The user says Outlook is slow since this morning.\"")"
                       disabled="@_session.IsBusy"
                       @bind="_input"
                       @bind:event="oninput"
@@ -141,8 +145,20 @@
     private string _rejectNote = string.Empty;
     private bool _autoRunReadOnly;
 
+    private IJSObjectReference? _embedModule;
+
     [Parameter]
     public string DeviceId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// True when shown as a panel inside the remote control viewer.  Claude can then
+    /// take screenshots of the remote screen through the viewer.
+    /// </summary>
+    [Parameter]
+    public bool Embedded { get; set; }
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = null!;
 
     [Inject]
     private IClaudeAssistantService AssistantService { get; set; } = null!;
@@ -171,6 +187,10 @@
         _autoRunReadOnly = settings.ClaudeAutoRunReadOnlyCommands;
 
         _session = result.Value;
+        if (Embedded)
+        {
+            _session.ScreenshotProvider = CaptureViewerScreenshot;
+        }
         _session.Changed += HandleSessionChanged;
     }
 
@@ -181,7 +201,64 @@
             _session.Changed -= HandleSessionChanged;
             _session.Dispose();
         }
+
+        if (_embedModule is not null)
+        {
+            _ = DisposeModule(_embedModule);
+        }
     }
+
+    private static async Task DisposeModule(IJSObjectReference module)
+    {
+        try
+        {
+            await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, so is the module.
+        }
+    }
+
+    private async Task<ViewerScreenshot> CaptureViewerScreenshot(CancellationToken cancellationToken)
+    {
+        ViewerScreenshot? screenshot = null;
+
+        // JS interop runs on the circuit's dispatcher.
+        await InvokeAsync(async () =>
+        {
+            try
+            {
+                _embedModule ??= await JS.InvokeAsync<IJSObjectReference>("import", cancellationToken, "./assistant-embed.js");
+
+                var info = await _embedModule.InvokeAsync<CaptureInfo>("captureViewerScreen", cancellationToken, 10_000);
+                if (!info.Ok)
+                {
+                    screenshot = new(null, 0, 0, info.Error);
+                    return;
+                }
+
+                // Streamed, because a capture is larger than the SignalR message size limit.
+                var streamRef = await _embedModule.InvokeAsync<IJSStreamReference>("takeCapturedScreen", cancellationToken);
+                await using var stream = await streamRef.OpenReadStreamAsync(maxAllowedSize: 8_000_000, cancellationToken);
+                using var reader = new StreamReader(stream);
+                var jpegBase64 = await reader.ReadToEndAsync(cancellationToken);
+                screenshot = new(jpegBase64, info.Width, info.Height, null);
+            }
+            catch (JSException ex)
+            {
+                screenshot = new(null, 0, 0, ex.Message);
+            }
+            catch (JSDisconnectedException)
+            {
+                screenshot = new(null, 0, 0, "The assistant panel was closed.");
+            }
+        });
+
+        return screenshot ?? new(null, 0, 0, "No screenshot available.");
+    }
+
+    private sealed record CaptureInfo(bool Ok, int Width, int Height, string? Error);
 
     private void HandleSessionChanged()
     {

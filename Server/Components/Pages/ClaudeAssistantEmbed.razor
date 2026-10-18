@@ -1,0 +1,11 @@
+@page "/assistant/{deviceId}/embed"
+@attribute [Authorize]
+@layout Layout.EmbedLayout
+
+@* The Claude assistant as a side panel inside the remote control viewer. *@
+<ClaudeAssistant DeviceId="@DeviceId" Embedded="true" />
+
+@code {
+    [Parameter]
+    public string DeviceId { get; set; } = string.Empty;
+}

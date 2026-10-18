@@ -1,0 +1,20 @@
+@using Remotely.Server.Auth
+@inherits LayoutComponentBase
+
+@* Minimal layout for pages shown inside another page, e.g. the Claude assistant panel in the viewer. *@
+<AuthorizeView Policy="@PolicyNames.TwoFactorRequired">
+    <Authorized>
+        @Body
+    </Authorized>
+    <NotAuthorized>
+        <div class="p-3">
+            Two-factor authentication is required.  Open SignalRemote in a normal browser tab to set it up.
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>

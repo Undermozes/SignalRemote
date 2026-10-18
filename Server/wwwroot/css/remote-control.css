@@ -538,3 +538,70 @@ footer {
     background-color: rgba(40, 40, 40, 0.5);
     min-height: 20px;
 }
+
+/* Claude assistant panel */
+#assistantPanel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 420px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border-left: 1px solid rgba(128, 128, 128, 0.4);
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.35);
+}
+
+#assistantPanel[hidden] {
+    display: none;
+}
+
+.assistant-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background-color: #2b2b2b;
+    color: #eee;
+    font-weight: 600;
+}
+
+.assistant-panel-header button {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+#assistantFrame {
+    flex: 1 1 auto;
+    width: 100%;
+    border: 0;
+}
+
+body.assistant-open #workAreaGrid {
+    right: 420px;
+}
+
+/* On phones the panel covers the lower half, so the screen stays visible above it. */
+@media (max-width: 800px) {
+    #assistantPanel {
+        top: auto;
+        left: 0;
+        width: auto;
+        height: 55vh;
+        height: 55dvh;
+        border-left: none;
+        border-top: 1px solid rgba(128, 128, 128, 0.4);
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    body.assistant-open #workAreaGrid {
+        right: 0;
+        bottom: 55vh;
+        bottom: 55dvh;
+    }
+}

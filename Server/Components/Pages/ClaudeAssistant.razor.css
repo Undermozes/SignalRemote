@@ -29,3 +29,18 @@
     max-height: 300px;
     overflow-y: auto;
 }
+
+/* Embedded as a panel in the remote control viewer. */
+.assistant-page.embedded {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    padding: 0.5rem 0.75rem;
+}
+
+.assistant-page.embedded .assistant-log {
+    flex: 1 1 auto;
+    max-height: none;
+    min-height: 0;
+}
