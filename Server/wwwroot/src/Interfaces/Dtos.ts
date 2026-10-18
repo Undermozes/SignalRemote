@@ -144,6 +144,23 @@ export interface ScreenDataDto {
     MachineName: string;
     ScreenWidth: number;
     ScreenHeight: number;
+    DisplayLayouts: DisplayLayoutDto[];
+}
+
+export interface DisplayLayoutDto {
+    DisplayName: string;
+    X: number;
+    Y: number;
+    Width: number;
+    Height: number;
+    IsPrimary: boolean;
+}
+
+export interface ScreenThumbnailDto {
+    DisplayName: string;
+    ImageBytes: Uint8Array;
+    Width: number;
+    Height: number;
 }
 
 export interface ScreenSizeDto {
@@ -172,6 +189,14 @@ export interface SessionMetricsDto {
     Fps: number;
     RoundTripLatency: number;
     IsGpuAccelerated: boolean;
+}
+
+export class SetQualityModeDto {
+    constructor(qualityMode: number) {
+        this.QualityMode = qualityMode;
+    }
+
+    QualityMode: number;
 }
 
 export class TapDto {

@@ -78,7 +78,7 @@ public class ConfigService : IConfigService
                 return new ConnectionInfo()
                 {
                     DeviceID = _debugGuid,
-                    Host = "http://localhost:5000",
+                    Host = "http://localhost:5001",
                     OrganizationID = AppConstants.DebugOrgId
                 };
             }

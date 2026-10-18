@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">SignalRemote Agent</string>
+    <string name="subtitle">Remote Desktop Agent for Android</string>
+
+    <!-- Connection settings labels -->
+    <string name="label_server_url">Server URL</string>
+    <string name="hint_server_url">https://your-server.example.com</string>
+    <string name="label_org_id">Organisation ID</string>
+    <string name="hint_org_id">xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</string>
+
+    <!-- Buttons -->
+    <string name="btn_start_agent">Start Agent</string>
+    <string name="btn_stop_agent">Stop Agent</string>
+    <string name="btn_enable_input_injection">Enable Input Injection</string>
+
+    <!-- Status -->
+    <string name="accessibility_status_disabled">Input injection: Disabled (tap to enable)</string>
+    <string name="accessibility_status_enabled">Input injection: Enabled ✓</string>
+
+    <!-- Service labels -->
+    <string name="input_injection_service_label">SignalRemote Input Injection</string>
+
+    <!-- Version -->
+    <string name="version_info">SignalRemote Agent v1.0.0</string>
+</resources>

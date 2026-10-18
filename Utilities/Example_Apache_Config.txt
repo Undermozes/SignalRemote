@@ -6,34 +6,34 @@
 	#Forward once Websocket Connection has been upgraded.
 	RewriteEngine On
 	RewriteCond %{HTTP:Upgrade} =websocket [NC]
-	RewriteRule /(.*)           ws://localhost:5000/$1 [P,L]
+	RewriteRule /(.*)           ws://localhost:5001/$1 [P,L]
 	RewriteCond %{HTTP:Upgrade} !=websocket [NC]
-	RewriteRule /(.*)           http://localhost:5000/$1 [P,L]
+	RewriteRule /(.*)           http://localhost:5001/$1 [P,L]
 
 	ProxyPreserveHost On
 	#Proxy Requests to Remotely Server
 	<LocationMatch "/">
-		ProxyPass http://localhost:5000/ 
-		ProxyPassReverse http://localhost:5000/
+		ProxyPass http://localhost:5001/ 
+		ProxyPassReverse http://localhost:5001/
 	</LocationMatch>
 	<Location "/hubs/user">
-		ProxyPass http://localhost:5000/
-		ProxyPassReverse http://localhost:5000/
+		ProxyPass http://localhost:5001/
+		ProxyPassReverse http://localhost:5001/
 	</Location>
 
 	<LocationMatch "/hubs/service">
-		ProxyPass http://localhost:5000/
-		ProxyPassReverse http://localhost:5000/
+		ProxyPass http://localhost:5001/
+		ProxyPassReverse http://localhost:5001/
 	</LocationMatch>
 
 	<LocationMatch "/hubs/viewer">
-		ProxyPass http://localhost:5000/
-		ProxyPassReverse http://localhost:5000/
+		ProxyPass http://localhost:5001/
+		ProxyPassReverse http://localhost:5001/
 	</LocationMatch>
 
 	<LocationMatch "/hubs/desktop">
-		ProxyPass http://localhost:5000/
-		ProxyPassReverse http://localhost:5000/
+		ProxyPass http://localhost:5001/
+		ProxyPassReverse http://localhost:5001/
 	</LocationMatch>
 
         ErrorLog ${APACHE_LOG_DIR}/error.log

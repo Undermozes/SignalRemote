@@ -62,6 +62,10 @@ public class ClientDownloadsController : ControllerBase
                     var filePath = Path.Combine("Content", "MacOS-arm64", "Remotely_Desktop");
                     return await GetDesktopFile(filePath);
                 }
+            case "AndroidApk":
+                {
+                    return await GetAndroidApk();
+                }
             default:
                 return NotFound();
         }
@@ -103,6 +107,10 @@ public class ClientDownloadsController : ControllerBase
                     var filePath = Path.Combine("Content", "MacOS-arm64", "Remotely_Desktop");
                     return await GetDesktopFile(filePath);
                 }
+            case "AndroidApk":
+                {
+                    return await GetAndroidApk();
+                }
             default:
                 return NotFound();
         }
@@ -141,6 +149,17 @@ public class ClientDownloadsController : ControllerBase
         }
         var orgResult = await _dataService.GetOrganizationById(organizationId);
         return orgResult.IsSuccess;
+    }
+
+    private async Task<IActionResult> GetAndroidApk()
+    {
+        await LogRequest(nameof(GetAndroidApk));
+        var filePath = Path.Combine(_hostEnv.WebRootPath, "Content", "Android", "SignalRemote-Agent.apk");
+        if (!FileIO.Exists(filePath))
+        {
+            return NotFound();
+        }
+        return PhysicalFile(filePath, "application/vnd.android.package-archive", "SignalRemote-Agent.apk");
     }
 
     private async Task<IActionResult> GetBashInstaller(string fileName, string organizationId)

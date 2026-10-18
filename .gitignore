@@ -297,3 +297,14 @@ Server.Installer/Properties/launchSettings.json
 !/.vscode/tasks.json
 /Server/appsettings.Development.json
 /Server/AppData
+
+# Android build artifacts
+Android/.gradle/
+Android/app/build/
+Android/build/
+Android/local.properties
+Android/.idea/
+Android/**/*.iml
+Android/captures/
+Android/.externalNativeBuild/
+Android/.cxx/

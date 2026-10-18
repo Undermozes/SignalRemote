@@ -8,6 +8,7 @@ using Remotely.Desktop.Shared.ViewModels;
 using Microsoft.AspNetCore.SignalR.Client;
 using Remotely.Shared.Services;
 using Remotely.Desktop.Native.Windows;
+using Remotely.Shared.Enums;
 
 namespace Remotely.Desktop.Shared.Services;
 
@@ -21,6 +22,7 @@ public interface IViewer : IDisposable
     int ImageQuality { get; }
     bool IsResponsive { get; }
     string Name { get; set; }
+    RemoteControlQualityMode QualityMode { get; set; }
     TimeSpan RoundTripLatency { get; }
     string ViewerConnectionId { get; set; }
 
@@ -34,6 +36,7 @@ public interface IViewer : IDisposable
     Task SendDesktopStream(IAsyncEnumerable<byte[]> asyncEnumerable, Guid streamId);
     Task SendFile(FileUpload fileUpload, Action<double> progressUpdateCallback, CancellationToken cancelToken);
     Task SendScreenData(string selectedDisplay, IEnumerable<string> displayNames, int screenWidth, int screenHeight);
+    Task SendScreenThumbnails();
     Task SendScreenSize(int width, int height);
     Task SendSessionMetrics(SessionMetricsDto metrics);
     Task SendWindowsSessions();
@@ -44,6 +47,14 @@ public interface IViewer : IDisposable
 public class Viewer : IViewer
 {
     public const int DefaultQuality = 80;
+    public const int PerformanceQuality = 40;
+    public const int HighQuality = 100;
+
+    // Auto quality thresholds
+    private const int AutoQualityDecreaseStep = 10;
+    private const int AutoQualityIncreaseStep = 2;
+    private const double HighLatencyThresholdMs = 200;
+    private const double LowLatencyThresholdMs = 100;
 
     private readonly IAudioCapturer _audioCapturer;
     private readonly IClipboardService _clipboardService;
@@ -96,6 +107,7 @@ public class Viewer : IViewer
     public int ImageQuality { get; private set; } = DefaultQuality;
     public bool IsResponsive { get; private set; } = true;
     public string Name { get; set; } = string.Empty;
+    public RemoteControlQualityMode QualityMode { get; set; } = RemoteControlQualityMode.Auto;
     public TimeSpan RoundTripLatency { get; private set; }
 
     public string ViewerConnectionId { get; set; } = string.Empty;
@@ -108,10 +120,33 @@ public class Viewer : IViewer
 
     public Task ApplyAutoQuality()
     {
-        if (ImageQuality < DefaultQuality)
+        switch (QualityMode)
         {
-            ImageQuality = Math.Min(DefaultQuality, ImageQuality + 2);
+            case RemoteControlQualityMode.Performance:
+                ImageQuality = PerformanceQuality;
+                break;
+
+            case RemoteControlQualityMode.Quality:
+                ImageQuality = HighQuality;
+                break;
+
+            case RemoteControlQualityMode.Auto:
+            default:
+                // Decrease quality when latency is high or viewer is falling behind.
+                if (RoundTripLatency.TotalMilliseconds > HighLatencyThresholdMs ||
+                    _lastFrameSent - _lastFrameReceived > TimeSpan.FromMilliseconds(500))
+                {
+                    ImageQuality = Math.Max(PerformanceQuality, ImageQuality - AutoQualityDecreaseStep);
+                }
+                else if (RoundTripLatency.TotalMilliseconds < LowLatencyThresholdMs &&
+                         _lastFrameSent - _lastFrameReceived < TimeSpan.FromMilliseconds(200))
+                {
+                    // Gradually recover quality when conditions improve.
+                    ImageQuality = Math.Min(DefaultQuality, ImageQuality + AutoQualityIncreaseStep);
+                }
+                break;
         }
+
         return Task.CompletedTask;
     }
 
@@ -239,9 +274,48 @@ public class Viewer : IViewer
             DisplayNames = displayNames,
             SelectedDisplay = selectedDisplay,
             ScreenWidth = screenWidth,
-            ScreenHeight = screenHeight
+            ScreenHeight = screenHeight,
+            DisplayLayouts = Capturer.GetDisplayLayouts().ToArray()
         };
         await TrySendToViewer(dto, DtoType.ScreenData, ViewerConnectionId);
+    }
+
+    public async Task SendScreenThumbnails()
+    {
+        foreach (var displayName in Capturer.GetDisplayNames())
+        {
+            try
+            {
+                var thumbnailResult = Capturer.GetDisplayThumbnail(displayName);
+                if (!thumbnailResult.IsSuccess || thumbnailResult.Value is null)
+                {
+                    continue;
+                }
+
+                using var bitmap = thumbnailResult.Value;
+                const int maxWidth = 320;
+                int thumbWidth = Math.Min(maxWidth, bitmap.Width);
+                int thumbHeight = (int)Math.Round((double)bitmap.Height / bitmap.Width * thumbWidth);
+
+                using var scaledBitmap = bitmap.Resize(new SkiaSharp.SKImageInfo(thumbWidth, thumbHeight), SkiaSharp.SKFilterQuality.Low);
+                using var image = SkiaSharp.SKImage.FromBitmap(scaledBitmap);
+                using var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 50);
+                var jpegBytes = data.ToArray();
+
+                var thumbnailDto = new ScreenThumbnailDto
+                {
+                    DisplayName = displayName,
+                    ImageBytes = jpegBytes,
+                    Width = thumbWidth,
+                    Height = thumbHeight
+                };
+                await TrySendToViewer(thumbnailDto, DtoType.ScreenThumbnail, ViewerConnectionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while sending thumbnail for display {displayName}.", displayName);
+            }
+        }
     }
 
     public async Task SendScreenSize(int width, int height)

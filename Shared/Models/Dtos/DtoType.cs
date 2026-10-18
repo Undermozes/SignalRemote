@@ -52,5 +52,9 @@ public enum DtoType
     [EnumMember]
     OpenFileTransferWindow = 27,
     [EnumMember]
-    SessionMetrics = 28
+    SessionMetrics = 28,
+    [EnumMember]
+    QualityMode = 29,
+    [EnumMember]
+    ScreenThumbnail = 30
 }

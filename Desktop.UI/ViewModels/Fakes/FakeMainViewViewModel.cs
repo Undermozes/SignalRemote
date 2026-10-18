@@ -4,6 +4,7 @@ using Remotely.Desktop.Shared.Services;
 using Remotely.Desktop.Shared.ViewModels;
 using Remotely.Shared.Models;
 using Remotely.Shared.Models.Dtos;
+using Remotely.Shared.Enums;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -84,6 +85,8 @@ public class FakeMainViewViewModel : FakeBrandedViewModelBase, IMainViewViewMode
 
         public string Name { get; set; } = "Rick James";
 
+        public RemoteControlQualityMode QualityMode { get; set; } = RemoteControlQualityMode.Auto;
+
         public TimeSpan RoundTripLatency => default;
 
         public string ViewerConnectionId { get; set; } = string.Empty;
@@ -137,6 +140,11 @@ public class FakeMainViewViewModel : FakeBrandedViewModelBase, IMainViewViewMode
         }
 
         public Task SendScreenData(string selectedDisplay, IEnumerable<string> displayNames, int screenWidth, int screenHeight)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task SendScreenThumbnails()
         {
             return Task.CompletedTask;
         }

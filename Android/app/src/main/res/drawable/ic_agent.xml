@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Background circle -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M54,54m-54,0a54,54 0,1 1,108 0a54,54 0,1 1,-108 0" />
+
+    <!-- Monitor outline -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,30 Q24,26 28,26 L80,26 Q84,26 84,30 L84,66 Q84,70 80,70 L60,70 L60,76 L68,76 Q70,76 70,78 L70,80 Q70,82 68,82 L40,82 Q38,82 38,80 L38,78 Q38,76 40,76 L48,76 L48,70 L28,70 Q24,70 24,66 Z
+               M28,30 L28,64 L80,64 L80,30 Z" />
+
+    <!-- Signal waves (simplified) -->
+    <path
+        android:fillColor="#42A5F5"
+        android:pathData="M38,47 Q38,38 54,38 Q70,38 70,47"
+        android:strokeColor="#42A5F5"
+        android:strokeWidth="3"
+        android:fillAlpha="0" />
+
+    <path
+        android:fillColor="#90CAF9"
+        android:pathData="M44,47 Q44,42 54,42 Q64,42 64,47"
+        android:strokeColor="#90CAF9"
+        android:strokeWidth="3"
+        android:fillAlpha="0" />
+
+    <!-- Centre dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,47m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+</vector>
