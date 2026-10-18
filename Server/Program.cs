@@ -109,6 +109,8 @@ builder.Services.AddAuthentication(options =>
 services.AddIdentityCore<RemotelyUser>(options =>
 {
     options.Stores.MaxLengthForKeys = 128;
+    // Existing migrations match the v1 Identity schema (no passkeys table).
+    options.Stores.SchemaVersion = IdentitySchemaVersions.Version1;
     options.Password.RequireNonAlphanumeric = false;
 })
     .AddEntityFrameworkStores<AppDb>()

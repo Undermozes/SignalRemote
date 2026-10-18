@@ -240,7 +240,13 @@ public class AppDb : IdentityDbContext
             // it correctly), so we need to use a converter.
             foreach (var entityType in builder.Model.GetEntityTypes())
             {
-                if (entityType.IsKeyless)
+                // Skip keyless and owned types, plus types EF only discovered by convention
+                // that have no key (e.g. IdentityPasskeyData, left behind when Identity
+                // schema v1 ignores IdentityUserPasskey). Calling builder.Entity() on those
+                // would promote them to explicit entities and fail model validation.
+                if (entityType.IsKeyless ||
+                    entityType.IsOwned() ||
+                    entityType.FindPrimaryKey() is null)
                 {
                     continue;
                 }
