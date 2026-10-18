@@ -1,14 +1,14 @@
 ﻿@inject IThemeProvider ThemeProvider
 
-<div class="signal-background">
-    <div class="signal-wrapper text-center">
+<div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
+    <div class="text-center">
         @if (!string.IsNullOrEmpty(StatusMessage))
         {
-            <h4>
+            <h4 class="mb-2 text-xl font-medium">
                 @StatusMessage
             </h4>
         }
-        <div class="signal @(GetSignalClass())"></div>
+        <div class="signal mt-2.5 inline-block size-[50px] rounded-full border-8 border-solid @(GetSignalClass())"></div>
     </div>
 </div>
 
@@ -26,6 +26,6 @@
 
     private string GetSignalClass()
     {
-        return _theme == Theme.Dark ? "signal-dark" : "signal-light";
+        return _theme == Theme.Dark ? "border-[whitesmoke]" : "border-[#333]";
     }
 }

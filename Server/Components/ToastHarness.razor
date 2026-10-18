@@ -1,16 +1,51 @@
 ﻿@using Remotely.Server.Services
 @inject IToastService ToastService
 
-<div class="toast-harness">
+@* Phones: full width at the bottom, above the safe-area inset.  md and up: bottom-right. *@
+<div class="pointer-events-none fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-50 flex flex-col gap-2 select-none md:left-auto md:right-6 md:bottom-6 md:w-sm">
     @foreach (var toast in ToastService.Toasts)
     {
-        <div @key="toast.Guid" class="toast-message @toast.ClassString" style="animation-delay: @(toast.Expiration.TotalMilliseconds.ToString() + "ms"); @toast.StyleOverrides">
+        <div @key="toast.Guid" class="toast-message pointer-events-none rounded-lg px-4 py-3 text-sm shadow-lg select-none @GetToastClass(toast.ClassString)" style="animation-delay: @(toast.Expiration.TotalMilliseconds.ToString() + "ms"); @toast.StyleOverrides">
             @toast.Message
         </div>
     }
 </div>
 
 @code {
+    // Toasts are still created with Bootstrap color classes (e.g. "bg-warning", "bg-success text-white")
+    // by IToastService and its callers.  Map those to Tailwind; anything else passes through.
+    private static readonly Dictionary<string, string> _bootstrapClassMap = new()
+    {
+        ["bg-success"] = "bg-success",
+        ["bg-warning"] = "bg-warning",
+        ["bg-danger"] = "bg-danger",
+        ["bg-info"] = "bg-sky-600",
+        ["bg-primary"] = "bg-brand",
+        ["bg-secondary"] = "bg-gray-600",
+        ["bg-dark"] = "bg-neutral-900",
+        ["text-white"] = "text-white",
+    };
+
+    private static string GetToastClass(string? classString)
+    {
+        var classes = (classString ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => _bootstrapClassMap.TryGetValue(x, out var mapped) ? mapped : x)
+            .ToList();
+
+        if (!classes.Any(x => x.StartsWith("bg-") || x.StartsWith("bg-")))
+        {
+            classes.Add("bg-neutral-900");
+        }
+
+        // Toasts have always had white text.
+        if (!classes.Contains("text-white"))
+        {
+            classes.Add("text-white");
+        }
+
+        return string.Join(" ", classes);
+    }
 
     protected override Task OnAfterRenderAsync(bool firstRender)
     {

@@ -1,12 +1,12 @@
-﻿<select class="form-control mb-3" @bind="_selectedScriptId">
+﻿<select class="sr-select mb-4" @bind="_selectedScriptId">
     @foreach (var script in QuickScripts)
     {
         <option @key="script.Id" value="@script.Id">@script.Name</option>
     }
 </select>
 
-<div class="text-end">
-    <button class="btn btn-primary" @onclick="RunScriptClicked">Run</button>
+<div class="flex justify-end">
+    <button class="sr-btn sr-btn-primary w-full sm:w-auto" @onclick="RunScriptClicked">Run</button>
 </div>
 
 @code {

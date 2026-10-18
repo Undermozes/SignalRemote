@@ -7,13 +7,14 @@
 
 @if (!string.IsNullOrWhiteSpace(_settings?.MessageOfTheDay))
 {
-    <div class="me-5">
-        <AlertBanner Message="@_settings?.MessageOfTheDay" StatusClass="info" />
-    </div>
+    <AlertBanner Message="@_settings?.MessageOfTheDay" StatusClass="info" />
 }
 
-<AlertsFrame />
-<DevicesFrame />
+@* Positioning context for the alerts button, which sits next to the "Devices" title. *@
+<div class="relative">
+    <AlertsFrame />
+    <DevicesFrame />
+</div>
 <ChatFrame />
 
 @code {

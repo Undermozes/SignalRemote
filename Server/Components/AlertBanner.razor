@@ -1,8 +1,13 @@
 ﻿@if (!string.IsNullOrEmpty(Message))
 {
-    <div class="alert alert-@GetStatusClass() alert-dismissible" role="alert">
-        <button type="button" class="btn-close" data-bs-dismiss="alert" @onclick="Close"></button>
-        @Message
+    <div class="sr-alert sr-alert-@GetStatusClass() items-center" role="alert">
+        <div class="min-w-0 flex-1 break-words">@Message</div>
+        <button type="button"
+                class="sr-btn sr-btn-ghost -my-2 -mr-2 w-11 shrink-0 px-0"
+                aria-label="Close"
+                @onclick="Close">
+            <span class="oi oi-x" aria-hidden="true"></span>
+        </button>
     </div>
 }
 

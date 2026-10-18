@@ -12,60 +12,46 @@
 
 <PageTitle>Log in</PageTitle>
 
-<h1>Log in</h1>
-<div class="row">
-    <div class="col-md-4">
-        <section>
-            <StatusMessage Message="@errorMessage" />
-            <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
-                <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
-                <hr />
-                <ValidationSummary class="text-danger" role="alert" />
-                <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label for="email" class="form-label">Email</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger" />
+<div class="mx-auto w-full max-w-md py-4 sm:py-10">
+    <h1 class="sr-page-title mb-1">Log in</h1>
+    <section>
+        <StatusMessage Message="@errorMessage" />
+        <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+            <DataAnnotationsValidator />
+            <h2 class="mb-4 text-base font-normal text-muted">Use a local account to log in.</h2>
+            <div class="sr-card">
+                <div class="sr-card-body sm:p-6">
+                    <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
+                    <div class="sr-field">
+                        <label for="email" class="sr-label">Email</label>
+                        <InputText id="email" inputmode="email" @bind-Value="Input.Email" class="sr-input" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                        <ValidationMessage For="() => Input.Email" class="mt-1 text-sm text-danger dark:text-red-400" />
+                    </div>
+                    <div class="sr-field">
+                        <label for="password" class="sr-label">Password</label>
+                        <InputText id="password" type="password" @bind-Value="Input.Password" class="sr-input" autocomplete="current-password" aria-required="true" placeholder="password" />
+                        <ValidationMessage For="() => Input.Password" class="mt-1 text-sm text-danger dark:text-red-400" />
+                    </div>
+                    <div class="sr-field">
+                        <label class="inline-flex min-h-11 cursor-pointer items-center gap-3 text-sm text-fg">
+                            <InputCheckbox @bind-Value="Input.RememberMe" class="sr-checkbox" />
+                            <span>Remember me</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="sr-btn sr-btn-primary min-h-12 w-full text-base">Log in</button>
                 </div>
-                <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="password" class="form-label">Password</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger" />
-                </div>
-                <div class="checkbox mb-3">
-                    <label class="form-label">
-                        <InputCheckbox 
-                            @bind-Value="Input.RememberMe" 
-                            class="darker-border-checkbox form-check-input ms-0 d-inline-block position-relative align-middle mt-0" />
-                        <span class="align-middle">
-                            Remember me
-                        </span>
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
-            </EditForm>
-        </section>
-    </div>
-@*     <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
-    </div> *@
+            </div>
+            <div class="mt-4 flex flex-col text-sm">
+                <a href="Account/ForgotPassword" class="inline-flex min-h-11 items-center text-brand no-underline hover:underline">Forgot your password?</a>
+                <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" class="inline-flex min-h-11 items-center text-brand no-underline hover:underline">Register as a new user</a>
+                <a href="Account/ResendEmailConfirmation" class="inline-flex min-h-11 items-center text-brand no-underline hover:underline">Resend email confirmation</a>
+            </div>
+        </EditForm>
+    </section>
+@*  <section class="mt-8">
+        <h3 class="sr-section-title">Use another service to log in.</h3>
+        <ExternalLoginPicker />
+    </section> *@
 </div>
 
 @code {

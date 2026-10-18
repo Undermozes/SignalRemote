@@ -1,24 +1,29 @@
 ﻿@inherits AuthComponentBase
 @attribute [Authorize]
 
-<div class="outer-grid mt-3 auto-height">
-    <EditForm Model="_selectedScript" OnValidSubmit="OnValidSubmit" class="h-100 pb-3">
-        <div class="h-100 left-outer-grid">
+@*
+    Phones/tablets: the script list on top, then the form and the editor, scrolling with the page.
+    lg and up: form + editor on the left, script list on the right, filling the viewport
+    (height set by auto-height in interop.js).
+*@
+<div class="auto-height mt-3 flex flex-col gap-6 max-lg:h-auto lg:grid lg:grid-cols-[1fr_minmax(14rem,18rem)] lg:gap-x-10">
+    <EditForm Model="_selectedScript" OnValidSubmit="OnValidSubmit" class="lg:h-full lg:min-h-0 lg:pb-3">
+        <div class="flex flex-col gap-4 lg:grid lg:h-full lg:grid-rows-[auto_1fr]">
             <div>
-                <div class="row">
+                <div class="grid grid-cols-1 gap-x-4 md:grid-cols-2 lg:grid-cols-3">
                     <DataAnnotationsValidator />
 
-                    <div class="col-12">
+                    <div class="col-span-full text-danger">
                         <ValidationSummary />
                     </div>
 
-                    <div class="col-12">
+                    <div class="col-span-full">
                         <AlertBanner Message="@_alertMessage" OnClose="() => _alertMessage = string.Empty" />
                     </div>
 
-                    <div class="mt-2 col-md-6 col-lg-4">
-                        <label>Shell</label>
-                        <InputSelect class="form-control" DisplayName="Shell" @bind-Value="_selectedScript.Shell">
+                    <div class="mt-2">
+                        <label class="sr-label">Shell</label>
+                        <InputSelect class="sr-select" DisplayName="Shell" @bind-Value="_selectedScript.Shell">
                             @foreach (var shell in Enum.GetValues<ScriptingShell>())
                             {
                                 <option @key="@shell" value="@shell">@shell</option>
@@ -27,113 +32,114 @@
                         <ValidationMessage For="() => _selectedScript.Shell" />
                     </div>
 
-                    <div class="mt-2 col-md-6 col-lg-4">
-                        <label>Script Name</label>
-                        <InputText class="form-control" DisplayName="Script Name" @bind-Value="_selectedScript.Name" placeholder="Script name" />
+                    <div class="mt-2">
+                        <label class="sr-label">Script Name</label>
+                        <InputText class="sr-input" DisplayName="Script Name" @bind-Value="_selectedScript.Name" placeholder="Script name" />
                         <ValidationMessage For="() => _selectedScript.Name" />
                     </div>
 
-                    <div class="mt-2 col-md-6 col-lg-4">
-                        <label>Folder Path</label>
-                        <InputText class="form-control" DisplayName="Folder Path" @bind-Value="_selectedScript.FolderPath" placeholder="Example: or/portland/quick burger #5" />
+                    <div class="mt-2">
+                        <label class="sr-label">Folder Path</label>
+                        <InputText class="sr-input" DisplayName="Folder Path" @bind-Value="_selectedScript.FolderPath" placeholder="Example: or/portland/quick burger #5" />
                         <ValidationMessage For="() => _selectedScript.FolderPath" />
                     </div>
 
 
-                    <div class="mt-2 col-md-6 col-lg-4">
-                        <label>Public?</label>
-                        <br />
-                        <InputCheckbox DisplayName="Public?" @bind-Value="_selectedScript.IsPublic" />
+                    <div class="mt-2">
+                        <label class="sr-label">Public?</label>
+                        <div class="flex min-h-11 items-center">
+                            <InputCheckbox class="sr-checkbox" DisplayName="Public?" @bind-Value="_selectedScript.IsPublic" />
+                        </div>
                         <ValidationMessage For="() => _selectedScript.IsPublic" />
                     </div>
-                    <div class="mt-2 col-md-6 col-lg-4">
-                        <label>Quick Script?</label>
-                        <br />
-                        <InputCheckbox DisplayName="Quick Script?" @bind-Value="_selectedScript.IsQuickScript" />
+                    <div class="mt-2">
+                        <label class="sr-label">Quick Script?</label>
+                        <div class="flex min-h-11 items-center">
+                            <InputCheckbox class="sr-checkbox" DisplayName="Quick Script?" @bind-Value="_selectedScript.IsQuickScript" />
+                        </div>
                         <ValidationMessage For="() => _selectedScript.IsQuickScript" />
                     </div>
-                    <div class="mt-2 col-md-6 col-lg-4">
-                        <label>Creator</label>
-                        <br />
-                        <input class="form-control" readonly value="@_selectedScript.Creator?.UserName" />
+                    <div class="mt-2">
+                        <label class="sr-label">Creator</label>
+                        <input class="sr-input" readonly value="@_selectedScript.Creator?.UserName" />
                     </div>
-                    <div class="mt-2 col-12">
-                        <button class="btn btn-primary"
+                    <div class="col-span-full mt-4 flex flex-wrap gap-3">
+                        <button class="sr-btn sr-btn-primary flex-1 sm:flex-none"
                                 type="submit"
                                 disabled="@(!CanModifyScript)">
                             Save
                         </button>
 
-                        <button class="btn btn-success ms-3" type="button" @onclick="CreateNew">
+                        <button class="sr-btn sr-btn-success flex-1 sm:flex-none" type="button" @onclick="CreateNew">
                             New
                         </button>
-                        <button class="btn btn-danger ms-3" type="button"
+                        <button class="sr-btn sr-btn-danger flex-1 sm:flex-none" type="button"
                                 disabled="@(!CanDeleteScript)"
                                 @onclick="DeleteSelectedScript">
                             Delete
                         </button>
                     </div>
-                    <div class="mt-2 col-12">
-                        <button type="button" class="btn btn-link me-3" @onclick="ToggleAlertOptionsShown">
+                    <div class="col-span-full mt-2 flex flex-wrap gap-x-6">
+                        <button type="button" class="sr-btn sr-btn-link min-h-11" @onclick="ToggleAlertOptionsShown">
                             Alert Options
                         </button>
-                        <button type="button" class="btn btn-link" @onclick="ToggleEnvironmentVarsShown">
+                        <button type="button" class="sr-btn sr-btn-link min-h-11" @onclick="ToggleEnvironmentVarsShown">
                             Environment Variables
                         </button>
                     </div>
-                    <div class="my-2 col-12 collapse @_alertOptionsShowClass">
-                        <h5>
-                            <span class="me-2">On Error</span>
-                            <button class="btn btn-sm btn-secondary" type="button" @onclick="ShowAlertErrorHelp">
+                    <div class="col-span-full my-2 @(string.IsNullOrWhiteSpace(_alertOptionsShowClass) ? "hidden" : "")">
+                        <h5 class="flex items-center gap-2 text-lg font-semibold">
+                            <span>On Error</span>
+                            <button class="sr-btn sr-btn-secondary sr-btn-sm" type="button" aria-label="Help" @onclick="ShowAlertErrorHelp">
                                 <span class="oi oi-question-mark" />
                             </button>
                         </h5>
-                        <div class="row">
-                            <div class="mt-2 col-md-6">
-                                <label>Send Email</label>
-                                <br />
-                                <InputCheckbox DisplayName="Send Email on Error" @bind-Value="_selectedScript.SendEmailOnError" />
+                        <div class="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+                            <div class="mt-2">
+                                <label class="sr-label">Send Email</label>
+                                <div class="flex min-h-11 items-center">
+                                    <InputCheckbox class="sr-checkbox" DisplayName="Send Email on Error" @bind-Value="_selectedScript.SendEmailOnError" />
+                                </div>
                                 <ValidationMessage For="() => _selectedScript.SendEmailOnError" />
-                                <br />
-                                to
-                                <br />
+                                <div class="mb-1 text-sm text-muted">to</div>
                                 <InputText type="email"
-                                           class="form-control"
+                                           class="sr-input"
                                            disabled="@(!_selectedScript.SendEmailOnError)"
                                            DisplayName="Send Error Email To"
                                            @bind-Value="_selectedScript.SendErrorEmailTo" />
                                 <ValidationMessage For="() => _selectedScript.SendErrorEmailTo" />
                             </div>
-                            <div class="mt-2 col-md-6">
-                                <label>Generate Alert</label>
-                                <br />
-                                <InputCheckbox DisplayName="Alert on Error" @bind-Value="_selectedScript.GenerateAlertOnError" />
+                            <div class="mt-2">
+                                <label class="sr-label">Generate Alert</label>
+                                <div class="flex min-h-11 items-center">
+                                    <InputCheckbox class="sr-checkbox" DisplayName="Alert on Error" @bind-Value="_selectedScript.GenerateAlertOnError" />
+                                </div>
                                 <ValidationMessage For="() => _selectedScript.GenerateAlertOnError" />
                             </div>
                         </div>
                     </div>
-                    <div class="my-2 col-12 collapse @_environmentVarsShowClass">
-                        <h5>Environment Variables</h5>
-                        <div class="row">
-                            <div class="mt-2 col-md-6">
-                                <div>Device ID</div>
-                                <div class="small text-muted mt-1">The device ID (GUID) of the computer currently running the script.</div>
-                                <input type="text" readonly class="form-control" value="DeviceId" />
+                    <div class="col-span-full my-2 @(string.IsNullOrWhiteSpace(_environmentVarsShowClass) ? "hidden" : "")">
+                        <h5 class="text-lg font-semibold">Environment Variables</h5>
+                        <div class="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+                            <div class="mt-2">
+                                <div class="font-medium">Device ID</div>
+                                <div class="sr-help mb-1">The device ID (GUID) of the computer currently running the script.</div>
+                                <input type="text" readonly class="sr-input" value="DeviceId" />
                             </div>
-                            <div class="mt-2 col-md-6">
-                                <div>Server URL</div>
-                                <div class="small text-muted mt-1">The URL of the server that the device connects to (e.g. https://app.example.com).</div>
-                                <input type="text" readonly class="form-control" value="ServerUrl" />
+                            <div class="mt-2">
+                                <div class="font-medium">Server URL</div>
+                                <div class="sr-help mb-1">The URL of the server that the device connects to (e.g. https://app.example.com).</div>
+                                <input type="text" readonly class="sr-input" value="ServerUrl" />
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="h100">
+            <div class="lg:min-h-0">
                 <InputTextArea @bind-Value="_selectedScript.Content" 
                                DisplayName="Script Input" 
-                               class="h-100 w-100"
+                               class="sr-textarea h-[60dvh] min-h-60 resize-y font-mono lg:h-full"
                                spellcheck="false"
                                autocomplete="off"
                                placeholder="Enter script text here" />
@@ -141,13 +147,13 @@
             </div>
         </div>
     </EditForm>
-    <div class="tree-view-wrapper-grid h-100 pb-3">
+    <div class="order-first flex min-h-0 flex-col gap-2 lg:order-none lg:h-full lg:pb-3">
         <div>
-            <h5>Saved Scripts</h5>
-            <div>
-                <input type="checkbox" @bind="ParentPage.ShowOnlyMyScripts" />
-                <span class="align-top">Show only mine</span>
-            </div>
+            <h5 class="mb-1 text-lg font-semibold">Saved Scripts</h5>
+            <label class="flex min-h-11 cursor-pointer items-center gap-2 md:min-h-8">
+                <input type="checkbox" class="sr-checkbox" @bind="ParentPage.ShowOnlyMyScripts" />
+                <span>Show only mine</span>
+            </label>
         </div>
         <TreeView DataSource="ParentPage.TreeNodes"
                   ItemTypeSelector="x => x.ItemType"
@@ -156,7 +162,7 @@
                   ChildItemSelector="x => x.ChildItems"
                   ItemIconCssSelector="ParentPage.GetItemIconCss"
                   KeySelector="x => x.Id"
-                  WrapperStyle="border: 1px solid gray; padding: .5em; height: 100%; border-radius: 5px;"
+                  WrapperClass="max-h-[40dvh] min-h-32 flex-1 lg:max-h-none"
                   T="ScriptTreeNode" />
     </div>
 </div>

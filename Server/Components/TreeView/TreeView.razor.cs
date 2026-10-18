@@ -26,6 +26,10 @@ public partial class TreeView<T> : ComponentBase
     [Parameter]
     public string? WrapperStyle { get; set; }
 
+    /// <summary>Extra CSS classes for the scrollable wrapper (e.g. Tailwind height classes).</summary>
+    [Parameter]
+    public string? WrapperClass { get; set; }
+
     [Parameter]
     public string? ChildItemStyle { get; set; }
 

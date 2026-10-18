@@ -1,37 +1,33 @@
-﻿@using Remotely.Server.Components 
-@using Remotely.Server.Auth 
+﻿﻿@using Remotely.Server.Components
+@using Remotely.Server.Auth
 @inherits LayoutComponentBase
 @inject NavigationManager NavMan
 
 <AuthorizeView Policy="@PolicyNames.TwoFactorRequired">
     <Authorized>
-            <div class="page">
-                <div class="sidebar">
-                    <NavMenu />
-                </div>
+        @* Mobile first: a top bar with a menu on phones, a fixed sidebar from md (768px) up. *@
+        <div class="min-h-dvh md:flex">
+            <aside class="sticky top-0 z-30 bg-[linear-gradient(155deg,rgb(30_30_30),steelblue_200%)] text-gray-200
+                          md:h-dvh md:w-64 md:shrink-0 md:overflow-y-auto">
+                <NavMenu />
+            </aside>
 
-                <div class="main">
-                    <div class="content px-4">
-                        @Body
-                    </div>
-                </div>
-            </div>
+            <main class="min-w-0 flex-1 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-8">
+                @Body
+            </main>
+        </div>
     </Authorized>
     <NotAuthorized>
-        <div class="container mt-5">
-            <h3>Two-Factor Authentication Required</h3>
-
-            <hr />
-            <div class="row">
-                <div class="col-sm-12">
-                    <p>Two-factor authentication is required.  Click the button below to set up your authenticator app.</p>
-                    <p>
-                        <button class="btn btn-primary" @onclick="NavigateToTwoFactor">Enable 2FA</button>
-                    </p>
-                </div>
-            </div>
+        <div class="mx-auto mt-12 max-w-lg px-4">
+            <h3 class="mb-4 text-2xl font-semibold">Two-Factor Authentication Required</h3>
+            <p class="mb-6 text-muted">
+                Two-factor authentication is required.  Click the button below to set up your authenticator app.
+            </p>
+            <button class="w-full rounded-lg bg-brand px-4 py-3 font-medium text-brand-contrast hover:bg-brand-hover sm:w-auto"
+                    @onclick="NavigateToTwoFactor">
+                Enable 2FA
+            </button>
         </div>
-
     </NotAuthorized>
 </AuthorizeView>
 

@@ -11,38 +11,37 @@
 
 <PageTitle>Two-factor authentication</PageTitle>
 
-<h1>Two-factor authentication</h1>
-<hr />
-<StatusMessage Message="@message" />
-<p>Your login is protected with an authenticator app. Enter your authenticator code below.</p>
-<div class="row">
-    <div class="col-md-4">
-        <EditForm Model="Input" FormName="login-with-2fa" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
-            <input type="hidden" name="RememberMe" value="@RememberMe" />
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.TwoFactorCode" class="form-control" autocomplete="off" />
-                <label for="two-factor-code" class="form-label">Authenticator code</label>
-                <ValidationMessage For="() => Input.TwoFactorCode" class="text-danger" />
-            </div>
-            <div class="checkbox mb-3">
-                <label for="remember-machine" class="form-label">
-                    <InputCheckbox @bind-Value="Input.RememberMachine" />
-                    Remember this machine
-                </label>
-            </div>
-            <div>
-                <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-            </div>
-        </EditForm>
+<div class="mx-auto w-full max-w-md py-4 sm:py-10">
+    <h1 class="sr-page-title">Two-factor authentication</h1>
+    <StatusMessage Message="@message" />
+    <p class="text-muted">Your login is protected with an authenticator app. Enter your authenticator code below.</p>
+    <div class="sr-card">
+        <div class="sr-card-body sm:p-6">
+            <EditForm Model="Input" FormName="login-with-2fa" OnValidSubmit="OnValidSubmitAsync" method="post">
+                <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+                <input type="hidden" name="RememberMe" value="@RememberMe" />
+                <DataAnnotationsValidator />
+                <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
+                <div class="sr-field">
+                    <label for="two-factor-code" class="sr-label">Authenticator code</label>
+                    <InputText id="two-factor-code" @bind-Value="Input.TwoFactorCode" class="sr-input font-mono tracking-widest" autocomplete="off" inputmode="numeric" />
+                    <ValidationMessage For="() => Input.TwoFactorCode" class="mt-1 text-sm text-danger dark:text-red-400" />
+                </div>
+                <div class="sr-field">
+                    <label for="remember-machine" class="inline-flex min-h-11 cursor-pointer items-center gap-3 text-sm text-fg">
+                        <InputCheckbox id="remember-machine" @bind-Value="Input.RememberMachine" class="sr-checkbox" />
+                        Remember this machine
+                    </label>
+                </div>
+                <button type="submit" class="sr-btn sr-btn-primary min-h-12 w-full text-base">Log in</button>
+            </EditForm>
+        </div>
     </div>
+    <p class="mt-4 text-sm text-muted">
+        Don't have access to your authenticator device? You can
+        <a href="Account/LoginWithRecoveryCode?ReturnUrl=@ReturnUrl" class="text-brand">log in with a recovery code</a>.
+    </p>
 </div>
-<p>
-    Don't have access to your authenticator device? You can
-    <a href="Account/LoginWithRecoveryCode?ReturnUrl=@ReturnUrl">log in with a recovery code</a>.
-</p>
 
 @code {
     private string? message;

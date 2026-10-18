@@ -1,71 +1,70 @@
 ﻿@attribute [Authorize]
 @inherits AuthComponentBase
 
-<div class="chat-card border border-secondary bg-secondary @Session.ExpandedClass">
-    <div class="chat-header bg-primary text-white p-2" @onclick="HeaderClicked">
-        <h6 class="mt-3">
-            <i class="oi oi-chat me-1"></i>
-            <span class="badge bg-info rounded-pill me-1">
-                @Session.MissedChats
-            </span>
-            @Session.DeviceName
-        </h6>
-        <div class="text-end">
-            <button class="btn btn-sm btn-secondary" title="Close" @onclick="CloseChatCard" @onclick:stopPropagation>
-                <i class="oi oi-x pointer"></i>
-            </button>
-        </div>
+<div class="chat-card @Session.ExpandedClass sr-card flex shrink-0 flex-col overflow-hidden shadow-lg">
+    <div class="flex min-h-12 cursor-pointer items-center gap-2 bg-brand py-1 pl-3 pr-1 text-brand-contrast select-none"
+         aria-expanded="@(Session.IsExpanded ? "true" : "false")"
+         @onclick="HeaderClicked">
+        <i class="oi oi-chat" aria-hidden="true"></i>
+        <span class="sr-badge bg-white/20 text-white" title="Missed chats">
+            @Session.MissedChats
+        </span>
+        <span class="min-w-0 flex-1 truncate font-semibold">@Session.DeviceName</span>
+        <button class="sr-btn w-11 shrink-0 px-0 text-white hover:bg-white/15"
+                title="Close"
+                aria-label="Close chat"
+                @onclick="CloseChatCard"
+                @onclick:stopPropagation>
+            <i class="oi oi-x" aria-hidden="true"></i>
+        </button>
     </div>
-    <div @ref="_chatMessagesWindow" class="chat-messages-window">
+    <div @ref="_chatMessagesWindow"
+         class="@(Session.IsExpanded ? "flex" : "hidden") h-[45dvh] flex-col gap-2 overflow-y-auto bg-surface p-3 md:h-80">
         @foreach (var item in Session.ChatHistory)
         {
             @if (item.Origin == ChatHistoryItemOrigin.System)
             {
-                <div @key="item" class="mt-1">
-                    <div class="chat-bubble d-inline-block text-white bg-warning">
-                        <div class="small">
-                            @item.Timestamp
-                        </div>
-                        <div class="font-weight-bold">
-                            @item.Message
-                        </div>
+                <div @key="item" class="max-w-[85%] self-start rounded-lg border border-amber-500/30 bg-amber-500/15 px-3 py-2 text-fg">
+                    <div class="text-xs text-muted">
+                        @item.Timestamp
+                    </div>
+                    <div class="font-semibold break-words">
+                        @item.Message
                     </div>
                 </div>
             }
             else if (item.Origin == ChatHistoryItemOrigin.Self)
             {
-                <div @key="item" class="text-end mt-1">
-                    <div class="chat-bubble d-inline-block bg-dark text-white">
-                        <div class="small">
-                            You
-                            <span class="mx-1">@@</span>
-                            @item.Timestamp
-                        </div>
-                        <div class="font-weight-bold">
-                            @item.Message
-                        </div>
+                <div @key="item" class="max-w-[85%] self-end rounded-lg bg-brand px-3 py-2 text-brand-contrast">
+                    <div class="text-xs opacity-80">
+                        You
+                        <span class="mx-1">@@</span>
+                        @item.Timestamp
+                    </div>
+                    <div class="font-semibold break-words">
+                        @item.Message
                     </div>
                 </div>
             }
             else if (item.Origin == ChatHistoryItemOrigin.Device)
             {
-                <div @key="item" class="mt-1">
-                    <div class="chat-bubble d-inline-block bg-primary text-white">
-                        <div class="small">
-                            @Session.DeviceName
-                            <span class="mx-1">@@</span>
-                            @item.Timestamp
-                        </div>
-                        <div class="font-weight-bold">
-                            @item.Message
-                        </div>
+                <div @key="item" class="max-w-[85%] self-start rounded-lg bg-surface-sunken px-3 py-2 text-fg">
+                    <div class="text-xs text-muted">
+                        @Session.DeviceName
+                        <span class="mx-1">@@</span>
+                        @item.Timestamp
+                    </div>
+                    <div class="font-semibold break-words">
+                        @item.Message
                     </div>
                 </div>
             }
         }
     </div>
-    <input class="chat-input"
-              @bind="_inputText"
-              @bind:event="oninput"
-              @onkeypress="EvaluateInputKeypress" />
+    <input class="chat-input sr-input @(Session.IsExpanded ? null : "hidden") rounded-none border-0 border-t border-border"
+           placeholder="Type a message and press Enter"
+           aria-label="Chat message"
+           @bind="_inputText"
+           @bind:event="oninput"
+           @onkeypress="EvaluateInputKeypress" />
 </div>

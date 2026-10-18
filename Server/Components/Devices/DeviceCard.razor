@@ -1,300 +1,264 @@
 ﻿@attribute [Authorize]
 @inherits AuthComponentBase
 
-<div @ref="_card" class="card border-secondary my-3 me-3 device-card @_theme @GetCardStateClass()"
+<div @ref="_card" class="device-card @_theme @GetCardStateClass() @CardClass"
      @onclick="ExpandCard"
      @onclick:stopPropagation
      @oncontextmenu="ContextMenuOpening"
      @oncontextmenu:preventDefault="_state == DeviceCardState.Normal"
      @oncontextmenu:stopPropagation="_state == DeviceCardState.Normal">
 
-    <div class="card-header" @onclick="HandleHeaderClick" 
+    @* Header: name, alias, status and selection.  Tapping it collapses an expanded card. *@
+    <div class="@HeaderClass" @onclick="HandleHeaderClick"
          @onclick:stopPropagation="_state == DeviceCardState.Expanded"
          @onclick:preventDefault="_state == DeviceCardState.Expanded">
-        <div>
-            @if (Device.IsOnline)
+        <div class="min-w-0 flex-1">
+            <div class="truncate font-semibold text-fg">@Device.DeviceName</div>
+            <div class="min-h-5 truncate text-sm text-muted">@Device.Alias</div>
+        </div>
+
+        @if (Device.IsOnline)
+        {
+            if (IsOutdated)
             {
-                if (IsOutdated)
-                {
-                    <i class="oi oi-power-standby text-warning" title="Agent Outdated"></i>
-                }
-                else
-                {
-                    <i class="oi oi-power-standby text-success" title="Online"></i>
-                }
+                <span class="sr-badge sr-badge-warning shrink-0" title="Agent Outdated">
+                    <i class="oi oi-power-standby" aria-hidden="true"></i>
+                    Outdated
+                </span>
             }
             else
             {
-                <i class="oi oi-power-standby text-danger" title="Offline"></i>
+                <span class="sr-badge sr-badge-success shrink-0" title="Online">
+                    <i class="oi oi-power-standby" aria-hidden="true"></i>
+                    Online
+                </span>
             }
-        </div>
-        <div class="overflow-hidden ms-2">
-            <div class="d-inline-block">
-                <div>@Device.DeviceName</div>
+        }
+        else
+        {
+            <span class="sr-badge sr-badge-danger shrink-0" title="Offline">
+                <i class="oi oi-power-standby" aria-hidden="true"></i>
+                Offline
+            </span>
+        }
 
-                <div class="small text-muted" style="height: 1rem">@Device.Alias</div>
-            </div>
-            
-        </div>
-        <div class="text-end">
-            @if (IsExpanded)
-            {
-                <button class="btn btn-sm me-2" title="Open in New Tab"
-                        @onclick:stopPropagation
-                        @onclick="OpenDeviceDetails">
-                    <i class="oi oi-external-link" style="font-size: 1.3em"></i>
-                </button>
-            }
+        @if (IsExpanded)
+        {
+            <button class="sr-btn sr-btn-ghost w-11 shrink-0 px-0"
+                    title="Open in New Tab"
+                    aria-label="Open in New Tab"
+                    @onclick:stopPropagation
+                    @onclick="OpenDeviceDetails">
+                <i class="oi oi-external-link" aria-hidden="true"></i>
+            </button>
+        }
+
+        @* The label gives the checkbox a 44px touch target; clicks on it never expand the card. *@
+        <label class="-my-2 -mr-2 flex size-11 shrink-0 cursor-pointer items-center justify-center"
+               title="Select device"
+               @onclick:stopPropagation>
             <input type="checkbox"
-                   class="align-middle"
+                   class="sr-checkbox"
+                   aria-label="Select @Device.DeviceName"
                    checked="@IsSelected"
                    @onchange="ToggleIsSelected"
                    @onclick:stopPropagation />
-        </div>
-
+        </label>
     </div>
 
-    <div class="card-body">
+    <div class="px-3 pb-3">
         @if (_fileUploadProgressLookup.Any())
         {
             foreach (var kvp in _fileUploadProgressLookup)
             {
-                <div class="alert alert-info">
+                <div class="sr-alert sr-alert-info mb-2">
                     @(GetProgressMessage(kvp.Key))
                 </div>
             }
-        } 
-        <div>
-            <div class="font-weight-bold text-info">
-                <label>User</label>
-            </div>
-            <div>
-                @Device.CurrentUser
-            </div>
+        }
 
-            <div style="grid-row: span 2" class="expanded-visible"></div>
-            <div style="grid-row: span 2" class="expanded-visible">
-                <DropdownButton DropDownMenuClass="dropdown-menu-end mb-2" ButtonClass="btn-primary">
-                    <ButtonContent>
-                        <i class="oi oi-bolt"></i>
-                        <span class="ms-2">Actions</span>
-                    </ButtonContent>
-                    <ChildListItems>
-                        <li>
-                            <button class="dropdown-item" @onclick="StartChat">
-                                <i class="oi oi-chat" title="Chat"></i>
-                                <span class="ms-2">Chat</span>
-                            </button>
-                        </li>
-                        @if (_isClaudeAssistantEnabled)
-                        {
-                            <li>
-                                <button class="dropdown-item" @onclick="OpenClaudeAssistant">
-                                    <i class="oi oi-lightbulb" title="Claude Assistant"></i>
-                                    <span class="ms-2">Claude Assistant</span>
-                                </button>
-                            </li>
-                        }
-                        <li>
-                            <button class="dropdown-item" @onclick="() => StartRemoteControl(false)">
-                                <i class="oi oi-laptop" title="Remote Control"></i>
-                                <span class="ms-2">Remote Control</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button class="dropdown-item" @onclick="() => StartRemoteControl(true)">
-                                <i class="oi oi-eye" title="View Only"></i>
-                                <span class="ms-2">View Only</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button class="dropdown-item" @onclick="() => WakeDevice()">
-                                <i class="oi oi-power-standby" title="Wake Device"></i>
-                                <span class="ms-2">Wake</span>
-                            </button>
-                        </li>
-                        <li>
-                            <FileInputButton ClassNames="dropdown-item btn btn-primary"
-                                             OnChanged="OnFileInputChanged">
-                                <ButtonContent>
-                                    <i class="oi oi-data-transfer-upload" title="Upload File"></i>
-                                    <span class="ms-2">Upload File</span>
-                                </ButtonContent>
-                            </FileInputButton>
-                        </li>
-                        @if (User?.IsAdministrator == true)
-                        {
-                            <li>
-                                <button class="dropdown-item" @onclick="ResetDeviceSecret">
-                                    <i class="oi oi-key" title="Reset Device Secret"></i>
-                                    <span class="ms-2">Reset Device Secret</span>
-                                </button>
-                            </li>
-                        }
-                        <li>
-                            <button class="dropdown-item" @onclick="UpdateAgent" disabled="@(!Device.IsOnline)">
-                                <i class="oi oi-cloud-download" title="Update Agent"></i>
-                                <span class="ms-2">Update Agent</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button class="dropdown-item bg-danger" @onclick="UninstallAgent">
-                                <i class="oi oi-delete" title="Uninstall"></i>
-                                <span class="ms-2">Uninstall</span>
-                            </button>
-                        </li>
-                    </ChildListItems>
-                </DropdownButton>
-            </div>
-
-            <div class="font-weight-bold text-info">
-                <label>Platform</label>
-            </div>
-            <div>
-                @Device.Platform
-            </div>
-
-            <div class="font-weight-bold text-info">
-                <label>Disk</label>
-                <button class="btn btn-link p-0 m-0 expanded-visible"
-                        style="font-size: 50%"
-                        @onclick="ShowAllDisks" 
-                        @onclick:stopPropagation>
-                    (View All)
-                </button>
-            </div>
-            <div>
-                @(MathHelper.GetFormattedPercent(Device.UsedStoragePercent))
-            </div>
-
-            <div class="font-weight-bold text-info expanded-visible">
-                Total Storage
-            </div>
-            <div class="expanded-visible">
-                @(Device.TotalStorage) GB
-            </div>
-
-
-            <div class="font-weight-bold text-info">
-                <label>Memory</label>
-            </div>
-            <div>
-                @(MathHelper.GetFormattedPercent(Device.UsedMemoryPercent))
-            </div>
-
-            <div class="font-weight-bold text-info expanded-visible">
-                Total Memory
-            </div>
-            <div class="expanded-visible">
-                @(Device.TotalMemory) GB
-            </div>
-
-            @if (IsExpanded)
+        @* At a glance: OS, signed-in user and CPU / memory / disk usage. *@
+        <div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
+            <span class="inline-flex min-w-0 max-w-full items-center gap-1.5" title="Platform">
+                <i class="oi oi-monitor" aria-hidden="true"></i>
+                <span class="sr-only">Platform</span>
+                <span class="truncate">@Device.Platform</span>
+            </span>
+            @if (!string.IsNullOrWhiteSpace(Device.CurrentUser))
             {
-                <div class="font-weight-bold text-info">
-                    <label>CPU</label>
-                </div>
-                <div>
-                    @MathHelper.GetFormattedPercent(Device.CpuUtilization)
-                </div>
+                <span class="inline-flex min-w-0 max-w-full items-center gap-1.5" title="User">
+                    <i class="oi oi-person" aria-hidden="true"></i>
+                    <span class="sr-only">User</span>
+                    <span class="truncate">@Device.CurrentUser</span>
+                </span>
             }
-
         </div>
-        <div>
-            <div class="mt-2" style="grid-column: span 4">
-                @if (IsExpanded)
-                {
-                    <div class="font-weight-bold text-info mt-2">
-                        Device ID
-                    </div>
-                    <div>
-                        <input class="form-control" readonly value="@Device.ID" />
-                    </div>
 
-                    <div class="font-weight-bold text-info mt-2">
-                        Agent Version
-                    </div>
-                    <div>
-                        <input class="form-control" readonly value="@Device.AgentVersion" />
-                    </div>
-
-                    <div class="font-weight-bold text-info mt-2">
-                        Last Online
-                    </div>
-                    <div>
-                        <input class="form-control" readonly value="@Device.LastOnline" />
-                    </div>
-
-                    <div class="font-weight-bold text-info mt-2">
-                        Public IP
-                    </div>
-                    <div>
-                        <input class="form-control" readonly value="@Device.PublicIP" />
-                    </div>
-
-                    <div class="font-weight-bold text-info mt-2">
-                        MAC Addresses
-                    </div>
-                    <div>
-                        <input 
-                            class="form-control" 
-                            readonly 
-                            value="@(string.Join(", ", Device.MacAddresses ?? Array.Empty<string>()))" />
-                    </div>
-
-                    <EditForm Model="Device" OnValidSubmit="HandleValidSubmit">
-                        <DataAnnotationsValidator />
-
-                        <div class="font-weight-bold text-info mt-2">
-                            Device Alias
-                        </div>
-                        <div>
-                            <InputText class="form-control" @bind-Value="@Device.Alias" />
-                            <ValidationMessage For="() => Device.Alias" />
-                        </div>
-
-                        <div class="font-weight-bold text-info mt-2">
-                            Device Group
-                        </div>
-                        <div>
-                            <InputSelect @bind-Value="Device.DeviceGroupID" class="form-control">
-                                <option value="">None</option>
-
-                                @foreach (var group in _deviceGroups)
-                                {
-                                    <option @key="group.ID" value="@group.ID">@group.Name</option>
-                                }
-                            </InputSelect>
-                            <ValidationMessage For="() => Device.DeviceGroupID" />
-                        </div>
-
-                        <div class="font-weight-bold text-info mt-2">
-                            Tags
-                        </div>
-                        <div>
-                            <InputText @bind-Value="Device.Tags" class="form-control" />
-                            <ValidationMessage For="() => Device.Tags" />
-                        </div>
-
-                        <div class="font-weight-bold text-info mt-2">
-                            Notes
-                        </div>
-                        <div>
-                            <InputTextArea @bind-Value="Device.Notes" style="width:100%; height: 10em;"></InputTextArea>
-                            <ValidationMessage For="() => Device.Notes" />
-                        </div>
-
-                        <div>
-                            <ValidationSummary />
-                        </div>
-
-                        <div class="text-end mt-2">
-                            <button type="submit" class="btn btn-primary">Save</button>
-                        </div>
-                    </EditForm>
-
-                }
+        <div class="mt-2 grid grid-cols-3 gap-2 text-center">
+            <div class="rounded-lg bg-surface-sunken px-2 py-1.5">
+                <div class="text-xs text-muted">CPU</div>
+                <div class="text-sm font-semibold tabular-nums text-fg">@MathHelper.GetFormattedPercent(Device.CpuUtilization)</div>
+            </div>
+            <div class="rounded-lg bg-surface-sunken px-2 py-1.5">
+                <div class="text-xs text-muted">Memory</div>
+                <div class="text-sm font-semibold tabular-nums text-fg">@(MathHelper.GetFormattedPercent(Device.UsedMemoryPercent))</div>
+            </div>
+            <div class="rounded-lg bg-surface-sunken px-2 py-1.5">
+                <div class="text-xs text-muted">Disk</div>
+                <div class="text-sm font-semibold tabular-nums text-fg">@(MathHelper.GetFormattedPercent(Device.UsedStoragePercent))</div>
             </div>
         </div>
     </div>
+
+    @* Actions.  Hidden (not removed) while collapsed, so a running file upload keeps its input element. *@
+    <div class="@(IsExpanded ? null : "hidden") border-t border-border px-3 py-3">
+        <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Actions</div>
+        <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            <button class="sr-btn sr-btn-primary col-span-2" @onclick="() => StartRemoteControl(false)">
+                <i class="oi oi-laptop" aria-hidden="true"></i>
+                Remote Control
+            </button>
+            <button class="sr-btn sr-btn-secondary" @onclick="() => StartRemoteControl(true)">
+                <i class="oi oi-eye" aria-hidden="true"></i>
+                View Only
+            </button>
+            <button class="sr-btn sr-btn-secondary" @onclick="StartChat">
+                <i class="oi oi-chat" aria-hidden="true"></i>
+                Chat
+            </button>
+            @if (_isClaudeAssistantEnabled)
+            {
+                <button class="sr-btn sr-btn-secondary" @onclick="OpenClaudeAssistant">
+                    <i class="oi oi-lightbulb" aria-hidden="true"></i>
+                    Claude Assistant
+                </button>
+            }
+            <button class="sr-btn sr-btn-secondary" @onclick="() => WakeDevice()">
+                <i class="oi oi-power-standby" aria-hidden="true"></i>
+                Wake
+            </button>
+            <FileInputButton ClassNames="sr-btn sr-btn-secondary"
+                             OnChanged="OnFileInputChanged">
+                <ButtonContent>
+                    <i class="oi oi-data-transfer-upload" aria-hidden="true"></i>
+                    Upload File
+                </ButtonContent>
+            </FileInputButton>
+            <button class="sr-btn sr-btn-secondary" @onclick="UpdateAgent" disabled="@(!Device.IsOnline)">
+                <i class="oi oi-cloud-download" aria-hidden="true"></i>
+                Update Agent
+            </button>
+        </div>
+
+        @* Destructive actions sit apart from the everyday ones. *@
+        <div class="mt-4 rounded-lg border border-red-500/30 bg-red-500/5 p-3">
+            <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-danger">Danger zone</div>
+            <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                @if (User?.IsAdministrator == true)
+                {
+                    <button class="sr-btn sr-btn-secondary" @onclick="ResetDeviceSecret">
+                        <i class="oi oi-key" aria-hidden="true"></i>
+                        Reset Device Secret
+                    </button>
+                }
+                <button class="sr-btn sr-btn-danger sm:ml-auto" @onclick="UninstallAgent">
+                    <i class="oi oi-delete" aria-hidden="true"></i>
+                    Uninstall
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @if (IsExpanded)
+    {
+        <div class="border-t border-border px-3 py-3">
+            <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Details</div>
+
+            <div class="grid grid-cols-2 gap-2 text-sm">
+                <div class="rounded-lg bg-surface-sunken px-3 py-2">
+                    <div class="text-xs text-muted">Total Storage</div>
+                    <div class="font-medium text-fg">@(Device.TotalStorage) GB</div>
+                    <button class="sr-btn sr-btn-link min-h-11 text-sm"
+                            @onclick="ShowAllDisks"
+                            @onclick:stopPropagation>
+                        View all disks
+                    </button>
+                </div>
+                <div class="rounded-lg bg-surface-sunken px-3 py-2">
+                    <div class="text-xs text-muted">Total Memory</div>
+                    <div class="font-medium text-fg">@(Device.TotalMemory) GB</div>
+                </div>
+            </div>
+
+            <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label class="mb-0 block min-w-0">
+                    <span class="sr-label">Device ID</span>
+                    <input class="sr-input cursor-default bg-surface-sunken" readonly value="@Device.ID" />
+                </label>
+                <label class="mb-0 block min-w-0">
+                    <span class="sr-label">Agent Version</span>
+                    <input class="sr-input cursor-default bg-surface-sunken" readonly value="@Device.AgentVersion" />
+                </label>
+                <label class="mb-0 block min-w-0">
+                    <span class="sr-label">Last Online</span>
+                    <input class="sr-input cursor-default bg-surface-sunken" readonly value="@Device.LastOnline" />
+                </label>
+                <label class="mb-0 block min-w-0">
+                    <span class="sr-label">Public IP</span>
+                    <input class="sr-input cursor-default bg-surface-sunken" readonly value="@Device.PublicIP" />
+                </label>
+                <label class="mb-0 block min-w-0 md:col-span-2">
+                    <span class="sr-label">MAC Addresses</span>
+                    <input class="sr-input cursor-default bg-surface-sunken"
+                           readonly
+                           value="@(string.Join(", ", Device.MacAddresses ?? Array.Empty<string>()))" />
+                </label>
+            </div>
+
+            <EditForm Model="Device" OnValidSubmit="HandleValidSubmit" class="mt-4 border-t border-border pt-3">
+                <DataAnnotationsValidator />
+
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <label class="mb-0 block min-w-0">
+                        <span class="sr-label">Device Alias</span>
+                        <InputText class="sr-input" @bind-Value="@Device.Alias" />
+                        <ValidationMessage For="() => Device.Alias" />
+                    </label>
+
+                    <label class="mb-0 block min-w-0">
+                        <span class="sr-label">Device Group</span>
+                        <InputSelect @bind-Value="Device.DeviceGroupID" class="sr-select">
+                            <option value="">None</option>
+
+                            @foreach (var group in _deviceGroups)
+                            {
+                                <option @key="group.ID" value="@group.ID">@group.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => Device.DeviceGroupID" />
+                    </label>
+
+                    <label class="mb-0 block min-w-0 md:col-span-2">
+                        <span class="sr-label">Tags</span>
+                        <InputText @bind-Value="Device.Tags" class="sr-input" />
+                        <ValidationMessage For="() => Device.Tags" />
+                    </label>
+
+                    <label class="mb-0 block min-w-0 md:col-span-2">
+                        <span class="sr-label">Notes</span>
+                        <InputTextArea @bind-Value="Device.Notes" class="sr-textarea h-40"></InputTextArea>
+                        <ValidationMessage For="() => Device.Notes" />
+                    </label>
+                </div>
+
+                <div class="mt-2">
+                    <ValidationSummary />
+                </div>
+
+                <div class="mt-3 flex justify-end">
+                    <button type="submit" class="sr-btn sr-btn-primary w-full sm:w-auto">Save</button>
+                </div>
+            </EditForm>
+        </div>
+    }
 </div>

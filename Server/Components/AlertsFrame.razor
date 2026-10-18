@@ -3,45 +3,56 @@
 @inject IDataService DataService 
 @inject IModalService ModalService 
 
-<button id="alertsButton" class="btn btn-info" @onclick="ToggleOpen">
-    <span class="oi oi-bell"></span>
-    <span id="alertsCount">
+@* The bell sits in the top-right corner of the page (AuthorizedIndex positions it).
+   Phones: the alerts open full screen.  From md up: a side panel on the right. *@
+<button id="alertsButton"
+        class="sr-btn sr-btn-secondary absolute right-0 top-0 z-10 shadow-sm"
+        title="Alerts"
+        aria-expanded="@(_isOpen ? "true" : "false")"
+        @onclick="ToggleOpen">
+    <span class="oi oi-bell" aria-hidden="true"></span>
+    <span id="alertsCount" class="sr-badge @(_alerts.Count > 0 ? "sr-badge-danger" : "sr-badge-neutral") tabular-nums">
         @_alerts.Count
     </span>
 </button>
 
-<div id="alertsFrame" class="bg-secondary @FrameClass">
-    <div class="text-end">
-        <button id="clearAllAlertsButton" class="btn btn-secondary mt-2 me-2 align-top" @onclick="ClearAllAlerts">
+<div id="alertsFrame"
+     class="@FrameClass fixed inset-0 z-50 flex flex-col bg-surface text-fg shadow-xl transition-transform duration-200
+            md:left-auto md:w-96 md:border-l md:border-border
+            @(_isOpen ? "visible translate-x-0" : "invisible translate-x-full")">
+    <div class="flex items-center gap-2 border-b border-border px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <h2 class="m-0 flex-1 text-lg font-semibold">Alerts</h2>
+        <button id="clearAllAlertsButton" class="sr-btn sr-btn-secondary" @onclick="ClearAllAlerts">
             Clear All
         </button>
-        <button id="closeAlertsFrameButton" class="btn btn-secondary btn-sm mt-2 me-2 align-top" @onclick="ToggleOpen">
-            <span class="oi oi-x pointer"></span>
+        <button id="closeAlertsFrameButton" class="sr-btn sr-btn-ghost w-11 px-0" title="Close" aria-label="Close alerts" @onclick="ToggleOpen">
+            <span class="oi oi-x" aria-hidden="true"></span>
         </button>
     </div>
 
-    <div id="alertsBody" class="mt-3">
+    <div id="alertsBody" class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        @if (!_alerts.Any())
+        {
+            <p class="m-0 text-center text-sm text-muted">No alerts.</p>
+        }
         @foreach (var alert in _alerts)
         {
-            <div @key="alert.ID" id="@alert.ID" class="card border-primary mb-3 me-2 ms-2">
-                <div class="card-header">@alert.CreatedOn.ToString()</div>
-                <div class="card-body">
-                    <h6 class="card-title">@alert.Device?.DeviceName</h6>
+            <div @key="alert.ID" id="@alert.ID" class="sr-card shrink-0">
+                <div class="sr-card-header text-xs font-normal text-muted">@alert.CreatedOn.ToString()</div>
+                <div class="sr-card-body">
+                    <h6 class="m-0 mb-1 text-base font-semibold">@alert.Device?.DeviceName</h6>
 
-                    <p class="card-text">@alert.Message</p>
+                    <p class="m-0 text-sm break-words">@alert.Message</p>
 
-                    @if (!string.IsNullOrWhiteSpace(alert.Details))
-                    {
-                        <div class="small">
-                            <button class="btn btn-link" @onclick="() => ShowAlertDetails(alert)">
+                    <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                        @if (!string.IsNullOrWhiteSpace(alert.Details))
+                        {
+                            <button class="sr-btn sr-btn-link min-h-11 text-sm" @onclick="() => ShowAlertDetails(alert)">
                                 View Details
                             </button>
-                        </div>
-                    }
-
-                    <div class="text-end">
+                        }
                         <button alert="@alert.ID"
-                                class="btn btn-sm btn-secondary alert-dismiss-button"
+                                class="alert-dismiss-button sr-btn sr-btn-secondary ml-auto"
                                 type="button"
                                 @onclick="()=> { _ = ClearAlert(alert); }">
                             Dismiss

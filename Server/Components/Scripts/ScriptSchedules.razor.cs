@@ -221,9 +221,9 @@ public partial class ScriptSchedules : AuthComponentBase
     {
         if (schedule?.Id == _selectedSchedule?.Id)
         {
-            return "table-primary";
+            return "bg-brand/15";
         }
-        return string.Empty;
+        return "even:bg-surface-sunken/40 hover:bg-surface-sunken";
     }
 
     private async Task SelectTableRow(ScriptSchedule schedule)

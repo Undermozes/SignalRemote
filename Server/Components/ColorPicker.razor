@@ -1,20 +1,20 @@
 ﻿@using Remotely.Server.Models
  
 <div>
-    <div>Color Sample:</div>
-    <div class="color-sample mb-2" style="background-color:@($"rgb({Red},{Green},{Blue})")"></div>
+    <div class="sr-label">Color Sample:</div>
+    <div class="mb-2 size-[50px] rounded-full border border-border" style="background-color:@($"rgb({Red},{Green},{Blue})")"></div>
 
-    <div>Red</div>
-    <input type="range" min="0" max="255" class="form-control red-picker" @bind="Red" />
-    <input type="number" min="0" max="255" class="form-control mb-4" style="width: 150px" @bind="Red" />
+    <div class="sr-label">Red</div>
+    <input type="range" min="0" max="255" class="red-picker block h-11 w-full cursor-pointer accent-brand" @bind="Red" />
+    <input type="number" min="0" max="255" class="sr-input mb-4 sm:w-[150px]" @bind="Red" />
 
-    <div>Green</div>
-    <input type="range" min="0" max="255" class="form-control green-picker" @bind="Green" />
-    <input type="number" min="0" max="255" class="form-control mb-4" style="width: 150px" @bind="Green" />
+    <div class="sr-label">Green</div>
+    <input type="range" min="0" max="255" class="green-picker block h-11 w-full cursor-pointer accent-brand" @bind="Green" />
+    <input type="number" min="0" max="255" class="sr-input mb-4 sm:w-[150px]" @bind="Green" />
 
-    <div>Blue</div>
-    <input type="range" min="0" max="255" class="form-control blue-picker" @bind="Blue" />
-    <input type="number" min="0" max="255" class="form-control mb-4" style="width: 150px" @bind="Blue" />
+    <div class="sr-label">Blue</div>
+    <input type="range" min="0" max="255" class="blue-picker block h-11 w-full cursor-pointer accent-brand" @bind="Blue" />
+    <input type="number" min="0" max="255" class="sr-input mb-4 sm:w-[150px]" @bind="Blue" />
 </div>
 
 

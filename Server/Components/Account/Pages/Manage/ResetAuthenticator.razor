@@ -12,21 +12,23 @@
 <PageTitle>Reset authenticator key</PageTitle>
 
 <StatusMessage />
-<h3>Reset authenticator key</h3>
-<div class="alert alert-warning" role="alert">
-    <p>
-        <span class="glyphicon glyphicon-warning-sign"></span>
-        <strong>If you reset your authenticator key your authenticator app will not work until you reconfigure it.</strong>
-    </p>
-    <p>
-        This process disables 2FA until you verify your authenticator app.
-        If you do not complete your authenticator app configuration you may lose access to your account.
-    </p>
+<h3 class="sr-section-title mt-0">Reset authenticator key</h3>
+<div class="sr-alert sr-alert-warning" role="alert">
+    <span class="oi oi-warning mt-0.5 text-warning" aria-hidden="true"></span>
+    <div class="space-y-2">
+        <p class="m-0">
+            <strong>If you reset your authenticator key your authenticator app will not work until you reconfigure it.</strong>
+        </p>
+        <p class="m-0">
+            This process disables 2FA until you verify your authenticator app.
+            If you do not complete your authenticator app configuration you may lose access to your account.
+        </p>
+    </div>
 </div>
 <div>
     <form @formname="reset-authenticator" @onsubmit="OnSubmitAsync" method="post">
         <AntiforgeryToken />
-        <button class="btn btn-danger" type="submit">Reset authenticator key</button>
+        <button class="sr-btn sr-btn-danger w-full sm:w-auto" type="submit">Reset authenticator key</button>
     </form>
 </div>
 

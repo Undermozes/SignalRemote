@@ -70,8 +70,8 @@ public partial class TreeViewItem<T> : ComponentBase
     {
         if (ParentTree.SelectedNode == this)
         {
-            return "bg-info";
+            return "bg-brand/15 text-fg";
         }
-        return "bg-secondary";
+        return "text-fg hover:bg-surface-sunken";
     }
 }

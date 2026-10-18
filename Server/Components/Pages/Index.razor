@@ -3,20 +3,20 @@
  
 <AuthorizeView>
     <NotAuthorized>
-        <div class="jumbotron">
-            <h3 class="display-4">Remotely</h3>
-            <p class="lead">
+        <div class="mx-auto mt-8 max-w-2xl rounded-2xl border border-border bg-surface-raised px-5 py-8 text-fg shadow-sm sm:mt-12 sm:px-10 sm:py-12">
+            <h3 class="m-0 text-4xl font-semibold tracking-tight sm:text-5xl">Remotely</h3>
+            <p class="mb-0 mt-3 text-lg text-muted">
                 An open-source remote support solution.
             </p>
-            <hr class="my-4">
-            <p class="lead">
-                <a class="btn btn-primary btn-lg me-2" href="Account/Login" role="button">Log In</a>
+            <hr class="my-6 border-border">
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <a class="sr-btn sr-btn-primary px-6 text-base" href="Account/Login" role="button">Log In</a>
 
                 @if (_isRegistrationEnabled)
                 {
-                    <a class="btn btn-primary btn-lg" href="Account/Register" role="button">Register</a>
+                    <a class="sr-btn sr-btn-secondary px-6 text-base" href="Account/Register" role="button">Register</a>
                 }
-            </p>
+            </div>
         </div>
     </NotAuthorized>
     <Authorized>

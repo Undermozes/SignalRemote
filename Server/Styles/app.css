@@ -1,0 +1,96 @@
+/*
+ * Tailwind CSS input for the SignalRemote web app.  Build with the Tailwind v4 CLI
+ * (see Server/Styles/README.md):
+ *   tailwindcss -i Server/Styles/app.css -o Server/wwwroot/css/app.css --minify
+ */
+@import "tailwindcss";
+
+@source "../Components";
+@source "../Pages";
+@source "../Services";
+@source "../Hubs";
+@source "../wwwroot/src";
+@source "../wwwroot/viewer-assistant.js";
+
+/* Dark mode follows the user's SignalRemote theme, set as class="dark" on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens.  Semantic colors switch with the theme, so components use
+ * bg-surface, text-muted etc. instead of picking light/dark colors.
+ */
+@theme {
+    --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+    --color-brand: #2563eb;
+    --color-brand-hover: #1d4ed8;
+    --color-brand-contrast: #ffffff;
+
+    --color-surface: var(--sr-surface);
+    --color-surface-raised: var(--sr-surface-raised);
+    --color-surface-sunken: var(--sr-surface-sunken);
+    --color-border: var(--sr-border);
+    --color-fg: var(--sr-fg);
+    --color-muted: var(--sr-muted);
+
+    --color-success: #16a34a;
+    --color-warning: #d97706;
+    --color-danger: #dc2626;
+}
+
+@layer base {
+    :root {
+        --sr-surface: #ffffff;
+        --sr-surface-raised: #ffffff;
+        --sr-surface-sunken: #f3f4f6;
+        --sr-border: #e5e7eb;
+        --sr-fg: #111827;
+        --sr-muted: #6b7280;
+    }
+
+    .dark {
+        --sr-surface: #1f2228;
+        --sr-surface-raised: #2a2e36;
+        --sr-surface-sunken: #16181d;
+        --sr-border: #3a3f4a;
+        --sr-fg: #e5e7eb;
+        --sr-muted: #9ca3af;
+        color-scheme: dark;
+    }
+
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        @apply bg-surface font-sans text-fg antialiased;
+        overscroll-behavior-y: contain;
+    }
+
+    /* Readable defaults for markup without utility classes (Preflight resets these). */
+    h1 { @apply mb-3 text-3xl font-semibold; }
+    h2 { @apply mb-3 text-2xl font-semibold; }
+    h3 { @apply mb-3 text-xl font-semibold; }
+    h4 { @apply mb-2 text-lg font-semibold; }
+    h5 { @apply mb-2 text-base font-semibold; }
+    h6 { @apply mb-2 text-sm font-semibold; }
+    p { @apply mb-3; }
+    a { @apply text-brand; }
+    a:hover { @apply underline; }
+    hr { @apply my-4 border-border; }
+    code { @apply rounded bg-surface-sunken px-1 py-0.5 font-mono text-[0.875em]; }
+    pre { @apply font-mono; }
+    button, [role="button"] { @apply cursor-pointer; }
+    :focus-visible { @apply outline-2 outline-offset-2 outline-brand; }
+    /* Blazor's FocusOnNavigate focuses the page heading for screen readers; don't outline it. */
+    h1:focus, h1:focus-visible { outline: none; }
+
+    /* Blazor form validation */
+    .validation-message { @apply mt-1 text-sm text-danger dark:text-red-400; }
+    .validation-errors { @apply mb-4 list-none rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-fg; }
+    .valid.modified:not([type=checkbox]) { @apply outline outline-1 outline-success; }
+    .invalid { @apply outline outline-1 outline-danger; }
+}
+
+/* Shared sr-* component classes. */
+@import "./components.css" layer(components);

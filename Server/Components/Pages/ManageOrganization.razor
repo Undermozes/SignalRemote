@@ -2,99 +2,92 @@
 @attribute [Authorize(Policy = PolicyNames.OrganizationAdminRequired)]
 @inherits AuthComponentBase
 
-<h3 class="mb-3">Manage Organization</h3>
+<h3 class="sr-page-title mt-2">Manage Organization</h3>
 
 @if (_isLoading)
 {
-    <h5>Loading...</h5>
+    <h5 class="text-lg text-muted">Loading...</h5>
 }
 else if (User is not null)
 {
-    <div class="row">
-        <div class="col-sm-8">
-            @* Organization ID *@
-            <div class="form-group mw">
-                <label class="mb-1">Organization ID</label>
-                <input readonly class="form-control" value="@_organization?.ID" />
-            </div>
-        </div>
-    </div>
+    <div class="flex flex-col gap-6">
+        <section class="sr-card max-w-3xl">
+            <div class="sr-card-header">Organization</div>
+            <div class="sr-card-body">
+                @* Organization ID *@
+                <div class="sr-field">
+                    <label class="sr-label" for="org-id">Organization ID</label>
+                    <input id="org-id" readonly class="sr-input bg-surface-sunken font-mono" value="@_organization?.ID" />
+                </div>
 
-
-    <div class="row">
-        <div class="col-sm-8">
-            @* Organization Name *@
-            <div class="form-group mw">
-                <label class="mb-1">Organization Name</label>
-
-                <div class="input-group">
-                    <input @onchange="OrganizationNameChanged"
+                @* Organization Name *@
+                <div class="sr-field">
+                    <label class="sr-label" for="org-name">Organization Name</label>
+                    <input id="org-name"
+                           @onchange="OrganizationNameChanged"
                            value="@_organization?.OrganizationName"
                            maxlength="25"
                            placeholder="Enter a name for your organization" 
-                           class="form-control" 
+                           class="sr-input" 
                            autocomplete="off" />
+                    <p class="sr-help">
+                        * Requires browser refresh.
+                    </p>
                 </div>
-                <div class="text-info small">
-                    * Requires browser refresh.
-                </div>
+                @if (User.IsServerAdmin)
+                {
+                    <div class="sr-field mb-0 flex min-h-11 items-center gap-3">
+                        <input id="org-default" class="sr-checkbox" type="checkbox" checked="@_organization?.IsDefaultOrganization" @onchange="DefaultOrgCheckChanged" />
+                        <label class="cursor-pointer text-sm font-medium" for="org-default">Default Organization For Server</label>
+                        <button class="sr-btn sr-btn-secondary sr-btn-sm" title="Help" @onclick="ShowDefaultOrgHelp">
+                            <span class="oi oi-question-mark"></span>
+                        </button>
+                    </div>
+                }
             </div>
-            @if (User.IsServerAdmin)
-            {
-                <div class="form-group">
-                    <label class="mb-1">Default Organization For Server</label>
-                    <button class="btn btn-sm btn-secondary ms-2" @onclick="ShowDefaultOrgHelp">
-                        <span class="oi oi-question-mark"></span>
-                    </button>
-                    <br />
-                    <input type="checkbox" checked="@_organization?.IsDefaultOrganization" @onchange="DefaultOrgCheckChanged" />
-                </div>
-            }
-        </div>
-    </div>
+        </section>
 
-    <div class="row">
-        <div class="col-sm-8">
-            @* Device Groups *@
-            <div class="form-group">
-                <label class="mb-1">Device Groups</label>
-                <button class="btn btn-sm btn-secondary ms-2" @onclick="ShowDeviceGroupHelp">
+        @* Device Groups *@
+        <section class="sr-card max-w-3xl">
+            <div class="sr-card-header">
+                <label class="m-0" for="org-device-groups">Device Groups</label>
+                <button class="sr-btn sr-btn-secondary sr-btn-sm" title="Help" @onclick="ShowDeviceGroupHelp">
                     <span class="oi oi-question-mark"></span>
                 </button>
-
-                <select class="form-control mb-1" @bind="_selectedDeviceGroupId" size="4">
+            </div>
+            <div class="sr-card-body">
+                <select id="org-device-groups" class="sr-select h-auto" @bind="_selectedDeviceGroupId" size="4">
                     @foreach (var deviceGroup in _deviceGroups)
                     {
                         <option @key="deviceGroup.ID" value="@deviceGroup.ID">@deviceGroup.Name</option>
                     }
                 </select>
 
-                <div class="text-end mb-3">
-                    <button type="button" class="btn btn-danger" @onclick="DeleteSelectedDeviceGroup">Delete</button>
+                <div class="mb-3 mt-2 flex justify-end">
+                    <button type="button" class="sr-btn sr-btn-danger" @onclick="DeleteSelectedDeviceGroup">Delete</button>
                 </div>
 
-                <div class="input-group">
-                    <input placeholder="Add new device group" class="form-control" maxlength="200"
+                <div class="flex gap-2">
+                    <input placeholder="Add new device group" aria-label="Add new device group" class="sr-input min-w-0 flex-1" maxlength="200"
                            @bind="_newDeviceGroupName"
                            @bind:event="oninput"
                            @onkeypress="EvaluateNewDeviceGroupKeyPress" />
-                    <button type="submit" class="btn btn-secondary" @onclick="CreateNewDeviceGroup">Add</button>
+                    <button type="submit" class="sr-btn sr-btn-secondary shrink-0" @onclick="CreateNewDeviceGroup">Add</button>
                 </div>
             </div>
+        </section>
 
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-sm-12">
-            @* Users *@
-            <div class="form-group">
-                <label class="control-label">Users</label>
-                <button class="btn btn-sm btn-secondary ms-2" @onclick="ShowUsersHelp">
+        @* Users: stacked cards on phones, a table from md up. *@
+        <section>
+            <div class="mb-3 flex items-center gap-2">
+                <h4 class="m-0 text-lg font-semibold">Users</h4>
+                <button class="sr-btn sr-btn-secondary sr-btn-sm" title="Help" @onclick="ShowUsersHelp">
                     <span class="oi oi-question-mark"></span>
                 </button>
-                <table class="table table-dark table-striped table-hover" style="max-height: 400px">
-                    <thead>
+            </div>
+            <div class="md:max-h-[400px] md:overflow-auto md:rounded-xl md:border md:border-border">
+                <table class="sr-table block md:table">
+                    <thead class="hidden md:table-header-group">
                         <tr>
                             <th>User Name</th>
                             <th>Administrator</th>
@@ -103,44 +96,44 @@ else if (User is not null)
                             <th>Delete User</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="flex flex-col gap-3 md:table-row-group">
                         @foreach (var orgUser in _orgUsers)
                         {
-                            <tr @key="orgUser.Id">
-                                <td class="middle-aligned"><label class="control-label">@orgUser.UserName</label></td>
+                            <tr @key="orgUser.Id" class="block rounded-xl border border-border bg-surface-raised md:table-row md:rounded-none md:border-0 md:even:bg-surface-sunken/50">
+                                <td class="block font-semibold break-all md:table-cell md:align-middle md:font-normal">@orgUser.UserName</td>
                                 @if (User.Id == orgUser.Id)
                                 {
-                                    <td><input type="checkbox" readonly disabled checked="@orgUser.IsAdministrator" /></td>
-                                    <td><button type="button" class="btn btn-secondary" title="Edit" @onclick="() => EditDeviceGroups(orgUser)">Edit</button></td>
-                                    <td></td>
-                                    <td><button type="button" class="btn btn-danger delete-user-button" disabled>Delete</button></td>
+                                    <td class="flex items-center justify-between gap-3 md:table-cell md:align-middle"><span class="text-sm text-muted md:hidden">Administrator</span><input class="sr-checkbox" type="checkbox" aria-label="Administrator" readonly disabled checked="@orgUser.IsAdministrator" /></td>
+                                    <td class="flex items-center justify-between gap-3 md:table-cell md:align-middle"><span class="text-sm text-muted md:hidden">Device Groups</span><button type="button" class="sr-btn sr-btn-secondary sr-btn-sm" title="Edit" @onclick="() => EditDeviceGroups(orgUser)">Edit</button></td>
+                                    <td class="hidden md:table-cell"></td>
+                                    <td class="flex items-center justify-between gap-3 md:table-cell md:align-middle"><span class="text-sm text-muted md:hidden">Delete User</span><button type="button" class="sr-btn sr-btn-danger sr-btn-sm delete-user-button" disabled>Delete</button></td>
                                 }
                                 else
                                 {
-                                    <td><input type="checkbox" @onchange="(ev) => SetUserIsAdmin(ev, orgUser)" checked="@orgUser.IsAdministrator" /></td>
-                                    <td><button type="button" class="btn btn-secondary" title="Edit" @onclick="() => EditDeviceGroups(orgUser)">Edit</button></td>
-                                    <td><button type="button" class="btn btn-danger" title="Reset Password" @onclick="() => ResetPassword(orgUser)">Reset</button></td>
-                                    <td><button type="button" class="btn btn-danger" title="Delete User" @onclick="() => DeleteUser(orgUser)">Delete</button></td>
+                                    <td class="flex items-center justify-between gap-3 md:table-cell md:align-middle"><span class="text-sm text-muted md:hidden">Administrator</span><input class="sr-checkbox" type="checkbox" aria-label="Administrator" @onchange="(ev) => SetUserIsAdmin(ev, orgUser)" checked="@orgUser.IsAdministrator" /></td>
+                                    <td class="flex items-center justify-between gap-3 md:table-cell md:align-middle"><span class="text-sm text-muted md:hidden">Device Groups</span><button type="button" class="sr-btn sr-btn-secondary sr-btn-sm" title="Edit" @onclick="() => EditDeviceGroups(orgUser)">Edit</button></td>
+                                    <td class="flex items-center justify-between gap-3 md:table-cell md:align-middle"><span class="text-sm text-muted md:hidden">Reset Password</span><button type="button" class="sr-btn sr-btn-danger sr-btn-sm" title="Reset Password" @onclick="() => ResetPassword(orgUser)">Reset</button></td>
+                                    <td class="flex items-center justify-between gap-3 md:table-cell md:align-middle"><span class="text-sm text-muted md:hidden">Delete User</span><button type="button" class="sr-btn sr-btn-danger sr-btn-sm" title="Delete User" @onclick="() => DeleteUser(orgUser)">Delete</button></td>
                                 }
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
+        </section>
 
 
-    @* Invitations *@
-    <div class="row">
-        <div class="col-sm-12">
-            <div class="form-group">
-                <label class="control-label">Invitations</label>
-                <button class="btn btn-sm btn-secondary ms-2" @onclick="ShowInvitesHelp">
+        @* Invitations: stacked cards on phones, a table from md up. *@
+        <section>
+            <div class="mb-3 flex items-center gap-2">
+                <h4 class="m-0 text-lg font-semibold">Invitations</h4>
+                <button class="sr-btn sr-btn-secondary sr-btn-sm" title="Help" @onclick="ShowInvitesHelp">
                     <span class="oi oi-question-mark"></span>
                 </button>
-                <table id="invitesTable" class="table table-dark table-striped table-hover" style="max-height: 400px">
-                    <thead>
+            </div>
+            <div class="md:max-h-[400px] md:overflow-auto md:rounded-xl md:border md:border-border">
+                <table id="invitesTable" class="sr-table block md:table">
+                    <thead class="hidden md:table-header-group">
                         <tr>
                             <th>Invited User</th>
                             <th>Administrator</th>
@@ -148,48 +141,48 @@ else if (User is not null)
                             <th>Delete</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="flex flex-col gap-3 md:table-row-group">
                         @foreach (var invite in _invites)
                         {
-                            <tr @key="invite.ID">
-                                <td class="middle-aligned"><label class="control-label">@invite.InvitedUser</label></td>
-                                <td class="middle-aligned"><input type="checkbox" checked="@invite.IsAdmin" disabled /></td>
-                                <td class="middle-aligned">
-                                    <label class="control-label">
-                                        <a href="@(NavManager.BaseUri)Invite/@invite.ID">Join Link</a>
-                                    </label>
+                            <tr @key="invite.ID" class="block rounded-xl border border-border bg-surface-raised md:table-row md:rounded-none md:border-0 md:even:bg-surface-sunken/50">
+                                <td class="block font-semibold break-all md:table-cell md:align-middle md:font-normal">@invite.InvitedUser</td>
+                                <td class="flex items-center justify-between gap-3 md:table-cell md:align-middle"><span class="text-sm text-muted md:hidden">Administrator</span><input class="sr-checkbox" type="checkbox" aria-label="Administrator" checked="@invite.IsAdmin" disabled /></td>
+                                <td class="flex items-center justify-between gap-3 md:table-cell md:align-middle">
+                                    <span class="text-sm text-muted md:hidden">Link(s)</span>
+                                    <a class="text-brand underline" href="@(NavManager.BaseUri)Invite/@invite.ID">Join Link</a>
                                 </td>
-                                <td><button type="button" class="btn btn-danger" invite="@invite.ID" @onclick="() => DeleteInvite(invite)">Delete</button></td>
+                                <td class="flex items-center justify-end gap-3 md:table-cell md:align-middle"><button type="button" class="sr-btn sr-btn-danger sr-btn-sm" invite="@invite.ID" @onclick="() => DeleteInvite(invite)">Delete</button></td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
+        </section>
 
 
-    @* Send Invites *@
-    <div class="row">
-        <div class="col-sm-8">
-            <div class="text-danger"></div>
-            <div class="form-group">
-                <label class="control-label">Add User</label>
-                <div class="input-group">
-                    <input @bind="_inviteEmail" @bind:event="oninput"
+        @* Send Invites *@
+        <section class="sr-card max-w-3xl">
+            <div class="sr-card-header">
+                <label class="m-0" for="invite-email">Add User</label>
+            </div>
+            <div class="sr-card-body">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <input id="invite-email"
+                           @bind="_inviteEmail" @bind:event="oninput"
                            placeholder="Email of user to add"
                            type="email"
                            required
-                           class="form-control" />
+                           class="sr-input min-w-0 flex-1" />
 
-                    <span class="input-group-text pe-1">Admin?</span>
-                    <div class="input-group-text ps-1">
-                        <input @bind="_inviteAsAdmin" type="checkbox" @onkeypress="EvaluateInviteInputKeypress" />
+                    <div class="flex items-center justify-between gap-3">
+                        <label class="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium" for="invite-admin">
+                            <input id="invite-admin" class="sr-checkbox" @bind="_inviteAsAdmin" type="checkbox" @onkeypress="EvaluateInviteInputKeypress" />
+                            Admin?
+                        </label>
+                        <button type="button" class="sr-btn sr-btn-primary px-6" @onclick="SendInvite">Add</button>
                     </div>
-                    <button type="button" class="btn btn-primary" @onclick="SendInvite">Add</button>
                 </div>
             </div>
-        </div>
+        </section>
     </div>
-
 }

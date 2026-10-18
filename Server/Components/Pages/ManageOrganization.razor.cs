@@ -280,9 +280,9 @@ public partial class ManageOrganization : AuthComponentBase
 
         await ModalService.ShowModal("Password Reset", builder =>
         {
-            builder.AddMarkupContent(0, $@"<div class=""mb-3"">Password Reset URL:</div>
-                    <input readonly value=""{resetUrl}"" class=""form-control"" /> 
-                    <div class=""mt-3"">NOTE: Give this URL to the user.  They must be logged out completely for it to work.</div>");
+            builder.AddMarkupContent(0, $@"<div class=""mb-2 text-sm font-medium"">Password Reset URL:</div>
+                    <input readonly value=""{resetUrl}"" class=""sr-input font-mono"" aria-label=""Password reset URL"" /> 
+                    <div class=""mt-3 text-sm text-muted"">NOTE: Give this URL to the user.  They must be logged out completely for it to work.</div>");
         });
     }
 

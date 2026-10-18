@@ -1,9 +1,10 @@
-﻿<ul class="nav nav-tabs">
+﻿@* Phones: the tab bar scrolls sideways instead of wrapping. *@
+<ul class="m-0 flex list-none gap-1 overflow-x-auto overscroll-x-contain border-b border-border p-0 [scrollbar-width:thin]" role="tablist">
     <CascadingValue Value="this">
         @TabHeaders
     </CascadingValue>
 </ul>
-<div class="tab-content">
+<div class="pt-1">
     <CascadingValue Value="this">
         @TabContents
     </CascadingValue>

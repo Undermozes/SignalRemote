@@ -2,59 +2,61 @@
 @attribute [Authorize]
 
 
-<h4 class="mt-3">Add or Edit Schedule</h4>
+<h4 class="sr-section-title mt-4">Add or Edit Schedule</h4>
 
 <EditForm Model="_selectedSchedule" OnValidSubmit="OnValidSubmit">
-    <div class="row">
+    <div class="grid grid-cols-1 gap-x-4 md:grid-cols-2 lg:grid-cols-3">
         <DataAnnotationsValidator />
 
-        <div class="col-12">
+        <div class="col-span-full text-danger">
             <ValidationSummary />
         </div>
 
-        <div class="col-12">
+        <div class="col-span-full">
             <AlertBanner Message="@_alertMessage" OnClose="() => _alertMessage = string.Empty" />
         </div>
 
-        <div class="mt-2 col-12">
-            <div>
-                <button type="submit" class="btn btn-primary align-middle me-3" disabled="@(!CanModifySchedule)">
+        <div class="col-span-full mt-2">
+            <div class="flex flex-wrap items-center gap-3">
+                <button type="submit" class="sr-btn sr-btn-primary flex-1 sm:flex-none" disabled="@(!CanModifySchedule)">
                     Save
                 </button>
 
-                <button type="button" class="btn btn-success me-3" @onclick="CreateNew">
+                <button type="button" class="sr-btn sr-btn-success flex-1 sm:flex-none" @onclick="CreateNew">
                     New
                 </button>
-                <button class="btn btn-danger me-4" type="button"
+                <button class="sr-btn sr-btn-danger flex-1 sm:flex-none" type="button"
                         disabled="@(!CanDeleteSchedule)"
                         @onclick="DeleteSelectedSchedule">
                     Delete
                 </button>
 
-                <InputCheckbox class="me-2 align-middle" @bind-Value="_selectedSchedule.RunOnNextConnect" />
-                <span class="align-middle">If devices are offline, run immediately when next connected</span>
+                <label class="flex min-h-11 w-full cursor-pointer items-center gap-2 sm:ml-2 sm:w-auto">
+                    <InputCheckbox class="sr-checkbox" @bind-Value="_selectedSchedule.RunOnNextConnect" />
+                    <span>If devices are offline, run immediately when next connected</span>
+                </label>
             </div>
         </div>
 
-        <div class="mt-2 col-md-6 col-lg-4">
+        <div class="mt-2">
             <div>
-                <label>Schedule Name</label>
-                <InputText class="form-control" @bind-Value="_selectedSchedule.Name" />
+                <label class="sr-label">Schedule Name</label>
+                <InputText class="sr-input" @bind-Value="_selectedSchedule.Name" />
             </div>
         </div>
 
-        <div class="mt-2 col-md-6 col-lg-4">
+        <div class="mt-2">
             <div>
-                <label>Start At</label>
-                <input type="datetime-local" step="1" class="form-control" @bind="_selectedSchedule.StartAt" />
+                <label class="sr-label">Start At</label>
+                <input type="datetime-local" step="1" class="sr-input" @bind="_selectedSchedule.StartAt" />
             </div>
         </div>
 
 
-        <div class="mt-2 col-md-6 col-lg-4">
+        <div class="mt-2">
             <div>
-                <label>Repeat Interval</label>
-                <InputSelect @bind-Value="_selectedSchedule.Interval" class="form-control">
+                <label class="sr-label">Repeat Interval</label>
+                <InputSelect @bind-Value="_selectedSchedule.Interval" class="sr-select">
                     @foreach (var interval in Enum.GetValues<RepeatInterval>())
                     {
                         <option @key="@interval" value="@interval">@interval</option>
@@ -64,13 +66,13 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="mt-2 col-md-6 col-lg-4">
-            <label>Saved Scripts</label>
-            <div class="small">
-                <input type="checkbox" @bind="ParentPage.ShowOnlyMyScripts" />
-                <span class="align-top">Show only mine</span>
-            </div>
+    <div class="mt-2 grid grid-cols-1 gap-x-4 md:grid-cols-2 lg:grid-cols-3">
+        <div class="mt-2">
+            <label class="sr-label">Saved Scripts</label>
+            <label class="flex min-h-11 cursor-pointer items-center gap-2 text-sm md:min-h-8">
+                <input type="checkbox" class="sr-checkbox" @bind="ParentPage.ShowOnlyMyScripts" />
+                <span>Show only mine</span>
+            </label>
             <TreeView DataSource="ParentPage.TreeNodes"
                       ItemTypeSelector="x => x.ItemType"
                       ItemHeaderSelector="x => x.Name"
@@ -78,38 +80,38 @@
                       ChildItemSelector="x => x.ChildItems"
                       ItemIconCssSelector="ParentPage.GetItemIconCss"
                       KeySelector="x => x.Id"
-                      WrapperStyle="border: 1px solid gray; padding: .5em; height: 300px; border-radius: 5px;"
+                      WrapperClass="h-60 md:h-75"
                       T="ScriptTreeNode" />
         </div>
 
-        <div class="mt-2 col-md-6 col-lg-4">
-            <label>Device Groups</label>
-            <div class="item-list-border">
+        <div class="mt-2">
+            <label class="sr-label">Device Groups</label>
+            <div class="h-60 overflow-y-auto rounded-lg border border-border bg-surface p-2 md:h-75">
                 @foreach (var deviceGroup in _deviceGroups)
                 {
-                    <div @key="@deviceGroup.ID">
-                        <input class="me-1" type="checkbox"
+                    <label @key="@deviceGroup.ID" class="flex min-h-11 cursor-pointer items-center gap-2 md:min-h-8">
+                        <input class="sr-checkbox" type="checkbox"
                                checked="@(_selectedDeviceGroups.Contains(deviceGroup.ID))"
                                @onchange="ev => DeviceGroupSelectedChanged(ev, deviceGroup)" />
 
-                        <span class="align-top">@deviceGroup.Name</span>
-                    </div>
+                        <span class="min-w-0 break-words">@deviceGroup.Name</span>
+                    </label>
                 }
             </div>
         </div>
 
-        <div class="mt-2 col-md-6 col-lg-4">
-            <label>Devices</label>
-            <div class="item-list-border">
+        <div class="mt-2">
+            <label class="sr-label">Devices</label>
+            <div class="h-60 overflow-y-auto rounded-lg border border-border bg-surface p-2 md:h-75">
                 @foreach (var device in _devices)
                 {
-                    <div @key="@device.ID">
-                        <input class="me-1" type="checkbox"
+                    <label @key="@device.ID" class="flex min-h-11 cursor-pointer items-center gap-2 md:min-h-8">
+                        <input class="sr-checkbox" type="checkbox"
                                checked="@(_selectedDevices.Contains(device.ID))"
                                @onchange="ev => DeviceSelectedChanged(ev, device)" />
 
-                        <span class="align-top">@device.DeviceName</span>
-                    </div>
+                        <span class="min-w-0 break-words">@device.DeviceName</span>
+                    </label>
                 }
             </div>
         </div>
@@ -118,29 +120,31 @@
 </EditForm>
    
 
-<h4 class="mt-5">Saved Schedules</h4>
-<table class="table table-dark table-striped table-hover">
-    <thead>
-        <tr>
-            <th>Script Name</th>
-            <th>Repeat Interval</th>
-            <th>Next Run</th>
-            <th>Last Run</th>
-            <th>Created At</th>
-            <th>Created By</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var schedule in _schedules)
-        {
-            <tr @key="schedule.Id" style="cursor: pointer" @onclick="async () => await SelectTableRow(schedule)" class="@GetTableRowClass(schedule)">
-                <td>@schedule.Name</td>
-                <td>@schedule.Interval</td>
-                <td>@schedule.NextRun</td>
-                <td>@schedule.LastRun</td>
-                <td>@schedule.CreatedAt</td>
-                <td>@schedule.Creator?.UserName</td>
+<h4 class="sr-section-title mt-10">Saved Schedules</h4>
+<div class="sr-table-wrap">
+    <table class="sr-table">
+        <thead>
+            <tr>
+                <th>Script Name</th>
+                <th>Repeat Interval</th>
+                <th>Next Run</th>
+                <th>Last Run</th>
+                <th>Created At</th>
+                <th>Created By</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var schedule in _schedules)
+            {
+                <tr @key="schedule.Id" @onclick="async () => await SelectTableRow(schedule)" class="cursor-pointer @GetTableRowClass(schedule)">
+                    <td>@schedule.Name</td>
+                    <td class="whitespace-nowrap">@schedule.Interval</td>
+                    <td class="whitespace-nowrap">@schedule.NextRun</td>
+                    <td class="whitespace-nowrap">@schedule.LastRun</td>
+                    <td class="whitespace-nowrap">@schedule.CreatedAt</td>
+                    <td>@schedule.Creator?.UserName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

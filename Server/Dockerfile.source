@@ -1,0 +1,20 @@
+# Builds the server image from source (no prebuilt publish output needed).
+# docker build -f Server/Dockerfile.source -t signalremote .
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+RUN apt-get -y update && apt-get -y install --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
+ARG TAILWIND_VERSION=4.1.11
+RUN case "$(uname -m)" in aarch64|arm64) tw=linux-arm64 ;; *) tw=linux-x64 ;; esac \
+ && curl -fsSL -o /usr/local/bin/tailwindcss "https://github.com/tailwindlabs/tailwindcss/releases/download/v${TAILWIND_VERSION}/tailwindcss-${tw}" \
+ && chmod +x /usr/local/bin/tailwindcss
+WORKDIR /src
+COPY . .
+RUN tailwindcss -i Server/Styles/app.css -o Server/wwwroot/css/app.css --minify
+RUN dotnet publish Server/Server.csproj -c Release -o /out
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+EXPOSE ${ASPNETCORE_HTTP_PORTS}
+RUN apt -y update && apt -y install curl && rm -rf /var/lib/apt/lists/*
+COPY --from=build /out /app
+WORKDIR /app
+ENTRYPOINT ["dotnet", "Remotely_Server.dll"]
+HEALTHCHECK CMD curl -f http://localhost:${ASPNETCORE_HTTP_PORTS}/api/healthcheck || exit 1

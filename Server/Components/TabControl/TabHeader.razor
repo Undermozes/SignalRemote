@@ -1,7 +1,8 @@
 ﻿@inject NavigationManager NavManager
  
-<li class="nav-item">
-    <a class="nav-link @ActiveClass" data-toggle="tab" @onclick="SetActiveTab" style="cursor: pointer; user-select: none;">
+<li class="shrink-0">
+    <a class="flex min-h-11 cursor-pointer items-center whitespace-nowrap border-b-2 px-4 text-sm font-medium no-underline select-none @ActiveClass"
+       role="tab" aria-selected="@(IsActive ? "true" : "false")" @onclick="SetActiveTab">
         @ChildContent
     </a>
 </li>
@@ -22,7 +23,11 @@
     [Parameter]
     public string? Name { get; set; }
 
-    private string ActiveClass => Parent?.ActiveTab == Name ? "active" : "";
+    private bool IsActive => Parent?.ActiveTab == Name;
+
+    private string ActiveClass => IsActive
+        ? "border-brand text-brand"
+        : "border-transparent text-muted hover:border-border hover:text-fg";
 
     protected override async Task OnInitializedAsync()
     {

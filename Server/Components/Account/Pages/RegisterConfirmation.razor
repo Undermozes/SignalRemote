@@ -12,21 +12,23 @@
 
 <PageTitle>Register confirmation</PageTitle>
 
-<h1>Register confirmation</h1>
+<div class="mx-auto w-full max-w-md py-4 sm:py-10">
+    <h1 class="sr-page-title">Register confirmation</h1>
 
-<StatusMessage Message="@statusMessage" />
+    <StatusMessage Message="@statusMessage" />
 
-@if (emailConfirmationLink is not null)
-{
-    <p>
-        This app does not currently have a real email sender registered, see <a href="https://aka.ms/aspaccountconf">these docs</a> for how to configure a real email sender.
-        Normally this would be emailed: <a href="@emailConfirmationLink">Click here to confirm your account</a>
-    </p>
-}
-else
-{
-    <p>Please check your email to confirm your account.</p>
-}
+    @if (emailConfirmationLink is not null)
+    {
+        <p>
+            This app does not currently have a real email sender registered, see <a href="https://aka.ms/aspaccountconf" class="text-brand">these docs</a> for how to configure a real email sender.
+            Normally this would be emailed: <a href="@emailConfirmationLink" class="text-brand">Click here to confirm your account</a>
+        </p>
+    }
+    else
+    {
+        <p>Please check your email to confirm your account.</p>
+    }
+</div>
 
 @code {
     private string? emailConfirmationLink;

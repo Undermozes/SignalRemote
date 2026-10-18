@@ -4,12 +4,13 @@
 @implements IDisposable
 @using Remotely.Server.Services.ClaudeAssistant
 
-<div class="assistant-page @(Embedded ? "embedded" : "mt-3")">
-    <div class="d-flex align-items-baseline mb-3">
-        <h3 class="mb-0 @(Embedded ? "fs-5" : "")">Claude Assistant</h3>
+@* Chat layout: the log scrolls, the composer stays at the bottom.  Embedded = panel in the viewer. *@
+<div class="flex flex-col text-fg @(Embedded ? "h-dvh bg-surface p-2" : "h-[calc(100dvh-6.5rem)] md:h-[calc(100dvh-2rem)]")">
+    <div class="mb-2 flex min-w-0 items-baseline gap-2">
+        <h3 class="m-0 shrink-0 font-semibold @(Embedded ? "text-base" : "text-2xl")">Claude Assistant</h3>
         @if (_session is not null)
         {
-            <span class="ms-3 text-muted">
+            <span class="truncate text-sm text-muted">
                 @_session.Device.DeviceName
                 @if (!string.IsNullOrWhiteSpace(_session.Device.Alias))
                 {
@@ -21,7 +22,7 @@
 
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <div class="alert alert-warning">@_errorMessage</div>
+        <div class="sr-alert sr-alert-warning">@_errorMessage</div>
     }
     else if (_session is null)
     {
@@ -29,71 +30,86 @@
     }
     else
     {
-        <div class="small text-muted mb-2">
-            Claude runs commands on this device through the agent.  Read-only commands
-            @(_autoRunReadOnly ? "run automatically" : "need your approval")
-            ; anything that could change the system always needs your approval.
-            Every command is logged and appears in the device's script history.
-            @if (_session.ScreenshotProvider is not null)
-            {
-                <span>Claude can see the remote screen.</span>
-            }
-        </div>
+        <details class="mb-2 text-xs text-muted">
+            <summary class="cursor-pointer select-none">How Claude works on this device</summary>
+            <p class="mt-1 mb-0">
+                Claude runs commands on this device through the agent.  Read-only commands
+                @(_autoRunReadOnly ? "run automatically" : "need your approval");
+                anything that could change the system always needs your approval.
+                Every command is logged and appears in the device's script history.
+                @if (_session.ScreenshotProvider is not null)
+                {
+                    <span>Claude can see the remote screen.</span>
+                }
+            </p>
+        </details>
 
-        <div class="assistant-log border rounded p-3 mb-3">
+        <div @ref="_logElement"
+             class="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-surface-sunken p-3">
+            @if (_session.Entries.Count == 0)
+            {
+                <div class="py-8 text-center text-sm text-muted">
+                    Describe the problem and Claude will investigate this device.
+                </div>
+            }
+
             @foreach (var entry in _session.Entries)
             {
                 switch (entry.Kind)
                 {
                     case AssistantEntryKind.User:
-                        <div class="assistant-entry assistant-user">
-                            <div class="assistant-label">@UserName</div>
-                            <div class="assistant-text">@entry.Text</div>
+                        <div class="flex justify-end">
+                            <div class="max-w-[85%] rounded-2xl rounded-br-sm bg-brand px-3 py-2 text-brand-contrast">
+                                <div class="text-[0.7rem] font-semibold opacity-80">@UserName</div>
+                                <div class="whitespace-pre-wrap break-words">@entry.Text</div>
+                            </div>
                         </div>
                         break;
 
                     case AssistantEntryKind.Assistant:
-                        <div class="assistant-entry assistant-claude">
-                            <div class="assistant-label">Claude</div>
-                            <div class="assistant-text">@entry.Text</div>
+                        <div class="flex justify-start">
+                            <div class="max-w-[92%] rounded-2xl rounded-bl-sm border border-border bg-surface-raised px-3 py-2">
+                                <div class="text-[0.7rem] font-semibold text-muted">Claude</div>
+                                <div class="whitespace-pre-wrap break-words">@entry.Text</div>
+                            </div>
                         </div>
                         break;
 
                     case AssistantEntryKind.Command:
-                        <div class="assistant-entry assistant-command card">
-                            <div class="card-header d-flex align-items-center">
-                                <span class="badge @(entry.IsReadOnly ? "text-bg-secondary" : "text-bg-warning") me-2">
+                        <div class="sr-card overflow-hidden">
+                            <div class="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
+                                <span class="sr-badge @(entry.IsReadOnly ? "sr-badge-neutral" : "sr-badge-warning")">
                                     @(entry.IsReadOnly ? "Read-only" : "Changes system")
                                 </span>
-                                <span class="me-2">@entry.Shell</span>
-                                <span class="ms-auto small">@GetStateLabel(entry)</span>
+                                <span class="font-mono">@entry.Shell</span>
+                                <span class="ml-auto text-muted">@GetStateLabel(entry)</span>
                             </div>
-                            <div class="card-body">
+                            <div class="space-y-2 p-3">
                                 @if (!string.IsNullOrWhiteSpace(entry.Purpose))
                                 {
-                                    <div class="mb-2">@entry.Purpose</div>
+                                    <div class="text-sm">@entry.Purpose</div>
                                 }
-                                <pre class="assistant-code">@entry.Command</pre>
+                                <pre class="m-0 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-sunken p-2 font-mono text-xs">@entry.Command</pre>
                                 @if (!entry.IsReadOnly)
                                 {
-                                    <div class="small text-muted mb-2">Why approval is needed: @entry.ClassificationReason</div>
+                                    <div class="text-xs text-muted">Why approval is needed: @entry.ClassificationReason</div>
                                 }
 
                                 @if (entry.State == CommandState.AwaitingApproval)
                                 {
-                                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                                        <button class="btn btn-sm btn-success" @onclick="() => Approve(entry)">Approve and run</button>
-                                        <input class="form-control form-control-sm"
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                        <button class="sr-btn sr-btn-success w-full sm:w-auto" @onclick="() => Approve(entry)">Approve and run</button>
+                                        <input class="sr-input sm:flex-1"
                                                placeholder="Optional note for Claude"
                                                @bind="_rejectNote" />
-                                        <button class="btn btn-sm btn-danger" @onclick="() => Reject(entry)">Reject</button>
+                                        <button class="sr-btn sr-btn-danger w-full sm:w-auto" @onclick="() => Reject(entry)">Reject</button>
                                     </div>
                                 }
                                 else if (!string.IsNullOrWhiteSpace(entry.Output))
                                 {
                                     <details>
-                                        <summary class="small">Output</summary>
-                                        <pre class="assistant-code assistant-output">@entry.Output</pre>
+                                        <summary class="cursor-pointer text-xs text-muted">Output</summary>
+                                        <pre class="mt-1 mb-0 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-sunken p-2 font-mono text-xs">@entry.Output</pre>
                                     </details>
                                 }
                             </div>
@@ -101,25 +117,26 @@
                         break;
 
                     case AssistantEntryKind.Info:
-                        <div class="assistant-entry small text-muted fst-italic">@entry.Text</div>
+                        <div class="text-center text-xs italic text-muted">@entry.Text</div>
                         break;
 
                     case AssistantEntryKind.Error:
-                        <div class="assistant-entry alert alert-danger py-2">@entry.Text</div>
+                        <div class="sr-alert sr-alert-danger mb-0">@entry.Text</div>
                         break;
                 }
             }
 
             @if (_session.IsBusy)
             {
-                <div class="assistant-entry small text-muted">
-                    <span class="spinner-border spinner-border-sm me-2"></span>Claude is working...
+                <div class="flex items-center gap-2 text-sm text-muted">
+                    <span class="size-4 animate-spin rounded-full border-2 border-muted border-t-transparent"></span>
+                    Claude is working...
                 </div>
             }
         </div>
 
-        <div class="d-flex gap-2">
-            <textarea class="form-control"
+        <div class="mt-2 flex items-end gap-2 pb-[env(safe-area-inset-bottom)]">
+            <textarea class="sr-textarea min-h-11 flex-1 resize-none"
                       rows="2"
                       placeholder="@(Embedded ? "Describe the problem, e.g. \"Find out why this website is slow in Chrome.\"" : "Describe the problem, e.g. \"The user says Outlook is slow since this morning.\"")"
                       disabled="@_session.IsBusy"
@@ -128,11 +145,11 @@
                       @onkeydown="HandleKeyDown"></textarea>
             @if (_session.IsBusy)
             {
-                <button class="btn btn-secondary" @onclick="() => _session.CancelTurn()">Stop</button>
+                <button class="sr-btn sr-btn-secondary" @onclick="() => _session.CancelTurn()">Stop</button>
             }
             else
             {
-                <button class="btn btn-primary" @onclick="Send">Send</button>
+                <button class="sr-btn sr-btn-primary" @onclick="Send">Send</button>
             }
         </div>
     }
@@ -146,6 +163,8 @@
     private bool _autoRunReadOnly;
 
     private IJSObjectReference? _embedModule;
+    private ElementReference _logElement;
+    private int _renderedEntryCount;
 
     [Parameter]
     public string DeviceId { get; set; } = string.Empty;
@@ -259,6 +278,24 @@
     }
 
     private sealed record CaptureInfo(bool Ok, int Width, int Height, string? Error);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Follow the conversation as entries are added.
+        if (_session is not null && _session.Entries.Count != _renderedEntryCount)
+        {
+            _renderedEntryCount = _session.Entries.Count;
+            try
+            {
+                _embedModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./assistant-embed.js");
+                await _embedModule.InvokeVoidAsync("scrollToBottom", _logElement);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
 
     private void HandleSessionChanged()
     {

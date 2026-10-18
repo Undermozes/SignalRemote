@@ -2,13 +2,13 @@
 
 <div>
 
-    <div class="@GetActiveClass() pointer tree-view-item" 
+    <div class="@GetActiveClass() flex min-h-11 cursor-pointer items-center rounded-md py-1 pr-2 select-none md:min-h-9" 
          style="padding-left: @($"{IndentLevel * .5}em"); @Style"
          @onclick="OnItemClick"
          @onclick:stopPropagation>
 
-        <span class="@ItemIconCssSelector.Invoke(Source) mx-2" />
-        <span>@HeaderSelector.Invoke(Source)</span>
+        <span class="@ItemIconCssSelector.Invoke(Source) mx-2 shrink-0" aria-hidden="true" />
+        <span class="min-w-0 break-words">@HeaderSelector.Invoke(Source)</span>
     </div>
 
     @if (IsExpanded)

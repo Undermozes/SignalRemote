@@ -1,16 +1,16 @@
 ﻿@inherits LayoutComponentBase
 @layout AccountLayout
 
-<h1>Manage your account</h1>
+<div class="mx-auto w-full max-w-5xl py-2 md:py-4">
+    <h1 class="sr-page-title mb-1">Manage your account</h1>
+    <h2 class="mb-4 text-base font-normal text-muted">Change your account settings</h2>
 
-<div>
-    <h2>Change your account settings</h2>
-    <hr />
-    <div class="row">
-        <div class="col-md-3">
+    @* Phones: horizontally scrollable tab bar.  md and up: vertical list beside the content.  No JS needed. *@
+    <div class="md:grid md:grid-cols-[13rem_minmax(0,1fr)] md:gap-8">
+        <div class="mb-6 md:mb-0">
             <ManageNavMenu />
         </div>
-        <div class="col-md-9">
+        <div class="min-w-0">
             @Body
         </div>
     </div>

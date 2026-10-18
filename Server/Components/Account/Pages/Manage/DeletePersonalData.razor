@@ -14,27 +14,28 @@
 
 <StatusMessage Message="@message" />
 
-<h3>Delete Personal Data</h3>
+<h3 class="sr-section-title mt-0">Delete Personal Data</h3>
 
-<div class="alert alert-warning" role="alert">
-    <p>
+<div class="sr-alert sr-alert-warning" role="alert">
+    <span class="oi oi-warning mt-0.5 text-warning" aria-hidden="true"></span>
+    <p class="m-0">
         <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
     </p>
 </div>
 
-<div>
+<div class="max-w-lg">
     <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post" Enhance>
         <DataAnnotationsValidator />
-        <ValidationSummary class="text-danger" role="alert" />
+        <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
         @if (requirePassword)
         {
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Please enter your password." />
-                <label for="password" class="form-label">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            <div class="sr-field">
+                <label for="password" class="sr-label">Password</label>
+                <InputText id="password" type="password" @bind-Value="Input.Password" class="sr-input" autocomplete="current-password" aria-required="true" placeholder="Please enter your password." />
+                <ValidationMessage For="() => Input.Password" class="mt-1 text-sm text-danger dark:text-red-400" />
             </div>
         }
-        <button class="w-100 btn btn-lg btn-danger" type="submit">Delete data and close my account</button>
+        <button class="sr-btn sr-btn-danger w-full sm:w-auto" type="submit">Delete data and close my account</button>
     </EditForm>
 </div>
 

@@ -15,168 +15,132 @@
     <LoadingSignal StatusMessage="@_loadingMessage" />
 }
 
-<h4 class="text-success mt-3">
-    Persistent Agents
-</h4>
-<p class="text-info mb-3">
-    Copy and paste on a remote computer to install the agent.
-</p>
+<div class="mx-auto max-w-4xl">
+    <h4 class="sr-section-title mt-2 text-success">
+        Persistent Agents
+    </h4>
+    <p class="mb-4 text-sm text-muted">
+        Copy and paste on a remote computer to install the agent.
+    </p>
 
-<div class="row">
-
-    <div class="col-sm-12 mb-3">
-        <div class="mb-1">
-            <strong>Windows 10/11 (32-Bit and 64-Bit)</strong>
-        </div>
-
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_windowsScript" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyScriptToClipboard(_windowsScript)">
-                <i class="oi oi-clipboard"></i>
-            </button>
-        </div>
-    </div>
-
-    <div class="col-sm-12 mb-3">
-        <div class="mb-1">
-            <strong>Ubuntu (64-Bit)</strong>
-        </div>
-
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_ubuntuScript" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyScriptToClipboard(_ubuntuScript)">
-                <i class="oi oi-clipboard"></i>
-            </button>
-        </div>
-    </div>
-
-    <div class="col-sm-12 mb-3">
-        <div class="mb-1">
-            <strong>Manjaro (64-Bit)</strong>
-        </div>
-
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_manjaroScript" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyScriptToClipboard(_manjaroScript)">
-                <i class="oi oi-clipboard"></i>
-            </button>
-        </div>
-    </div>
-
-    <div class="col-sm-12 mb-3">
-        <div class="mb-1">
-            <strong>Linux ARM64 (e.g., Raspberry Pi)</strong>
-        </div>
-
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_linuxArm64Script" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyScriptToClipboard(_linuxArm64Script)">
-                <i class="oi oi-clipboard"></i>
-            </button>
-        </div>
-    </div>
-</div>
-
-<h4 class="text-success mt-3">
-    Attended Support
-</h4>
-<p class="text-info">
-    You can upload custom versions of the attended support client (i.e. "Remotely_Desktop.exe")
-    and send the download link to end-users when they need support. For example, you could sign
-    the EXE with a commercial certificate so the end-user (hopefully) doesn't see a SmartScreen
-    warning about the file.
-</p>
-<p class="mb-3 text-warning">
-    NOTE: These binaries must be manually updated each time a new Docker image is pulled.
-</p>
-
-<div class="row">
-    <div class="col-sm-12 mb-4">
-        <div class="mb-1">
-            <strong>Windows 10/11 (64-Bit)</strong>
-        </div>
-
-        @if (_winX64File?.Exists != true)
+    <div class="flex flex-col gap-4">
+        @foreach (var (title, script) in new[]
         {
-            <div class="text-danger mb-2">
-                Note: A custom binary for this file hasn't been uploaded yet.
+            ("Windows 10/11 (32-Bit and 64-Bit)", _windowsScript),
+            ("Ubuntu (64-Bit)", _ubuntuScript),
+            ("Manjaro (64-Bit)", _manjaroScript),
+            ("Linux ARM64 (e.g., Raspberry Pi)", _linuxArm64Script)
+        })
+        {
+            <div class="sr-card">
+                <div class="sr-card-header justify-between text-sm">
+                    <span>@title</span>
+                    <button class="sr-btn sr-btn-primary shrink-0" type="button" id="button-addon2" title="Copy to clipboard" @onclick="() => CopyScriptToClipboard(script)">
+                        <i class="oi oi-clipboard"></i>
+                        <span>Copy</span>
+                    </button>
+                </div>
+                <pre class="m-0 max-h-48 overflow-auto rounded-b-xl bg-surface-sunken p-3 font-mono text-xs break-all whitespace-pre-wrap text-fg"><code>@script</code></pre>
             </div>
         }
-        else if (_winX64File?.PhysicalPath is not null)
-        {
-            <div class="text-info mb-2">
-                Created Date: @(_winX64CreatedDate) UTC
-            </div>
-        }
+    </div>
 
-        @if (_isServerAdmin)
-        {
-            <div class="mb-2">
-                <FileInputButton ClassNames="btn btn-primary"
-                                 OnChanged="HandleWin64FileChanged">
-                    <ButtonContent>
-                        <i class="oi oi-data-transfer-upload" title="Upload File"></i>
-                        <span class="ms-2">Upload File</span>
-                    </ButtonContent>
-                </FileInputButton>
-                <div class="mt-1">
-                    <span class="text-primary">
-                        Note: Only server admins will have this button.
-                    </span>
+    <h4 class="sr-section-title mt-8 text-success">
+        Attended Support
+    </h4>
+    <p class="mb-2 text-sm text-muted">
+        You can upload custom versions of the attended support client (i.e. "Remotely_Desktop.exe")
+        and send the download link to end-users when they need support. For example, you could sign
+        the EXE with a commercial certificate so the end-user (hopefully) doesn't see a SmartScreen
+        warning about the file.
+    </p>
+    <div class="sr-alert sr-alert-warning">
+        NOTE: These binaries must be manually updated each time a new Docker image is pulled.
+    </div>
+
+    <div class="flex flex-col gap-4">
+        <div class="sr-card">
+            <div class="sr-card-header text-sm">Windows 10/11 (64-Bit)</div>
+            <div class="sr-card-body flex flex-col gap-3">
+                @if (_winX64File?.Exists != true)
+                {
+                    <div class="text-sm text-danger">
+                        Note: A custom binary for this file hasn't been uploaded yet.
+                    </div>
+                }
+                else if (_winX64File?.PhysicalPath is not null)
+                {
+                    <div class="text-sm text-muted">
+                        Created Date: @(_winX64CreatedDate) UTC
+                    </div>
+                }
+
+                @if (_isServerAdmin)
+                {
+                    <div>
+                        <FileInputButton ClassNames="sr-btn sr-btn-secondary w-full sm:w-auto"
+                                         OnChanged="HandleWin64FileChanged">
+                            <ButtonContent>
+                                <i class="oi oi-data-transfer-upload" title="Upload File"></i>
+                                <span>Upload File</span>
+                            </ButtonContent>
+                        </FileInputButton>
+                        <p class="sr-help">
+                            Note: Only server admins will have this button.
+                        </p>
+                    </div>
+                }
+
+                <div class="flex flex-col gap-2 sm:flex-row">
+                    <input type="text" class="sr-input min-w-0 flex-1 font-mono" readonly value="@_winX64Uri" aria-label="Windows 64-bit download link" />
+                    <button class="sr-btn sr-btn-primary shrink-0" type="button" id="button-addon2" title="Copy to clipboard" @onclick="() => CopyUriToClipboard(_winX64Uri)">
+                        <i class="oi oi-clipboard"></i>
+                        <span>Copy link</span>
+                    </button>
                 </div>
             </div>
-        }
-
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_winX64Uri" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyUriToClipboard(_winX64Uri)">
-                <i class="oi oi-clipboard"></i>
-            </button>
         </div>
 
-    </div>
+        <div class="sr-card">
+            <div class="sr-card-header text-sm">Windows 10/11 (32-Bit)</div>
+            <div class="sr-card-body flex flex-col gap-3">
+                @if (_winX86File?.Exists != true)
+                {
+                    <div class="text-sm text-danger">
+                        Note: A custom binary for this file hasn't been uploaded yet.
+                    </div>
+                }
+                else if (_winX86File?.PhysicalPath is not null)
+                {
+                    <div class="text-sm text-muted">
+                        Created Date: @(_winX86CreatedDate) UTC
+                    </div>
+                }
 
-    <div class="col-sm-12 mb-4">
-        <div class="mb-1">
-            <strong>Windows 10/11 (32-Bit)</strong>
-        </div>
+                @if (_isServerAdmin)
+                {
+                    <div>
+                        <FileInputButton ClassNames="sr-btn sr-btn-secondary w-full sm:w-auto"
+                                         OnChanged="HandleWin86FileChanged">
+                            <ButtonContent>
+                                <i class="oi oi-data-transfer-upload" title="Upload File"></i>
+                                <span>Upload File</span>
+                            </ButtonContent>
+                        </FileInputButton>
+                        <p class="sr-help">
+                            Note: Only server admins will have this button.
+                        </p>
+                    </div>
+                }
 
-        @if (_winX86File?.Exists != true)
-        {
-            <div class="text-danger mb-2">
-                Note: A custom binary for this file hasn't been uploaded yet.
-            </div>
-        }
-        else if (_winX86File?.PhysicalPath is not null)
-        {
-            <div class="text-info mb-2">
-                Created Date: @(_winX86CreatedDate) UTC
-            </div>
-        }
-
-        @if (_isServerAdmin)
-        {
-            <div class="mb-2">
-                <FileInputButton ClassNames="btn btn-primary"
-                                 OnChanged="HandleWin86FileChanged">
-                    <ButtonContent>
-                        <i class="oi oi-data-transfer-upload" title="Upload File"></i>
-                        <span class="ms-2">Upload File</span>
-                    </ButtonContent>
-                </FileInputButton>
-                <div class="mt-1">
-                    <span class="text-primary">
-                        Note: Only server admins will have this button.
-                    </span>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                    <input type="text" class="sr-input min-w-0 flex-1 font-mono" readonly value="@_winX86Uri" aria-label="Windows 32-bit download link" />
+                    <button class="sr-btn sr-btn-primary shrink-0" type="button" id="button-addon2" title="Copy to clipboard" @onclick="() => CopyUriToClipboard(_winX86Uri)">
+                        <i class="oi oi-clipboard"></i>
+                        <span>Copy link</span>
+                    </button>
                 </div>
             </div>
-        }
-
-        <div class="input-group">
-            <input type="text" class="form-control" readonly value="@_winX86Uri" />
-            <button class="btn btn-primary" type="button" id="button-addon2" @onclick="() => CopyUriToClipboard(_winX86Uri)">
-                <i class="oi oi-clipboard"></i>
-            </button>
         </div>
     </div>
 </div>

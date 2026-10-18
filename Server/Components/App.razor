@@ -4,33 +4,22 @@
 @inject IThemeProvider ThemeProvider
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="@(_theme == Theme.Dark ? "dark" : null)">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=550, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Remotely</title>
     <base href="/" />
     <link href="css/site.css" rel="stylesheet" />
     <link href="Remotely_Server.styles.css" rel="stylesheet" />
     <script src="interop.js"></script>
-
-    @if (_theme == Theme.Dark)
-    {
-        <link rel="stylesheet" href="/css/Themes/darkly.min.css" />
-        <link rel="stylesheet" href="/css/Themes/darkly.custom.css" />
-    }
-    else
-    {
-        <link rel="stylesheet" href="/css/Themes/yeti.min.css" />
-        <link rel="stylesheet" href="/css/Themes/yeti.custom.css" />
-    }
+    <link rel="stylesheet" href="/css/app.css" />
 
     <HeadOutlet @rendermode="RenderModeForPage" />
 </head>
 <body>
     <Routes @rendermode="RenderModeForPage" />
     <script src="_framework/blazor.web.js"></script>
-    <script src="/lib/bootstrap/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 

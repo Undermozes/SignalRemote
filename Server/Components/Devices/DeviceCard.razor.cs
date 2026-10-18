@@ -184,6 +184,16 @@ public partial class DeviceCard : AuthComponentBase
     }
 
 
+    // Presentational class strings for the card and its header.
+    private string CardClass =>
+        "sr-card min-w-0 scroll-mt-16 overflow-hidden transition-shadow " +
+        (IsExpanded ? "col-span-full cursor-auto shadow-md" : "cursor-pointer hover:shadow-md") +
+        (IsSelected ? " ring-2 ring-brand" : string.Empty);
+
+    private string HeaderClass =>
+        "flex items-center gap-2 px-3 py-2 select-none" +
+        (IsExpanded ? " cursor-pointer" : string.Empty);
+
     private string GetCardStateClass()
     {
         return $"{_state}".ToLower();

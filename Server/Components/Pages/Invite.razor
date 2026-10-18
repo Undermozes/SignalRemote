@@ -3,15 +3,15 @@
 @inject AuthenticationStateProvider AuthProvider
 @inject IToastService Toasts
 
-<h3>Organization Invite</h3>
-<hr />
+<h3 class="sr-page-title">Organization Invite</h3>
+<hr class="mb-4 border-border" />
 
-<div class="row">
-    <div class="col-sm-12">
+<div>
+    <div class="max-w-2xl">
         @if (_joinSuccessful)
         {
-            <h5>Congratulations!</h5>
-            <p class="text-info">
+            <h5 class="mb-2 text-lg font-semibold">Congratulations!</h5>
+            <p class="text-sky-600 dark:text-sky-400">
                 You've successfully joined the organization!
             </p>
         }
@@ -26,12 +26,12 @@
             <div>
                 <div>
                     <strong class="text-danger">WARNING: </strong>
-                    <p class="text-danger">You will leave your current organization and lose access to its agents unless someone is able to invite you back in.</p>
-                    <p>Are you sure you want to leave your current organization and join this one?</p>
+                    <p class="mb-3 text-danger">You will leave your current organization and lose access to its agents unless someone is able to invite you back in.</p>
+                    <p class="mb-4">Are you sure you want to leave your current organization and join this one?</p>
                 </div>
-                <div class="form-group">
-                    <button type="button" class="btn btn-secondary me-3" onclick="location.assign(location.origin)">Cancel</button>
-                    <button type="button" class="btn btn-danger" @onclick="Confirm">Confirm</button>
+                <div class="flex flex-col-reverse gap-3 sm:flex-row">
+                    <button type="button" class="sr-btn sr-btn-secondary w-full sm:w-auto" onclick="location.assign(location.origin)">Cancel</button>
+                    <button type="button" class="sr-btn sr-btn-danger w-full sm:w-auto" @onclick="Confirm">Confirm</button>
                 </div>
             </div>
         }

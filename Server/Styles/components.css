@@ -1,0 +1,142 @@
+/*
+ * Shared component classes (sr-*), built from Tailwind utilities.  Imported into
+ * the components layer, so utilities on the same element override them
+ * (e.g. "sr-btn sr-btn-primary w-full").
+ *
+ * Use these for repeated UI pieces; use plain utilities for layout and one-offs.
+ */
+
+/* Buttons: 44px tall by default (comfortable touch target), sr-btn-sm for dense rows. */
+.sr-btn {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-transparent px-4 py-2 text-sm font-medium no-underline transition-colors select-none;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+}
+.sr-btn-sm {
+    @apply min-h-9 px-3 py-1 text-xs;
+}
+.sr-btn-primary {
+    @apply bg-brand text-brand-contrast hover:bg-brand-hover;
+}
+.sr-btn-secondary {
+    @apply border-border bg-surface-raised text-fg hover:bg-surface-sunken;
+}
+.sr-btn-danger {
+    @apply bg-danger text-white hover:bg-red-700;
+}
+.sr-btn-success {
+    @apply bg-success text-white hover:bg-green-700;
+}
+.sr-btn-warning {
+    @apply bg-warning text-white hover:bg-amber-700;
+}
+.sr-btn-ghost {
+    @apply bg-transparent text-fg hover:bg-surface-sunken;
+}
+.sr-btn-link {
+    @apply min-h-0 bg-transparent p-0 text-brand underline-offset-2 hover:underline;
+}
+
+/* Form controls.  16px text on phones keeps iOS Safari from zooming in on focus. */
+.sr-label {
+    @apply mb-1 block text-sm font-medium text-fg;
+}
+.sr-help {
+    @apply mt-1 text-sm text-muted;
+}
+.sr-input,
+.sr-select,
+.sr-textarea {
+    @apply block w-full rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg sm:text-sm;
+    @apply placeholder:text-muted focus:border-brand focus:outline-2 focus:outline-brand/30;
+    @apply disabled:opacity-60;
+}
+.sr-input,
+.sr-select {
+    @apply min-h-11;
+}
+.sr-checkbox {
+    @apply size-5 shrink-0 cursor-pointer rounded accent-brand;
+}
+.sr-field {
+    @apply mb-4;
+}
+
+/* Surfaces */
+.sr-card {
+    @apply rounded-xl border border-border bg-surface-raised text-fg shadow-sm;
+}
+.sr-card-header {
+    @apply flex items-center gap-2 border-b border-border px-4 py-3 font-semibold;
+}
+.sr-card-body {
+    @apply p-4;
+}
+.sr-page-title {
+    @apply mb-4 text-2xl font-semibold text-fg;
+}
+.sr-section-title {
+    @apply mb-3 mt-6 text-lg font-semibold text-fg;
+}
+
+/* Badges */
+.sr-badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+}
+.sr-badge-neutral {
+    @apply bg-surface-sunken text-muted;
+}
+.sr-badge-success {
+    @apply bg-green-500/15 text-green-600 dark:text-green-400;
+}
+.sr-badge-warning {
+    @apply bg-amber-500/15 text-amber-600 dark:text-amber-400;
+}
+.sr-badge-danger {
+    @apply bg-red-500/15 text-red-600 dark:text-red-400;
+}
+.sr-badge-info {
+    @apply bg-blue-500/15 text-blue-600 dark:text-blue-400;
+}
+
+/* Alerts */
+.sr-alert {
+    @apply mb-4 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm;
+}
+.sr-alert-info {
+    @apply border-blue-500/30 bg-blue-500/10 text-fg;
+}
+.sr-alert-success {
+    @apply border-green-500/30 bg-green-500/10 text-fg;
+}
+.sr-alert-warning {
+    @apply border-amber-500/30 bg-amber-500/10 text-fg;
+}
+.sr-alert-danger {
+    @apply border-red-500/30 bg-red-500/10 text-fg;
+}
+
+/* Tables: wrap in .sr-table-wrap so wide tables scroll sideways on phones. */
+.sr-table-wrap {
+    @apply w-full overflow-x-auto rounded-xl border border-border;
+}
+.sr-table {
+    @apply w-full border-collapse text-left text-sm text-fg;
+}
+.sr-table th {
+    @apply border-b border-border bg-surface-sunken px-3 py-2 font-semibold whitespace-nowrap;
+}
+.sr-table td {
+    @apply border-b border-border px-3 py-2 align-top;
+}
+.sr-table tr:last-child td {
+    @apply border-b-0;
+}
+
+/* Native <dialog> modal (replaces Bootstrap's modal JS). */
+.sr-dialog {
+    @apply m-auto w-[calc(100%-2rem)] max-w-lg rounded-xl border border-border bg-surface-raised p-0 text-fg shadow-xl;
+}
+.sr-dialog::backdrop {
+    @apply bg-black/50;
+}

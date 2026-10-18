@@ -18,29 +18,32 @@
 
 <PageTitle>Register</PageTitle>
 
-<StatusMessage Message="@message" />
-<h1>Register</h1>
-<h2>Associate your @ProviderDisplayName account.</h2>
-<hr />
+<div class="mx-auto w-full max-w-md py-4 sm:py-10">
+    <StatusMessage Message="@message" />
+    <h1 class="sr-page-title mb-1">Register</h1>
+    <h2 class="mb-4 text-base font-normal text-muted">Associate your @ProviderDisplayName account.</h2>
 
-<div  class="alert alert-info">
-    You've successfully authenticated with <strong>@ProviderDisplayName</strong>.
-    Please enter an email address for this site below and click the Register button to finish
-    logging in.
-</div>
+    <div class="sr-alert sr-alert-info">
+        <div>
+            You've successfully authenticated with <strong>@ProviderDisplayName</strong>.
+            Please enter an email address for this site below and click the Register button to finish
+            logging in.
+        </div>
+    </div>
 
-<div class="row">
-    <div class="col-md-4">
-        <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" class="form-control" autocomplete="email" placeholder="Please enter your email." />
-                <label for="email" class="form-label">Email</label>
-                <ValidationMessage For="() => Input.Email" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </EditForm>
+    <div class="sr-card">
+        <div class="sr-card-body sm:p-6">
+            <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
+                <div class="sr-field">
+                    <label for="email" class="sr-label">Email</label>
+                    <InputText id="email" @bind-Value="Input.Email" class="sr-input" autocomplete="email" placeholder="Please enter your email." />
+                    <ValidationMessage For="() => Input.Email" class="mt-1 text-sm text-danger dark:text-red-400" />
+                </div>
+                <button type="submit" class="sr-btn sr-btn-primary min-h-12 w-full text-base">Register</button>
+            </EditForm>
+        </div>
     </div>
 </div>
 

@@ -14,43 +14,43 @@
 
 <PageTitle>Manage email</PageTitle>
 
-<h3>Manage email</h3>
+<h3 class="sr-section-title mt-0">Manage email</h3>
 
 <StatusMessage Message="@message"/>
-<div class="row">
-    <div class="col-md-6">
-        <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
-            <AntiforgeryToken />
-        </form>
-        <EditForm Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            @if (isEmailConfirmed)
-            {
-                <div class="form-floating mb-3 input-group">
-                    <input type="text" value="@email" class="form-control" placeholder="Please enter your email." disabled />
-                    <div class="input-group-append">
-                        <span class="h-100 input-group-text text-success font-weight-bold">✓</span>
-                    </div>
-                    <label for="email" class="form-label">Email</label>
+<div class="max-w-lg">
+    <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
+        <AntiforgeryToken />
+    </form>
+    <EditForm Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
+        @if (isEmailConfirmed)
+        {
+            <div class="sr-field">
+                <label for="email" class="sr-label">Email</label>
+                <div class="relative">
+                    <input id="email" type="text" value="@email" class="sr-input pr-10" placeholder="Please enter your email." disabled />
+                    <span class="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-center font-bold text-success" title="Confirmed">
+                        ✓<span class="sr-only">Confirmed</span>
+                    </span>
                 </div>
-            }
-            else
-            {
-                <div class="form-floating mb-3">
-                    <input type="text" value="@email" class="form-control" placeholder="Please enter your email." disabled />
-                    <label for="email" class="form-label">Email</label>
-                    <button type="submit" class="btn btn-link" form="send-verification-form">Send verification email</button>
-                </div>
-            }
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true" placeholder="Please enter new email." />
-                <label for="new-email" class="form-label">New email</label>
-                <ValidationMessage For="() => Input.NewEmail" class="text-danger" />
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Change email</button>
-        </EditForm>
-    </div>
+        }
+        else
+        {
+            <div class="sr-field">
+                <label for="email" class="sr-label">Email</label>
+                <input id="email" type="text" value="@email" class="sr-input" placeholder="Please enter your email." disabled />
+                <button type="submit" class="sr-btn sr-btn-link mt-2 min-h-11" form="send-verification-form">Send verification email</button>
+            </div>
+        }
+        <div class="sr-field">
+            <label for="new-email" class="sr-label">New email</label>
+            <InputText id="new-email" inputmode="email" @bind-Value="Input.NewEmail" class="sr-input" autocomplete="email" aria-required="true" placeholder="Please enter new email." />
+            <ValidationMessage For="() => Input.NewEmail" class="mt-1 text-sm text-danger dark:text-red-400" />
+        </div>
+        <button type="submit" class="sr-btn sr-btn-primary w-full sm:w-auto">Change email</button>
+    </EditForm>
 </div>
 
 @code {

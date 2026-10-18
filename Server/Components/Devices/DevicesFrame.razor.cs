@@ -31,6 +31,7 @@ public partial class DevicesFrame : AuthComponentBase
     private int _devicesPerPage = 25;
     private string? _filter;
     private bool _hideOfflineDevices = true;
+    private bool _showFilters;
     private string _lastFilterState = string.Empty;
     private string? _selectedGroupId;
     private string _selectedSortProperty = "DeviceName";
@@ -120,18 +121,18 @@ public partial class DevicesFrame : AuthComponentBase
             return;
         }
 
-        TerminalStore.AddTerminalLine($"{deviceResult.Value.DeviceName} @ {result.TimeStamp}", "font-weight-bold");
+        TerminalStore.AddTerminalLine($"{deviceResult.Value.DeviceName} @ {result.TimeStamp}", "font-bold");
 
         var stdOut = result.StandardOutput ?? Array.Empty<string>();
         var stdErr = result.ErrorOutput ?? Array.Empty<string>();
 
         foreach (var line in stdOut)
         {
-            TerminalStore.AddTerminalLine(line, "text-info");
+            TerminalStore.AddTerminalLine(line, "text-sky-400");
         }
         foreach (var line in stdErr)
         {
-            TerminalStore.AddTerminalLine(line, "text-danger");
+            TerminalStore.AddTerminalLine(line, "text-red-400");
         }
         TerminalStore.InvokeLinesChanged();
     }

@@ -11,228 +11,272 @@
 
 @if (_isAuthenticated)
 {
-    <div class="alert alert-info">
-        Check out the <a href="/deploy">Deploy</a> page for a copy-and-paste deploy script!
+    <div class="sr-alert sr-alert-info">
+        <i class="oi oi-info mt-0.5" aria-hidden="true"></i>
+        <div>Check out the <a class="font-medium text-brand underline" href="/deploy">Deploy</a> page for a copy-and-paste deploy script!</div>
     </div>
 }
 
-
-<div class="row mb-3">
-    <h4>Portable Instant Support Clients</h4>
-    <p class="text-info col-sm-12 mb-2">
+<section class="mb-8">
+    <h4 class="sr-section-title mt-2">Portable Instant Support Clients</h4>
+    <p class="mb-4 text-sm text-muted">
         Instant desktop sharing.  No account required.
     </p>
-    <div class="col-sm-6 mb-3">
-        <strong>Windows (64-Bit)</strong>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="sr-card flex flex-col">
+            <div class="sr-card-header">Windows (64-Bit)</div>
+            <div class="sr-card-body flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/api/ClientDownloads/Desktop/WindowsDesktop-x64/@_organizationId">
+                        <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
+                        <span>Windows EXE</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="sr-card flex flex-col">
+            <div class="sr-card-header">Windows (32-Bit)</div>
+            <div class="sr-card-body flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/api/ClientDownloads/Desktop/WindowsDesktop-x86/@_organizationId">
+                        <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
+                        <span>Windows EXE</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="sr-card flex flex-col">
+            <div class="sr-card-header">Linux 64-Bit</div>
+            <div class="sr-card-body flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/api/ClientDownloads/Desktop/UbuntuDesktop/@_organizationId">
+                        <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
+                        <span>Ubuntu Executable</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="sr-card flex flex-col">
+            <div class="sr-card-header">Android (8.0+)</div>
+            <div class="sr-card-body flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/api/ClientDownloads/Desktop/AndroidApk">
+                        <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
+                        <span>Android APK</span>
+                    </a>
+                </div>
+                <p class="sr-help mt-0">
+                    Sideloading required. Enable <em>Install unknown apps</em> in Android Settings → Apps before installing.
+                </p>
+            </div>
+        </div>
+        @*<div class="sr-card">
+        <strong>macOS x64 (10.12 - 10.15)</strong>
         <p>
-            <a target="_blank" href="/api/ClientDownloads/Desktop/WindowsDesktop-x64/@_organizationId">Windows EXE</a>
+        <a target="_blank" href="/api/ClientDownloads/Desktop/MacOS-x64/@_organizationId">macOS x64 Executable</a>
         </p>
-    </div>
-    <div class="col-sm-6">
-        <strong>Windows (32-Bit)</strong>
+        <strong>macOS arm64 (11.01)</strong>
         <p>
-            <a target="_blank" href="/api/ClientDownloads/Desktop/WindowsDesktop-x86/@_organizationId">Windows EXE</a>
+        <a target="_blank" href="/api/ClientDownloads/Desktop/MacOS-arm64/@_organizationId">macOS arm64 Executable</a>
         </p>
+        </div>*@
     </div>
-    <div class="col-sm-6 mb-3">
-        <strong>Linux 64-Bit</strong>
-        <p>
-            <a target="_blank" href="/api/ClientDownloads/Desktop/UbuntuDesktop/@_organizationId">Ubuntu Executable</a>
-        </p>
-    </div>
-    <div class="col-sm-6 mb-3">
-        <strong>Android (8.0+)</strong>
-        <p>
-            <a target="_blank" href="/api/ClientDownloads/Desktop/AndroidApk">Android APK</a>
-        </p>
-        <p class="small text-muted">
-            Sideloading required. Enable <em>Install unknown apps</em> in Android Settings → Apps before installing.
-        </p>
-    </div>
-    @*<div class="col-sm-6 mb-3">
-    <strong>macOS x64 (10.12 - 10.15)</strong>
-    <p>
-    <a target="_blank" href="/api/ClientDownloads/Desktop/MacOS-x64/@_organizationId">macOS x64 Executable</a>
-    </p>
-    <strong>macOS arm64 (11.01)</strong>
-    <p>
-    <a target="_blank" href="/api/ClientDownloads/Desktop/MacOS-arm64/@_organizationId">macOS arm64 Executable</a>
-    </p>
-    </div>*@
-</div>
+</section>
 
 
-<div class="row">
-    <h4>Resident Agents</h4>
+<section>
+    <h4 class="sr-section-title">Resident Agents</h4>
 
-    <p class="text-info col-sm-12 mb-2">
+    <p class="mb-4 text-sm text-muted">
         Installable background agents that provide unattended access and remote scripting.
     </p>
 
     @if (!_isAuthenticated)
     {
-        <div class="col-sm-6 mb-3">
-            <h6>Must be logged in to download.</h6>
+        <div class="sr-alert sr-alert-warning">
+            <h6 class="m-0 text-sm font-semibold">Must be logged in to download.</h6>
         </div>
 
     }
     else
     {
-        <div class="col-sm-6 mb-3">
-            <strong>Windows 10 / 11 (64-Bit and 32-Bit)</strong>
-            <p>
-                <a target="_blank" href="/API/ClientDownloads/WindowsInstaller/@_organizationId">Windows PowerShell Installer</a>
-                <br />
-                <a target="_blank" href="/Content/Remotely-Win-x64.zip">Windows x64 Files Only</a>
-                <br />
-                <a target="_blank" href="/Content/Remotely-Win-x86.zip">Windows x86 Files Only</a>
-            </p>
-
-            <p>
-                <div class="small">Example Quiet Install:</div>
-
-                <code class="label label-default small">
-                    powershell.exe -ExecutionPolicy Bypass -F {path}\Install-Remotely.ps1
-                    -install
-                    -quiet
-                    -organizationid "0b3d706b-9c5d-41e6-8ae9-5720d16324e6"
-                    -serverurl "https://remotely.mytechshop.com"
-                </code>
-            </p>
-            <p>
-                <div class="small">Example Quiet Uninstall:</div>
-
-                <code class="label label-default small">powershell.exe -ExecutionPolicy Bypass -F Install-Remotely.ps1 -uninstall -quiet</code>
-            </p>
-            <p>
-                <div class="small">Example Local Install:</div>
-
-                <code class="label label-default small">
-                    powershell.exe -ExecutionPolicy Bypass -F {path}\Install-Remotely.ps1
-                    -install
-                    -quiet
-                    -organizationid "0b3d706b-9c5d-41e6-8ae9-5720d16324e6"
-                    -serverurl "https://remotely.mytechshop.com"
-                    -path "[path]\Remotely-Win-x64.zip"
-                </code>
-            </p>
-            <p>
-                <div class="small">All Override Options:</div>
-
-                <code class="label label-default small">
-                    powershell.exe -ExecutionPolicy Bypass -F {path}\Install-Remotely.ps1
-                    -install -quiet -supportshortcut
-                    -organizationid "0b3d706b-9c5d-41e6-8ae9-5720d16324e6"
-                    -serverurl "https://remotely.mytechshop.com"
-                    -devicegroup "Customer Group 1"
-                    -devicealias "Front Desk"
-                    -deviceuuid "eebb4d87-5459-4976-989e-a7876dffc69c"
-                </code>
-            </p>
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div class="sr-card flex flex-col">
+            <div class="sr-card-header">Windows 10 / 11 (64-Bit and 32-Bit)</div>
+            <div class="sr-card-body flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/API/ClientDownloads/WindowsInstaller/@_organizationId">
+                        <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
+                        <span>Windows PowerShell Installer</span>
+                    </a>
+                    <a target="_blank" class="sr-btn sr-btn-secondary w-full justify-start" href="/Content/Remotely-Win-x64.zip">
+                        <i class="oi oi-box" aria-hidden="true"></i>
+                        <span>Windows x64 Files Only</span>
+                    </a>
+                    <a target="_blank" class="sr-btn sr-btn-secondary w-full justify-start" href="/Content/Remotely-Win-x86.zip">
+                        <i class="oi oi-box" aria-hidden="true"></i>
+                        <span>Windows x86 Files Only</span>
+                    </a>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Quiet Install:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">powershell.exe -ExecutionPolicy Bypass -F {path}\Install-Remotely.ps1
+                            -install
+                            -quiet
+                            -organizationid "0b3d706b-9c5d-41e6-8ae9-5720d16324e6"
+                            -serverurl "https://remotely.mytechshop.com"</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Quiet Uninstall:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">powershell.exe -ExecutionPolicy Bypass -F Install-Remotely.ps1 -uninstall -quiet</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Local Install:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">powershell.exe -ExecutionPolicy Bypass -F {path}\Install-Remotely.ps1
+                            -install
+                            -quiet
+                            -organizationid "0b3d706b-9c5d-41e6-8ae9-5720d16324e6"
+                            -serverurl "https://remotely.mytechshop.com"
+                            -path "[path]\Remotely-Win-x64.zip"</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">All Override Options:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">powershell.exe -ExecutionPolicy Bypass -F {path}\Install-Remotely.ps1
+                            -install -quiet -supportshortcut
+                            -organizationid "0b3d706b-9c5d-41e6-8ae9-5720d16324e6"
+                            -serverurl "https://remotely.mytechshop.com"
+                            -devicegroup "Customer Group 1"
+                            -devicealias "Front Desk"
+                            -deviceuuid "eebb4d87-5459-4976-989e-a7876dffc69c"</code>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="col-sm-6 mb-3">
-            <strong>Linux 64-Bit</strong>
-            <p>
-                <a target="_blank" href="/API/ClientDownloads/UbuntuInstaller-x64/@_organizationId">Ubuntu x64 Bash Installer</a>
-                <br />
-                <a target="_blank" href="/API/ClientDownloads/ManjaroInstaller-x64/@_organizationId">Manjaro x64 Bash Installer</a>
-                <br />
-                <a target="_blank" href="/Content/Remotely-Linux.zip">Linux x64 Files Only</a>
-            </p>
-            <p>
-                <div class="small">Example Install:</div>
-
-                <code class="label label-default small">sudo [path]/Install-Ubuntu-x64.sh</code>
-            </p>
-            <p>
-                <div class="small">Example Local Install:</div>
-
-                <code class="label label-default small">sudo [path]/Install-Ubuntu-x64.sh --path [path]/Remotely-Linux.zip</code>
-            </p>
-            <p>
-                <div class="small">Uninstall:</div>
-
-                <code class="label label-default small">sudo [path]/Install-Ubuntu-x64.sh --uninstall</code>
-            </p>
+        <div class="sr-card flex flex-col">
+            <div class="sr-card-header">Linux 64-Bit</div>
+            <div class="sr-card-body flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/API/ClientDownloads/UbuntuInstaller-x64/@_organizationId">
+                        <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
+                        <span>Ubuntu x64 Bash Installer</span>
+                    </a>
+                    <a target="_blank" class="sr-btn sr-btn-secondary w-full justify-start" href="/API/ClientDownloads/ManjaroInstaller-x64/@_organizationId">
+                        <i class="oi oi-box" aria-hidden="true"></i>
+                        <span>Manjaro x64 Bash Installer</span>
+                    </a>
+                    <a target="_blank" class="sr-btn sr-btn-secondary w-full justify-start" href="/Content/Remotely-Linux.zip">
+                        <i class="oi oi-box" aria-hidden="true"></i>
+                        <span>Linux x64 Files Only</span>
+                    </a>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Install:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-Ubuntu-x64.sh</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Local Install:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-Ubuntu-x64.sh --path [path]/Remotely-Linux.zip</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Uninstall:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-Ubuntu-x64.sh --uninstall</code>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="col-sm-6 mb-3">
-            <strong>Linux ARM64 (e.g., Raspberry Pi)</strong>
-            <p>
-                <a target="_blank" href="/API/ClientDownloads/LinuxArm64Installer/@_organizationId">Linux ARM64 Bash Installer</a>
-                <br />
-                <a target="_blank" href="/Content/Remotely-Linux-arm64.zip">Linux ARM64 Files Only</a>
-            </p>
-            <p>
-                <div class="small">Example Install:</div>
-
-                <code class="label label-default small">sudo [path]/Install-Linux-arm64.sh</code>
-            </p>
-            <p>
-                <div class="small">Example Local Install:</div>
-
-                <code class="label label-default small">sudo [path]/Install-Linux-arm64.sh --path [path]/Remotely-Linux-arm64.zip</code>
-            </p>
-            <p>
-                <div class="small">Uninstall:</div>
-
-                <code class="label label-default small">sudo [path]/Install-Linux-arm64.sh --uninstall</code>
-            </p>
+        <div class="sr-card flex flex-col">
+            <div class="sr-card-header">Linux ARM64 (e.g., Raspberry Pi)</div>
+            <div class="sr-card-body flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/API/ClientDownloads/LinuxArm64Installer/@_organizationId">
+                        <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
+                        <span>Linux ARM64 Bash Installer</span>
+                    </a>
+                    <a target="_blank" class="sr-btn sr-btn-secondary w-full justify-start" href="/Content/Remotely-Linux-arm64.zip">
+                        <i class="oi oi-box" aria-hidden="true"></i>
+                        <span>Linux ARM64 Files Only</span>
+                    </a>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Install:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-Linux-arm64.sh</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Local Install:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-Linux-arm64.sh --path [path]/Remotely-Linux-arm64.zip</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Uninstall:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-Linux-arm64.sh --uninstall</code>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="col-sm-6 mb-3">
-            <strong>macOS x64 (10.12 - 10.15)</strong>
-            <p>
-                <a target="_blank" href="/API/ClientDownloads/MacOSInstaller-x64/@_organizationId">macOS x64 Bash Installer</a>
-                <br />
-                <a target="_blank" href="/Content/Remotely-MacOS-x64.zip">macOS x64 Files Only</a>
-            </p>
-
-            <p>
-                <div class="small">Example Install:</div>
-
-                <code class="label label-default small">sudo [path]/Install-MacOS-x64.sh</code>
-            </p>
-            <p>
-                <div class="small">Example Local Install:</div>
-
-                <code class="label label-default small">sudo [path]/Install-MacOS-x64.sh --path [path]/Remotely-MacOS-x64.zip</code>
-            </p>
-            <p>
-                <div class="small">Example Uninstall:</div>
-
-                <code class="label label-default small">sudo [path]/Install-MacOS-x64.sh --uninstall</code>
-            </p>
+        <div class="sr-card flex flex-col">
+            <div class="sr-card-header">macOS x64 (10.12 - 10.15)</div>
+            <div class="sr-card-body flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/API/ClientDownloads/MacOSInstaller-x64/@_organizationId">
+                        <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
+                        <span>macOS x64 Bash Installer</span>
+                    </a>
+                    <a target="_blank" class="sr-btn sr-btn-secondary w-full justify-start" href="/Content/Remotely-MacOS-x64.zip">
+                        <i class="oi oi-box" aria-hidden="true"></i>
+                        <span>macOS x64 Files Only</span>
+                    </a>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Install:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-MacOS-x64.sh</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Local Install:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-MacOS-x64.sh --path [path]/Remotely-MacOS-x64.zip</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Uninstall:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-MacOS-x64.sh --uninstall</code>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="col-sm-6 mb-3">
-            <strong>macOS arm64</strong>
-            <p>
-                <a target="_blank" href="/API/ClientDownloads/MacOSInstaller-arm64/@_organizationId">macOS arm64 Bash Installer</a>
-                <br />
-                <a target="_blank" href="/Content/Remotely-MacOS-arm64.zip">macOS arm64 Files Only</a>
-            </p>
-
-            <p>
-                <div class="small">Example Install:</div>
-
-                <code class="label label-default small">sudo [path]/Install-MacOS-arm64.sh</code>
-            </p>
-            <p>
-                <div class="small">Example Local Install:</div>
-
-                <code class="label label-default small">sudo [path]/Install-MacOS-arm64.sh --path [path]/Remotely-MacOS-arm64.zip</code>
-            </p>
-            <p>
-                <div class="small">Example Uninstall:</div>
-
-                <code class="label label-default small">sudo [path]/Install-MacOS-arm64.sh --uninstall</code>
-            </p>
+        <div class="sr-card flex flex-col">
+            <div class="sr-card-header">macOS arm64</div>
+            <div class="sr-card-body flex flex-col gap-4">
+                <div class="flex flex-col gap-2">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/API/ClientDownloads/MacOSInstaller-arm64/@_organizationId">
+                        <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
+                        <span>macOS arm64 Bash Installer</span>
+                    </a>
+                    <a target="_blank" class="sr-btn sr-btn-secondary w-full justify-start" href="/Content/Remotely-MacOS-arm64.zip">
+                        <i class="oi oi-box" aria-hidden="true"></i>
+                        <span>macOS arm64 Files Only</span>
+                    </a>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Install:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-MacOS-arm64.sh</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Local Install:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-MacOS-arm64.sh --path [path]/Remotely-MacOS-arm64.zip</code>
+                    </div>
+                    <div>
+                        <div class="mb-1 text-xs font-medium text-muted">Example Uninstall:</div>
+                        <code class="block overflow-x-auto rounded-lg border border-border bg-surface-sunken p-3 font-mono text-xs break-words text-fg">sudo [path]/Install-MacOS-arm64.sh --uninstall</code>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
     }
 
-</div>
+</section>
 
 @code {
     private string? _organizationId;

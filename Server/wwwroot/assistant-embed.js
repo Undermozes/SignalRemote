@@ -1,4 +1,5 @@
-// Used by the Claude assistant when it's embedded in the remote control viewer.
+// Helpers for the Claude assistant page.  Screenshots are only available when it is
+// embedded in the remote control viewer.
 // The viewer page (the parent window) owns the screen canvas, so captures are
 // requested from it with postMessage.  See wwwroot/viewer-assistant.js.
 
@@ -56,4 +57,10 @@ export function takeCapturedScreen() {
     const capture = lastCapture ?? "";
     lastCapture = null;
     return new TextEncoder().encode(capture);
+}
+
+export function scrollToBottom(element) {
+    if (element) {
+        element.scrollTop = element.scrollHeight;
+    }
 }

@@ -11,25 +11,26 @@
 
 <PageTitle>Recovery code verification</PageTitle>
 
-<h1>Recovery code verification</h1>
-<hr />
-<StatusMessage Message="@message" />
-<p>
-    You have requested to log in with a recovery code. This login will not be remembered until you provide
-    an authenticator app code at log in or disable 2FA and log in again.
-</p>
-<div class="row">
-    <div class="col-md-4">
-        <EditForm Model="Input" FormName="login-with-recovery-code" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.RecoveryCode" class="form-control" autocomplete="off" placeholder="RecoveryCode" />
-                <label for="recovery-code" class="form-label">Recovery Code</label>
-                <ValidationMessage For="() => Input.RecoveryCode" class="text-danger" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-        </EditForm>
+<div class="mx-auto w-full max-w-md py-4 sm:py-10">
+    <h1 class="sr-page-title">Recovery code verification</h1>
+    <StatusMessage Message="@message" />
+    <p class="text-muted">
+        You have requested to log in with a recovery code. This login will not be remembered until you provide
+        an authenticator app code at log in or disable 2FA and log in again.
+    </p>
+    <div class="sr-card">
+        <div class="sr-card-body sm:p-6">
+            <EditForm Model="Input" FormName="login-with-recovery-code" OnValidSubmit="OnValidSubmitAsync" method="post">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
+                <div class="sr-field">
+                    <label for="recovery-code" class="sr-label">Recovery Code</label>
+                    <InputText id="recovery-code" @bind-Value="Input.RecoveryCode" class="sr-input font-mono" autocomplete="off" placeholder="RecoveryCode" />
+                    <ValidationMessage For="() => Input.RecoveryCode" class="mt-1 text-sm text-danger dark:text-red-400" />
+                </div>
+                <button type="submit" class="sr-btn sr-btn-primary min-h-12 w-full text-base">Log in</button>
+            </EditForm>
+        </div>
     </div>
 </div>
 

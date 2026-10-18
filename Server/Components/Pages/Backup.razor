@@ -9,123 +9,123 @@
 @inject IJsInterop JsInterop
 @inject NavigationManager NavigationManager
 
-<h3 class="mb-3">Backup &amp; Restore</h3>
+<h3 class="sr-page-title mt-2">Backup &amp; Restore</h3>
 
 @if (!string.IsNullOrWhiteSpace(_alertMessage))
 {
     <AlertBanner Message="@_alertMessage" />
 }
 
-<div class="row">
-    <div class="col-lg-8">
-        @* ───────── Create Backup Section ───────── *@
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <span class="oi oi-cloud-download me-2"></span>Create Backup
-                </h5>
+<div class="flex max-w-3xl flex-col gap-6">
+    @* ───────── Create Backup Section ───────── *@
+    <section class="sr-card">
+        <div class="sr-card-header">
+            <h5 class="m-0 flex items-center gap-2 text-base font-semibold">
+                <span class="oi oi-cloud-download"></span>Create Backup
+            </h5>
+        </div>
+        <div class="sr-card-body">
+            <p class="mb-4 text-sm text-muted">
+                Create a backup of your account data including your devices and device groups.
+                The backup will be downloaded as a JSON file.
+            </p>
+            <button class="sr-btn sr-btn-primary w-full sm:w-auto" @onclick="CreateAndDownloadBackup" disabled="@_isProcessing">
+                @if (_isProcessing)
+                {
+                    <span class="inline-block size-4 animate-spin rounded-full border-2 border-current border-r-transparent" role="status"></span>
+                }
+                <span class="oi oi-data-transfer-download"></span> Download Backup
+            </button>
+        </div>
+    </section>
+
+    @* ───────── Restore Backup Section ───────── *@
+    <section class="sr-card">
+        <div class="sr-card-header">
+            <h5 class="m-0 flex items-center gap-2 text-base font-semibold">
+                <span class="oi oi-cloud-upload"></span>Restore Backup
+            </h5>
+        </div>
+        <div class="sr-card-body">
+            <p class="mb-4 text-sm text-muted">
+                Upload a previously created backup file to restore device metadata
+                (aliases, tags, notes, and device group assignments).
+            </p>
+            <div class="mb-4">
+                <InputFile OnChange="OnRestoreFileSelected" class="sr-input cursor-pointer file:mr-3 file:rounded-md file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-fg" accept=".json" aria-label="Backup file" />
             </div>
-            <div class="card-body">
-                <p class="text-muted">
-                    Create a backup of your account data including your devices and device groups.
-                    The backup will be downloaded as a JSON file.
+            @if (_restoreFileContent is not null)
+            {
+                <p class="mb-3 text-sm break-all text-muted">
+                    File loaded: @_restoreFileName
                 </p>
-                <button class="btn btn-primary" @onclick="CreateAndDownloadBackup" disabled="@_isProcessing">
+                <button class="sr-btn sr-btn-warning w-full sm:w-auto" @onclick="RestoreFromFile" disabled="@_isProcessing">
                     @if (_isProcessing)
                     {
-                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        <span class="inline-block size-4 animate-spin rounded-full border-2 border-current border-r-transparent" role="status"></span>
                     }
-                    <span class="oi oi-data-transfer-download me-1"></span> Download Backup
+                    <span class="oi oi-loop-circular"></span> Restore Backup
                 </button>
-            </div>
+            }
         </div>
+    </section>
 
-        @* ───────── Restore Backup Section ───────── *@
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <span class="oi oi-cloud-upload me-2"></span>Restore Backup
-                </h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted">
-                    Upload a previously created backup file to restore device metadata
-                    (aliases, tags, notes, and device group assignments).
-                </p>
-                <div class="mb-3">
-                    <InputFile OnChange="OnRestoreFileSelected" class="form-control" accept=".json" />
-                </div>
-                @if (_restoreFileContent is not null)
-                {
-                    <p class="text-info small">
-                        File loaded: @_restoreFileName
+    @* ───────── Google Drive Section ───────── *@
+    <section class="sr-card">
+        <div class="sr-card-header">
+            <h5 class="m-0 flex items-center gap-2 text-base font-semibold">
+                <span class="oi oi-hard-drive"></span>Google Drive
+            </h5>
+        </div>
+        <div class="sr-card-body">
+            @if (!GoogleDriveService.IsConfigured)
+            {
+                <div class="sr-alert sr-alert-info mb-0 flex-col gap-1">
+                    <strong>Google Drive is not configured.</strong>
+                    <p class="m-0">
+                        Ask your server administrator to configure Google Drive OAuth credentials
+                        (Client ID and Client Secret) in the server settings.
                     </p>
-                    <button class="btn btn-warning" @onclick="RestoreFromFile" disabled="@_isProcessing">
+                </div>
+            }
+            else if (!_isGoogleDriveConnected)
+            {
+                <p class="mb-4 text-sm text-muted">
+                    Connect your Google Drive account to store and retrieve backups in the cloud.
+                </p>
+                <button class="sr-btn sr-btn-secondary w-full sm:w-auto" @onclick="ConnectGoogleDrive">
+                    <span class="oi oi-link-intact"></span> Connect to Google Drive
+                </button>
+            }
+            else
+            {
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <span class="sr-badge sr-badge-success">
+                        <span class="oi oi-check"></span> Connected to Google Drive
+                    </span>
+                    <button class="sr-btn sr-btn-ghost sr-btn-sm text-danger" @onclick="DisconnectGoogleDrive">
+                        <span class="oi oi-link-broken"></span> Disconnect
+                    </button>
+                </div>
+
+                <div class="mb-4 flex flex-col gap-2 sm:flex-row">
+                    <button class="sr-btn sr-btn-success" @onclick="UploadToGoogleDrive" disabled="@_isProcessing">
                         @if (_isProcessing)
                         {
-                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            <span class="inline-block size-4 animate-spin rounded-full border-2 border-current border-r-transparent" role="status"></span>
                         }
-                        <span class="oi oi-loop-circular me-1"></span> Restore Backup
+                        <span class="oi oi-cloud-upload"></span> Upload Backup to Drive
                     </button>
-                }
-            </div>
-        </div>
-
-        @* ───────── Google Drive Section ───────── *@
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <span class="oi oi-hard-drive me-2"></span>Google Drive
-                </h5>
-            </div>
-            <div class="card-body">
-                @if (!GoogleDriveService.IsConfigured)
-                {
-                    <div class="alert alert-info">
-                        <strong>Google Drive is not configured.</strong>
-                        <p class="mb-0 mt-1">
-                            Ask your server administrator to configure Google Drive OAuth credentials
-                            (Client ID and Client Secret) in the server settings.
-                        </p>
-                    </div>
-                }
-                else if (!_isGoogleDriveConnected)
-                {
-                    <p class="text-muted">
-                        Connect your Google Drive account to store and retrieve backups in the cloud.
-                    </p>
-                    <button class="btn btn-outline-primary" @onclick="ConnectGoogleDrive">
-                        <span class="oi oi-link-intact me-1"></span> Connect to Google Drive
+                    <button class="sr-btn sr-btn-secondary" @onclick="RefreshDriveBackups" disabled="@_isProcessing">
+                        <span class="oi oi-reload"></span> Refresh
                     </button>
-                }
-                else
+                </div>
+
+                @if (_driveBackups.Count > 0)
                 {
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-success">
-                            <span class="oi oi-check me-1"></span> Connected to Google Drive
-                        </span>
-                        <button class="btn btn-outline-danger btn-sm" @onclick="DisconnectGoogleDrive">
-                            <span class="oi oi-link-broken me-1"></span> Disconnect
-                        </button>
-                    </div>
-
-                    <div class="d-flex gap-2 mb-3">
-                        <button class="btn btn-success" @onclick="UploadToGoogleDrive" disabled="@_isProcessing">
-                            @if (_isProcessing)
-                            {
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            }
-                            <span class="oi oi-cloud-upload me-1"></span> Upload Backup to Drive
-                        </button>
-                        <button class="btn btn-outline-secondary" @onclick="RefreshDriveBackups" disabled="@_isProcessing">
-                            <span class="oi oi-reload me-1"></span> Refresh
-                        </button>
-                    </div>
-
-                    @if (_driveBackups.Count > 0)
-                    {
-                        <h6>Backups on Google Drive</h6>
-                        <table class="table table-striped table-sm">
+                    <h6 class="mb-2 text-sm font-semibold">Backups on Google Drive</h6>
+                    <div class="sr-table-wrap">
+                        <table class="sr-table">
                             <thead>
                                 <tr>
                                     <th>Name</th>
@@ -137,12 +137,12 @@
                             <tbody>
                                 @foreach (var file in _driveBackups)
                                 {
-                                    <tr>
-                                        <td>@file.Name</td>
-                                        <td>@file.CreatedTime?.LocalDateTime.ToString("g")</td>
-                                        <td>@FormatFileSize(file.Size)</td>
+                                    <tr class="even:bg-surface-sunken/50">
+                                        <td class="break-all">@file.Name</td>
+                                        <td class="whitespace-nowrap">@file.CreatedTime?.LocalDateTime.ToString("g")</td>
+                                        <td class="whitespace-nowrap">@FormatFileSize(file.Size)</td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-primary"
+                                            <button class="sr-btn sr-btn-secondary sr-btn-sm"
                                                     @onclick="() => RestoreFromGoogleDrive(file.Id)"
                                                     disabled="@_isProcessing">
                                                 <span class="oi oi-loop-circular"></span> Restore
@@ -152,15 +152,15 @@
                                 }
                             </tbody>
                         </table>
-                    }
-                    else if (_driveBackupsLoaded)
-                    {
-                        <p class="text-muted">No backups found on Google Drive.</p>
-                    }
+                    </div>
                 }
-            </div>
+                else if (_driveBackupsLoaded)
+                {
+                    <p class="text-sm text-muted">No backups found on Google Drive.</p>
+                }
+            }
         </div>
-    </div>
+    </section>
 </div>
 
 @code {

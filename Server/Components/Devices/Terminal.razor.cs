@@ -145,7 +145,7 @@ public partial class Terminal : AuthComponentBase, IDisposable
 
         TerminalStore.AddTerminalLine(
             $"Completions for {deviceResult.Value.DeviceName}",
-            className: "font-weight-bold");
+            className: "font-bold");
 
         foreach (var match in completionMatches)
         {

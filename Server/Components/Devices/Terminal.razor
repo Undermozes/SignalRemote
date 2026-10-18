@@ -1,64 +1,61 @@
 ﻿@inherits AuthComponentBase
 
-<div class="terminal-frame @_terminalOpenClass">
-    <div class="terminal-header">
-        <div>
-            <button class="btn btn-secondary terminal-button ms-4" @onclick="ToggleTerminalOpen">
-                <i class="oi oi-terminal"></i>
-                <span class="ms-2">Terminal</span>
-            </button>
-        </div>
-        <div class="text-end">
-            <button class="btn btn-secondary terminal-button me-4" @onclick="ShowQuickScripts">
-                <i class="oi oi-script"></i>
-                <span class="ms-2">Quick Scripts</span>
-            </button>
-        </div>
+@{
+    var isOpen = !string.IsNullOrWhiteSpace(_terminalOpenClass);
+}
 
+@* Closed: two tabs fixed to the bottom of the screen.
+   Open: full screen on phones, a panel along the bottom (right of the sidebar) from md up. *@
+<div class="terminal-frame @_terminalOpenClass fixed inset-x-0 bottom-0 flex flex-col pb-[env(safe-area-inset-bottom)] md:left-64 md:right-4 md:top-auto md:bg-transparent md:pb-0 md:pointer-events-none @(isOpen ? "top-0 z-40 bg-surface pt-[env(safe-area-inset-top)] md:pt-0" : "z-20 pointer-events-none")">
+    <div class="flex items-end justify-between gap-2 px-2 pt-2 md:px-4 md:pt-0">
+        <button class="sr-btn sr-btn-secondary pointer-events-auto shadow-md md:rounded-b-none md:border-b-0"
+                aria-expanded="@(isOpen ? "true" : "false")"
+                @onclick="ToggleTerminalOpen">
+            <i class="oi @(isOpen ? "oi-x" : "oi-terminal")" aria-hidden="true"></i>
+            <span>Terminal</span>
+        </button>
+        <button class="sr-btn sr-btn-secondary pointer-events-auto shadow-md md:rounded-b-none md:border-b-0" @onclick="ShowQuickScripts">
+            <i class="oi oi-script" aria-hidden="true"></i>
+            <span>Quick Scripts</span>
+        </button>
     </div>
 
-    <div class="terminal-body border border-secondary bg-dark">
-        <div @ref="_terminalWindow" class="terminal-window px-2 py-1">
-            
+    <div class="@(isOpen ? "flex" : "hidden") pointer-events-auto mt-2 min-h-0 flex-1 flex-col overflow-hidden border-t border-border bg-gray-950 text-gray-100 shadow-xl
+                md:mt-0 md:h-[25rem] md:max-h-[80dvh] md:flex-none md:rounded-t-lg md:border-x">
+        <div @ref="_terminalWindow" class="min-h-0 flex-1 overflow-y-auto px-3 py-2 font-mono text-sm break-words whitespace-pre-wrap md:overflow-x-auto md:whitespace-pre">
             @foreach (var line in TerminalStore.TerminalLines)
             {
-                <div @key="line.Id" class="ms-1 terminal-line @line.ClassName" title="@line.Title">
+                <div @key="line.Id" class="min-h-[1.3em] @line.ClassName" title="@line.Title">
                     @line.Text
                 </div>
             }
         </div>
-        <div>
-            <div class="terminal-input-area px-2 mb-2">
-                <div>
-                    <button class="btn btn-sm btn-secondary me-1"
-                            style="align-self: center" 
-                            @onclick="ShowTerminalHelp">
-                        <i class="oi oi-question-mark"></i>
-                    </button>
 
-                </div>
-                <div>
-                    <select @bind="_shell" class="form-control">
-                        @foreach (var shell in Enum.GetValues(typeof(ScriptingShell)))
-                        {
-                            <option @key="shell" value="@shell">@shell</option>
-                        }
-                    </select>
-
-                </div>
-                <div>
-                    <input @ref="_terminalInput" 
-                           class="form-control" 
-                           placeholder="Enter a terminal command"
-                           spellcheck="false"
-                           autocomplete="off"
-                           @bind="InputText" 
-                           @bind:event="oninput" 
-                           @onkeypress="EvaluateInputKeypress"
-                           @onkeydown="EvaluateKeyDown" />
-                </div>
-            </div>
+        @* Phones: help + shell on one row, the command input full width below.  One row from md up. *@
+        <div class="grid grid-cols-[auto_1fr] gap-2 border-t border-border bg-surface-raised p-2 md:grid-cols-[auto_auto_1fr]">
+            <button class="sr-btn sr-btn-secondary w-11 px-0"
+                    title="Terminal Help"
+                    aria-label="Terminal Help"
+                    @onclick="ShowTerminalHelp">
+                <i class="oi oi-question-mark" aria-hidden="true"></i>
+            </button>
+            <select @bind="_shell" class="sr-select md:w-auto" aria-label="Shell">
+                @foreach (var shell in Enum.GetValues(typeof(ScriptingShell)))
+                {
+                    <option @key="shell" value="@shell">@shell</option>
+                }
+            </select>
+            <input @ref="_terminalInput"
+                   class="sr-input col-span-2 font-mono md:col-span-1"
+                   placeholder="Enter a terminal command"
+                   aria-label="Terminal command"
+                   spellcheck="false"
+                   autocomplete="off"
+                   autocapitalize="off"
+                   @bind="InputText"
+                   @bind:event="oninput"
+                   @onkeypress="EvaluateInputKeypress"
+                   @onkeydown="EvaluateKeyDown" />
         </div>
-
     </div>
 </div>

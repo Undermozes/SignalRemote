@@ -9,32 +9,25 @@
 @inject ILogsManager LogsManager
 @inject ILoaderService LoaderService
 
-<h3 class="mb-3">Server Logs</h3>
+<h3 class="sr-page-title mt-2">Server Logs</h3>
 
-<div class="buttons-row mb-3">
-    <div>
-        <button class="btn btn-danger" type="button" @onclick="ClearAllLogs">
-            Delete Logs
-        </button>
-    </div>
-    <div>
-        <button class="btn btn-primary"
-                onclick="window.open('/API/ServerLogs/Download', '_blank')">
-            Download Logs
-        </button>
-    </div>
-    <div>
-        <button class="btn btn-primary"
-                onclick="window.open('/API/ScriptResults', '_blank')">
-            Download Script History
-        </button>
-    </div>
+<div class="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+    <button class="sr-btn sr-btn-danger" type="button" @onclick="ClearAllLogs">
+        Delete Logs
+    </button>
+    <button class="sr-btn sr-btn-primary"
+            onclick="window.open('/API/ServerLogs/Download', '_blank')">
+        Download Logs
+    </button>
+    <button class="sr-btn sr-btn-primary"
+            onclick="window.open('/API/ScriptResults', '_blank')">
+        Download Script History
+    </button>
 </div>
-<div class="filters-row mb-3">
-    <div style="display:inline-block">
-        <strong>Type:</strong>
-        <br />
-        <select class="form-control-sm" @bind="LogLevel">
+<div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div>
+        <label class="sr-label" for="logs-type">Type:</label>
+        <select id="logs-type" class="sr-select" @bind="LogLevel">
             <option value="">All</option>
             @foreach (var eventType in Enum.GetValues(typeof(LogLevel)))
             {
@@ -42,24 +35,21 @@
             }
         </select>
     </div>
-    <div style="display:inline-block">
-        <strong>Filter:</strong>
-        <br />
-        <input type="text" @bind="MessageFilter" @bind:event="oninput" />
+    <div>
+        <label class="sr-label" for="logs-filter">Filter:</label>
+        <input id="logs-filter" class="sr-input" type="text" @bind="MessageFilter" @bind:event="oninput" />
     </div>
-    <div style="display:inline-block">
-        <strong>From:</strong>
-        <br />
-        <input type="date" @bind="FromDate" />
+    <div>
+        <label class="sr-label" for="logs-from">From:</label>
+        <input id="logs-from" class="sr-input" type="date" @bind="FromDate" />
     </div>
-    <div style="display:inline-block">
-        <strong>To:</strong>
-        <br />
-        <input type="date" @bind="ToDate" />
+    <div>
+        <label class="sr-label" for="logs-to">To:</label>
+        <input id="logs-to" class="sr-input" type="date" @bind="ToDate" />
     </div>
 </div>
 
-<textarea readonly class="logs-content bg-dark text-white">
+<textarea readonly aria-label="Server logs" class="block h-[60dvh] w-full resize-y rounded-lg border border-border bg-gray-950 p-3 font-mono text-xs whitespace-pre text-gray-100 md:h-[500px]">
     @(string.Join(Environment.NewLine, _filteredLogs))
 </textarea>
 

@@ -1,17 +1,32 @@
 ﻿@inject IJsInterop JsInterop
 
-<div class="@WrapperClass">
-    <button class="btn dropdown-toggle @ButtonClass"
+@*
+    Open/close is Blazor state.  While open, a transparent full-screen backdrop catches
+    clicks outside the menu.  The menu stays in the DOM when closed (only hidden), so
+    things like a hidden file input inside it keep working.
+*@
+<div class="relative inline-block @WrapperClass" @onkeydown="OnKeyDown">
+    @if (_isOpen)
+    {
+        <div class="fixed inset-0 z-40 cursor-default" aria-hidden="true" @onclick="Close"></div>
+    }
+    <button class="sr-btn @ButtonClass"
             type="button"
-            data-bs-toggle="dropdown">
+            aria-haspopup="true"
+            aria-expanded="@(_isOpen ? "true" : "false")"
+            @onclick="Toggle">
         @ButtonContent
+        <span class="oi oi-caret-bottom text-[0.6rem]" aria-hidden="true"></span>
     </button>
-    <ul class="dropdown-menu @DropDownMenuClass" >
+    <ul class="@(_isOpen ? "" : "hidden") absolute z-50 mt-1 min-w-48 max-w-[calc(100vw-2rem)] list-none rounded-lg border border-border bg-surface-raised p-1 text-fg shadow-lg @DropDownMenuClass"
+        @onclick="Close">
         @ChildListItems
     </ul>
 </div>
 
 @code {
+    private bool _isOpen;
+
     [Parameter]
     public string? ButtonClass { get; set; }
 
@@ -27,4 +42,22 @@
 
     [Parameter]
     public RenderFragment? ChildListItems { get; set; }
+
+    private void Toggle()
+    {
+        _isOpen = !_isOpen;
+    }
+
+    private void Close()
+    {
+        _isOpen = false;
+    }
+
+    private void OnKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            _isOpen = false;
+        }
+    }
 }

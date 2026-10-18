@@ -2,39 +2,40 @@
 @inject IJsInterop JsInterop
 @inject IJSRuntime JsRuntime
 
-<div @ref="_modalRef" id="defaultModal" class="modal fade" style="background-color: rgba(0,0,0,0.35)">
-    <div class="modal-dialog modal-dialog-scrollable" role="document" @onclick:stopPropagation>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">@ModalService.Title</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" >
-                @if (ModalService.RenderBody is not null)
+@* Native <dialog>, opened with showModal() from ModalHarness.razor.js.  Esc and a click on the backdrop close it. *@
+<dialog @ref="_modalRef" id="defaultModal" class="sr-dialog max-h-[calc(100dvh-2rem)]" aria-labelledby="defaultModalTitle">
+    <div class="flex max-h-[calc(100dvh-2rem)] flex-col">
+        <div class="flex items-center justify-between gap-2 border-b border-border py-2 pl-4 pr-2">
+            <h5 id="defaultModalTitle" class="m-0 text-lg font-semibold">@ModalService.Title</h5>
+            <button type="button" class="sr-btn sr-btn-ghost size-11 p-0 text-xl" aria-label="Close" @onclick="CloseModal">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="min-h-0 flex-1 overflow-y-auto p-4">
+            @if (ModalService.RenderBody is not null)
+            {
+                @ModalService.RenderBody
+            }
+            else
+            {
+                @foreach (var line in ModalService.Body ?? Array.Empty<string>())
                 {
-                    @ModalService.RenderBody
+                    <p class="mb-3 last:mb-0">
+                        @line
+                    </p>
                 }
-                else
-                {
-                    @foreach (var line in ModalService.Body ?? Array.Empty<string>())
-                    {
-                        <p>
-                            @line
-                        </p>
-                    }
-                }
+            }
 
-            </div>
-            <div class="modal-footer">
-                @foreach (var button in ModalService.Buttons)
-                {
-                    <button @key="button" type="button" data-bs-dismiss="modal" class="@button.Class" @onclick="() => ExecuteButtonAction(button.OnClick)">@button.Text</button>
-                }
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+        </div>
+        <div class="flex flex-col gap-2 border-t border-border p-4 sm:flex-row sm:flex-wrap sm:justify-end">
+            @foreach (var button in ModalService.Buttons)
+            {
+                <button @key="button" type="button" class="@(string.IsNullOrWhiteSpace(button.Class) ? "sr-btn sr-btn-primary" : button.Class) w-full sm:w-auto" @onclick="() => ExecuteButtonAction(button.OnClick)">@button.Text</button>
+            }
+            <button type="button" class="sr-btn sr-btn-secondary w-full sm:w-auto" @onclick="CloseModal">Close</button>
         </div>
     </div>
-</div>
+</dialog>
 
 @code {
     private IJSObjectReference? _module;
@@ -54,9 +55,18 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    private Task ExecuteButtonAction(Action onclick)
+    private async Task ExecuteButtonAction(Action onclick)
     {
+        // Buttons used to close the modal through data-bs-dismiss="modal".
+        await CloseModal();
         onclick.Invoke();
-        return Task.CompletedTask;
+    }
+
+    private async Task CloseModal()
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("closeModal", _modalRef);
+        }
     }
 }

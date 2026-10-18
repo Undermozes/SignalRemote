@@ -5,21 +5,19 @@
 <PageTitle>Personal Data</PageTitle>
 
 <StatusMessage />
-<h3>Personal Data</h3>
+<h3 class="sr-section-title mt-0">Personal Data</h3>
 
-<div class="row">
-    <div class="col-md-6">
-        <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
-        <p>
-            <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-        </p>
+<div class="max-w-lg">
+    <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
+    <p>
+        <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
+    </p>
+    <div class="flex flex-col gap-2 sm:flex-row">
         <form action="Account/Manage/DownloadPersonalData" method="post">
             <AntiforgeryToken />
-            <button class="btn btn-primary" type="submit">Download</button>
+            <button class="sr-btn sr-btn-primary w-full sm:w-auto" type="submit">Download</button>
         </form>
-        <p>
-            <a href="Account/Manage/DeletePersonalData" class="btn btn-danger">Delete</a>
-        </p>
+        <a href="Account/Manage/DeletePersonalData" class="sr-btn sr-btn-danger">Delete</a>
     </div>
 </div>
 

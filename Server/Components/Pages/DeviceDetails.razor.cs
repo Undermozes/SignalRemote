@@ -217,7 +217,7 @@ public partial class DeviceDetails : AuthComponentBase
         var disksString = JsonSerializer.Serialize(_device.Drives, JsonSerializerHelper.IndentedOptions);
         void modalBody(RenderTreeBuilder builder)
         {
-            builder.AddMarkupContent(0, $"<div style='white-space: pre'>{disksString}</div>");
+            builder.AddMarkupContent(0, $"<div class='overflow-x-auto font-mono text-xs whitespace-pre'>{disksString}</div>");
         }
         ModalService.ShowModal($"All Disks for {_device.DeviceName}", modalBody);
     }
@@ -228,14 +228,14 @@ public partial class DeviceDetails : AuthComponentBase
         {
             var output = string.Join("\r\n", result.StandardOutput ?? Array.Empty<string>());
             var error = string.Join("\r\n", result.ErrorOutput ?? Array.Empty<string>());
-            var textareaStyle = "width: 100%; height: 200px; white-space: pre;";
+            var textareaClass = "sr-textarea h-48 font-mono text-xs whitespace-pre";
 
-            builder.AddMarkupContent(0, "<h5>Input</h5>");
-            builder.AddMarkupContent(1, $"<textarea readonly style=\"{textareaStyle}\">{result.ScriptInput}</textarea>");
-            builder.AddMarkupContent(2, "<h5 class=\"mt-3\">Standard Output</h5>");
-            builder.AddMarkupContent(3, $"<textarea readonly style=\"{textareaStyle}\">{output}</textarea>");
-            builder.AddMarkupContent(4, "<h5 class=\"mt-3\">Error Output</h5>");
-            builder.AddMarkupContent(3, $"<textarea readonly style=\"{textareaStyle}\">{error}</textarea>");
+            builder.AddMarkupContent(0, "<h5 class=\"mb-1 text-sm font-semibold\">Input</h5>");
+            builder.AddMarkupContent(1, $"<textarea readonly class=\"{textareaClass}\">{result.ScriptInput}</textarea>");
+            builder.AddMarkupContent(2, "<h5 class=\"mb-1 mt-4 text-sm font-semibold\">Standard Output</h5>");
+            builder.AddMarkupContent(3, $"<textarea readonly class=\"{textareaClass}\">{output}</textarea>");
+            builder.AddMarkupContent(4, "<h5 class=\"mb-1 mt-4 text-sm font-semibold\">Error Output</h5>");
+            builder.AddMarkupContent(3, $"<textarea readonly class=\"{textareaClass}\">{error}</textarea>");
         }
 
         ModalService.ShowModal("Script Input/Output", outputModal);

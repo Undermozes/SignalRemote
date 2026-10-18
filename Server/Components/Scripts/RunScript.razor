@@ -1,19 +1,25 @@
 ﻿@inherits AuthComponentBase
 @attribute [Authorize]
 
-<div class="main-grid mt-3 auto-height">
-    <div style="grid-column: span 3">
-        <button class="btn btn-primary align-middle me-4" @onclick="ExecuteScript">Run</button>
-        <input type="checkbox" class="me-1 align-middle" @bind="_runOnNextConnect" />
-        <span class="align-middle">If offline, run immediately when next connected</span>
+@*
+    Phones: everything stacks and scrolls with the page (lists get a max height).
+    lg and up: three columns that fill the viewport (height set by auto-height in interop.js).
+*@
+<div class="auto-height mt-3 flex flex-col gap-4 max-lg:h-auto lg:grid lg:grid-cols-[minmax(14rem,auto)_1fr_1fr] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:col-span-3">
+        <button class="sr-btn sr-btn-primary w-full sm:w-auto" @onclick="ExecuteScript">Run</button>
+        <label class="flex min-h-11 cursor-pointer items-center gap-2">
+            <input type="checkbox" class="sr-checkbox" @bind="_runOnNextConnect" />
+            <span>If offline, run immediately when next connected</span>
+        </label>
     </div>
-    <div class="column-wrapper h-100 pb-3">
+    <div class="flex min-h-0 flex-col gap-2 lg:h-full lg:pb-3">
         <div>
-            <h5>Saved Scripts</h5>
-            <div>
-                <input type="checkbox" @bind="ParentPage.ShowOnlyMyScripts" />
-                <span class="align-top">Show only mine</span>
-            </div>
+            <h5 class="mb-1 text-lg font-semibold">Saved Scripts</h5>
+            <label class="flex min-h-11 cursor-pointer items-center gap-2 md:min-h-8">
+                <input type="checkbox" class="sr-checkbox" @bind="ParentPage.ShowOnlyMyScripts" />
+                <span>Show only mine</span>
+            </label>
         </div>
         <TreeView DataSource="ParentPage.TreeNodes"
                   ItemTypeSelector="x => x.ItemType"
@@ -22,37 +28,37 @@
                   ChildItemSelector="x => x.ChildItems"
                   ItemIconCssSelector="ParentPage.GetItemIconCss"
                   KeySelector="x => x.Id"
-                  WrapperStyle="border: 1px solid gray; padding: .5em; height: 100%; border-radius: 5px;"
+                  WrapperClass="max-h-[60dvh] min-h-32 flex-1 lg:max-h-none"
                   T="ScriptTreeNode" />
     </div>
-    <div class="column-wrapper h-100 pb-3">
-        <h5>Device Groups</h5>
-        <div class="item-list-border h-100">
+    <div class="flex min-h-0 flex-col gap-2 lg:h-full lg:pb-3">
+        <h5 class="mb-1 text-lg font-semibold">Device Groups</h5>
+        <div class="max-h-[60dvh] min-h-32 flex-1 overflow-y-auto rounded-lg border border-border bg-surface p-2 lg:max-h-none">
             @foreach (var deviceGroup in _deviceGroups)
             {
-                <div @key="@deviceGroup.ID">
-                    <input class="me-1" type="checkbox" 
+                <label @key="@deviceGroup.ID" class="flex min-h-11 cursor-pointer items-center gap-2 md:min-h-8">
+                    <input class="sr-checkbox" type="checkbox" 
                            checked="@(_selectedDeviceGroups.Contains(deviceGroup.ID))"
                            @onchange="ev => DeviceGroupSelectedChanged(ev, deviceGroup)" />
 
-                    <span class="align-top">@deviceGroup.Name</span>
-                </div>
+                    <span class="min-w-0 break-words">@deviceGroup.Name</span>
+                </label>
             }
         </div>
     </div>
 
-    <div class="column-wrapper h-100 pb-3">
-        <h5>Devices</h5>
-        <div class="item-list-border h-100">
+    <div class="flex min-h-0 flex-col gap-2 lg:h-full lg:pb-3">
+        <h5 class="mb-1 text-lg font-semibold">Devices</h5>
+        <div class="max-h-[60dvh] min-h-32 flex-1 overflow-y-auto rounded-lg border border-border bg-surface p-2 lg:max-h-none">
             @foreach (var device in _devices)
             {
-                <div @key="@device.ID">
-                    <input class="me-1" type="checkbox"
+                <label @key="@device.ID" class="flex min-h-11 cursor-pointer items-center gap-2 md:min-h-8">
+                    <input class="sr-checkbox" type="checkbox"
                            checked="@(_selectedDeviceGroups.Contains(device.ID))"
                            @onchange="ev => DeviceSelectedChanged(ev, device)" />
 
-                    <span class="align-top">@device.DeviceName</span>
-                </div>
+                    <span class="min-w-0 break-words">@device.DeviceName</span>
+                </label>
             }
         </div>
     </div>
