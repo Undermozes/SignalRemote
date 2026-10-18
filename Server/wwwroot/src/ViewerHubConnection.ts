@@ -23,6 +23,11 @@ export class ViewerHubConnection {
     Connection: HubConnection;
     PartialCaptureFrames: Uint8Array[] = [];
 
+    // The hub enforces authentication too, so pass along the page's one-time password.
+    GetHubUrl(): string {
+        const otp = new URLSearchParams(location.search).get("otp");
+        return otp ? `/hubs/viewer?otp=${encodeURIComponent(otp)}` : "/hubs/viewer";
+    }
 
     Connect() {
         if (this.Connection) {
@@ -30,7 +35,7 @@ export class ViewerHubConnection {
         }
 
         this.Connection = new signalR.HubConnectionBuilder()
-            .withUrl("/hubs/viewer")
+            .withUrl(this.GetHubUrl())
             .withHubProtocol(new signalR.protocols.msgpack.MessagePackHubProtocol())
             .configureLogging(signalR.LogLevel.Information)
             .build();

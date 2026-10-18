@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Remotely.Server.Auth;
+using Remotely.Server.Extensions;
 using Remotely.Server.Services;
 using Remotely.Shared.Entities;
 
@@ -20,8 +21,19 @@ public class SavedScriptsController : ControllerBase
     [HttpGet("{scriptId}")]
     public async Task<ActionResult<SavedScript>> GetScript(Guid scriptId)
     {
+        if (!Request.Headers.TryGetOrganizationId(out var orgId))
+        {
+            return Unauthorized();
+        }
+
         var result =  await _dataService.GetSavedScript(scriptId);
         if (!result.IsSuccess)
+        {
+            return NotFound();
+        }
+
+        // Scripts may only be read by the organization that owns them.
+        if (!string.Equals(result.Value.OrganizationID, orgId, StringComparison.OrdinalIgnoreCase))
         {
             return NotFound();
         }

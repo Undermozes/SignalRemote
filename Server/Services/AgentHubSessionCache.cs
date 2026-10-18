@@ -74,7 +74,11 @@ public class AgentHubSessionCache : IAgentHubSessionCache
         if (_connectionIdToDeviceLookup.TryRemove(connectionId, out var lookupResult))
         {
             device = lookupResult;
-            _ = _deviceIdToConnectionIdLookup.TryRemove(lookupResult.ID, out _);
+            // Only remove the device mapping if it still points at this connection.  When an
+            // agent reconnects, the old connection's disconnect can arrive after the new
+            // connection registered, and must not mark the device offline.
+            _ = _deviceIdToConnectionIdLookup.TryRemove(
+                new KeyValuePair<string, string>(lookupResult.ID, connectionId));
             return true;
         }
 

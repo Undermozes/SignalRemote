@@ -129,9 +129,10 @@ public class UpdaterMac : IUpdater
 
             _logger.LogInformation("Service Updater: Downloading install package.");
 
-            var zipPath = Path.Combine(Path.GetTempPath(), "RemotelyUpdate.zip");
+            var stagingDir = UpdateStaging.CreateStagingDirectory();
+            var zipPath = Path.Combine(stagingDir, "RemotelyUpdate.zip");
 
-            var installerPath = Path.Combine(Path.GetTempPath(), "RemotelyUpdate.sh");
+            var installerPath = Path.Combine(stagingDir, "RemotelyUpdate.sh");
 
             await _updateDownloader.DownloadFile(
                    $"{serverUrl}/API/ClientDownloads/MacOSInstaller-{_achitecture}/{connectionInfo.OrganizationID}",

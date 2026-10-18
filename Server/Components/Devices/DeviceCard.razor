@@ -86,6 +86,15 @@
                                 <span class="ms-2">Chat</span>
                             </button>
                         </li>
+                        @if (_isClaudeAssistantEnabled)
+                        {
+                            <li>
+                                <button class="dropdown-item" @onclick="OpenClaudeAssistant">
+                                    <i class="oi oi-lightbulb" title="Claude Assistant"></i>
+                                    <span class="ms-2">Claude Assistant</span>
+                                </button>
+                            </li>
+                        }
                         <li>
                             <button class="dropdown-item" @onclick="() => StartRemoteControl(false)">
                                 <i class="oi oi-laptop" title="Remote Control"></i>
@@ -113,6 +122,15 @@
                                 </ButtonContent>
                             </FileInputButton>
                         </li>
+                        @if (User?.IsAdministrator == true)
+                        {
+                            <li>
+                                <button class="dropdown-item" @onclick="ResetDeviceSecret">
+                                    <i class="oi oi-key" title="Reset Device Secret"></i>
+                                    <span class="ms-2">Reset Device Secret</span>
+                                </button>
+                            </li>
+                        }
                         <li>
                             <button class="dropdown-item bg-danger" @onclick="UninstallAgent">
                                 <i class="oi oi-delete" title="Uninstall"></i>

@@ -22,6 +22,13 @@ public class DeviceClientDto
     [DataMember]
     public List<Drive> Drives { get; set; } = new();
 
+    /// <summary>
+    /// Per-device secret that the agent uses to authenticate with the server.
+    /// Never stored on the device entity.
+    /// </summary>
+    [DataMember]
+    public string? DeviceSecret { get; set; }
+
     [DataMember]
     public string ID { get; set; } = string.Empty;
 

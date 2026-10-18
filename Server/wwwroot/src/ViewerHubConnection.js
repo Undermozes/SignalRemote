@@ -13,12 +13,17 @@ export class ViewerHubConnection {
     constructor() {
         this.PartialCaptureFrames = [];
     }
+    // The hub enforces authentication too, so pass along the page's one-time password.
+    GetHubUrl() {
+        const otp = new URLSearchParams(location.search).get("otp");
+        return otp ? `/hubs/viewer?otp=${encodeURIComponent(otp)}` : "/hubs/viewer";
+    }
     Connect() {
         if (this.Connection) {
             this.Connection.stop();
         }
         this.Connection = new signalR.HubConnectionBuilder()
-            .withUrl("/hubs/viewer")
+            .withUrl(this.GetHubUrl())
             .withHubProtocol(new signalR.protocols.msgpack.MessagePackHubProtocol())
             .configureLogging(signalR.LogLevel.Information)
             .build();

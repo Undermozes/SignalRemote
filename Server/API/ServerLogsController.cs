@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Remotely.Server.Auth;
+using Remotely.Server.Extensions;
 using Remotely.Server.Services;
 
 namespace Remotely.Server.API;
@@ -8,13 +9,16 @@ namespace Remotely.Server.API;
 [ApiController]
 public class ServerLogsController : ControllerBase
 {
+    private readonly IDataService _dataService;
     private readonly ILogsManager _logsManager;
     private readonly ILogger<ServerLogsController> _logger;
 
     public ServerLogsController(
+        IDataService dataService,
         ILogsManager logsManager,
         ILogger<ServerLogsController> logger)
     {
+        _dataService = dataService;
         _logsManager = logsManager;
         _logger = logger;
     }
@@ -23,6 +27,12 @@ public class ServerLogsController : ControllerBase
     [HttpGet("Download")]
     public async Task<IActionResult> Download()
     {
+        // Server logs contain data from every organization.
+        if (!await this.IsServerAdmin(_dataService))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden);
+        }
+
         _logger.LogInformation(
             "Downloading server logs. Remote IP: {ip}",
             HttpContext.Connection.RemoteIpAddress);

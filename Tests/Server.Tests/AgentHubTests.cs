@@ -45,6 +45,7 @@ public class AgentHubTests
             expiringTokenService.Object,
             remoteControlSessions.Object,
             messenger.Object,
+            new Mock<IDeviceAuthService>().Object,
             logger.Object);
 
         var hubClients = new Mock<IHubCallerClients<IAgentHubClient>>();
@@ -88,6 +89,7 @@ public class AgentHubTests
             expiringTokenService.Object,
             remoteControlSessions.Object,
             messenger.Object,
+            new Mock<IDeviceAuthService>().Object,
             logger.Object);
 
         var hubClients = new Mock<IHubCallerClients<IAgentHubClient>>();

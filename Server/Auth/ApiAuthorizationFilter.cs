@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Remotely.Server.Extensions;
 using Remotely.Server.Services;
 using Remotely.Shared;
 using System.Net;
@@ -28,13 +29,16 @@ public class ApiAuthorizationFilter : IAsyncAuthorizationFilter
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while authorizing API key.");
+            // Fail closed.  Never let a request through when authorization threw.
+            context.HttpContext.Request.Headers.ResetAuthHeaders();
+            context.Result = new UnauthorizedResult();
         }
     }
 
     private async Task Authorize(AuthorizationFilterContext context)
     {
         var http = context.HttpContext;
-        http.Request.Headers["OrganizationID"] = string.Empty;
+        http.Request.Headers.ResetAuthHeaders();
 
         if (http.User.Identity?.IsAuthenticated == true)
         {

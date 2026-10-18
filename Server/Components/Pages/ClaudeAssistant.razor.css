@@ -1,0 +1,31 @@
+.assistant-log {
+    max-height: calc(100vh - 320px);
+    min-height: 200px;
+    overflow-y: auto;
+}
+
+.assistant-entry {
+    margin-bottom: 0.75rem;
+}
+
+.assistant-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.7;
+}
+
+.assistant-text {
+    white-space: pre-wrap;
+}
+
+.assistant-code {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.assistant-output {
+    max-height: 300px;
+    overflow-y: auto;
+}

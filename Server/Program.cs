@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -17,6 +18,7 @@ using Remotely.Server.Hubs;
 using Remotely.Server.Models;
 using Remotely.Server.Options;
 using Remotely.Server.Services;
+using Remotely.Server.Services.ClaudeAssistant;
 using Remotely.Server.Services.Stores;
 using Remotely.Shared.Entities;
 using Remotely.Shared.Services;
@@ -193,6 +195,8 @@ services.AddSignalR(options =>
     options.EnableDetailedErrors = builder.Environment.IsDevelopment();
     options.MaximumReceiveMessageSize = 100_000;
 })
+    .AddHubOptions<AgentHub>(options => options.AddFilter<AgentHubAuthFilter>())
+    .AddHubOptions<ViewerHub>(options => options.AddFilter<ViewerHubAuthFilter>())
     .AddJsonProtocol(options =>
     {
         options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
@@ -212,6 +216,8 @@ services.AddRateLimiter(options =>
     });
 });
 services.AddHttpClient();
+services.AddHttpClient(SsrfGuard.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(30))
+    .ConfigurePrimaryHttpMessageHandler(SsrfGuard.CreateHandler);
 services.AddLogging();
 services.AddScoped<IEmailSender, EmailSender>();
 if (builder.Environment.IsDevelopment())
@@ -241,6 +247,11 @@ services.AddSingleton<ICircuitManager, CircuitManager>();
 services.AddScoped<IAuthService, AuthService>();
 services.AddScoped<ISelectedCardsStore, SelectedCardsStore>();
 services.AddScoped<IExpiringTokenService, ExpiringTokenService>();
+services.AddScoped<IDeviceAuthService, DeviceAuthService>();
+services.AddScoped<IAgentCommandRunner, AgentCommandRunner>();
+services.AddScoped<IClaudeAssistantService, ClaudeAssistantService>();
+services.AddSingleton<AgentHubAuthFilter>();
+services.AddSingleton<ViewerHubAuthFilter>();
 services.AddScoped<IScriptScheduleDispatcher, ScriptScheduleDispatcher>();
 services.AddSingleton<IOtpProvider, OtpProvider>();
 services.AddSingleton<IEmbeddedServerDataProvider, EmbeddedServerDataProvider>();
@@ -295,8 +306,12 @@ else
     }
 }
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    // Don't advertise the full API surface on production servers.
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 ConfigureStaticFiles();
 

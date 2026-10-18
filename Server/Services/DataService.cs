@@ -522,6 +522,11 @@ public class DataService : IDataService
             return Result.Fail("Results not found.");
         }
 
+        if (!string.Equals(run.OrganizationID, result.OrganizationID, StringComparison.OrdinalIgnoreCase))
+        {
+            return Result.Fail("Run and result belong to different organizations.");
+        }
+
         run.Results ??= new List<ScriptResult>();
         run.Results.Add(result);
 
@@ -706,9 +711,16 @@ public class DataService : IDataService
             if (options is null ||
                 string.IsNullOrWhiteSpace(options.DeviceID) ||
                 string.IsNullOrWhiteSpace(options.OrganizationID) ||
+                !Guid.TryParse(options.DeviceID, out _) ||
+                !dbContext.Organizations.Any(x => x.ID == options.OrganizationID) ||
                 dbContext.Devices.Any(x => x.ID == options.DeviceID))
             {
                 return Result.Fail<Device>("Required parameters are missing or incorrect.");
+            }
+
+            if (options.DeviceAlias?.Length > 100)
+            {
+                return Result.Fail<Device>("Device alias is too long.");
             }
 
             var device = new Device()
@@ -2154,6 +2166,19 @@ public class DataService : IDataService
         }
         else
         {
+            // Only allow moving the device into a group of its own organization.
+            var groupExists = await dbContext.DeviceGroups.AnyAsync(x =>
+                x.ID == deviceGroupId &&
+                x.OrganizationID == device.OrganizationID);
+
+            if (!groupExists)
+            {
+                _logger.LogWarning(
+                    "Refused to assign device {deviceId} to group {groupId} from another organization.",
+                    deviceId,
+                    deviceGroupId);
+                return;
+            }
             device.DeviceGroupID = deviceGroupId;
         }
 

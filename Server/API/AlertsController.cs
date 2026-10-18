@@ -40,6 +40,15 @@ public class AlertsController : ControllerBase
 
         _logger.LogInformation("Alert created.  Alert Options: {options}", JsonSerializer.Serialize(alertOptions));
 
+        if (!string.IsNullOrWhiteSpace(alertOptions.AlertDeviceID))
+        {
+            var deviceResult = await _dataService.GetDevice(orgId, alertOptions.AlertDeviceID);
+            if (!deviceResult.IsSuccess)
+            {
+                return BadRequest("Device not found.");
+            }
+        }
+
         if (alertOptions.ShouldAlert)
         {
             try
@@ -98,10 +107,20 @@ public class AlertsController : ControllerBase
                     return BadRequest("API request body is required to send API request.");
                 }
 
-                using var httpClient = _httpClientFactory.CreateClient();
-                using var request = new HttpRequestMessage(
-                    new HttpMethod(alertOptions.ApiRequestMethod),
-                    alertOptions.ApiRequestUrl);
+                if (!SsrfGuard.IsAllowedUrl(alertOptions.ApiRequestUrl, out var requestUri))
+                {
+                    return BadRequest("API request URL must be a public http(s) URL.");
+                }
+
+                var method = alertOptions.ApiRequestMethod.Trim().ToUpperInvariant();
+                if (method is not ("POST" or "PUT" or "PATCH"))
+                {
+                    return BadRequest("API request method must be POST, PUT or PATCH.");
+                }
+
+                // This client refuses to connect to private, loopback and link-local addresses.
+                using var httpClient = _httpClientFactory.CreateClient(SsrfGuard.HttpClientName);
+                using var request = new HttpRequestMessage(new HttpMethod(method), requestUri);
 
                 request.Content = new StringContent(alertOptions.ApiRequestBody);
                 request.Content.Headers.ContentType = new("application/json");

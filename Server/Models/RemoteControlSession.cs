@@ -46,6 +46,11 @@ public class RemoteControlSession : IDisposable
     /// </summary>
     public bool RequireConsent { get; set; }
 
+    /// <summary>
+    /// Signed-in requesters the end user has already accepted for this session.
+    /// </summary>
+    public HashSet<string> ConsentedRequesters { get; private set; } = new(StringComparer.OrdinalIgnoreCase);
+
     public DateTimeOffset StartTime { get; internal set; }
 
     /// <summary>
@@ -89,6 +94,7 @@ public class RemoteControlSession : IDisposable
         clone.UnattendedSessionId = Guid.NewGuid();
         clone.AccessKey = RandomGenerator.GenerateAccessKey();
         clone.ViewerList = new();
+        clone.ConsentedRequesters = new(ConsentedRequesters, StringComparer.OrdinalIgnoreCase);
         clone.ViewOnly = false;
         return clone;
     }

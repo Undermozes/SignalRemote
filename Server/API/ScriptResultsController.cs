@@ -6,6 +6,7 @@ using Remotely.Server.Extensions;
 using Remotely.Server.Services;
 using Remotely.Shared.Dtos;
 using System.Text;
+using System.Text.Encodings.Web;
 
 namespace Remotely.Server.API;
 
@@ -43,15 +44,19 @@ public class ScriptResultsController : ControllerBase
 
     [HttpGet("{scriptId}")]
     [ServiceFilter(typeof(ApiAuthorizationFilter))]
-    public ActionResult<FileResult> DownloadResults(string scriptId)
+    public async Task<ActionResult<FileResult>> DownloadResults(string scriptId)
     {
         if (!Request.Headers.TryGetOrganizationId(out var orgId))
         {
             return Unauthorized();
         }
 
-        var commandResult = _dataService.GetScriptResult(scriptId, orgId);
-        var content = System.Text.Json.JsonSerializer.Serialize(commandResult);
+        var commandResult = await _dataService.GetScriptResult(scriptId, orgId);
+        if (!commandResult.IsSuccess)
+        {
+            return NotFound();
+        }
+        var content = System.Text.Json.JsonSerializer.Serialize(commandResult.Value);
         return File(Encoding.UTF8.GetBytes(content), "application/octet-stream", "ScriptResults.json");
     }
 
@@ -60,6 +65,28 @@ public class ScriptResultsController : ControllerBase
     [ServiceFilter(typeof(ExpiringTokenFilter))]
     public async Task<ActionResult<ScriptResultResponse>> Post([FromBody] ScriptResultDto result)
     {
+        if (!Request.Headers.TryGetOrganizationId(out var orgId))
+        {
+            return Unauthorized();
+        }
+
+        // An agent's token is bound to its own device.  It may only post results for itself.
+        if (Request.Headers.TryGetTokenDeviceId(out var tokenDeviceId) &&
+            !string.Equals(tokenDeviceId, result.DeviceID, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning(
+                "Device {tokenDeviceId} tried to post a script result for device {deviceId}.",
+                tokenDeviceId,
+                result.DeviceID);
+            return Unauthorized();
+        }
+
+        var deviceCheck = await _dataService.GetDevice(orgId, result.DeviceID);
+        if (!deviceCheck.IsSuccess)
+        {
+            return NotFound();
+        }
+
         var scriptResult = await _dataService.AddScriptResult(result);
 
         if (!scriptResult.IsSuccess)
@@ -79,6 +106,11 @@ public class ScriptResultsController : ControllerBase
             }
 
             var savedScript = savedScriptResult.Value;
+            if (!string.Equals(savedScript.OrganizationID, orgId, StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound();
+            }
+
             if (savedScript.GenerateAlertOnError)
             {
                 await _dataService.AddAlert(result.DeviceID,
@@ -102,16 +134,19 @@ public class ScriptResultsController : ControllerBase
 
                 if (!string.IsNullOrWhiteSpace(savedScript.SendErrorEmailTo))
                 {
+                    // Device data and script output are untrusted, so HTML-encode them.
+                    static string Enc(string? value) => HtmlEncoder.Default.Encode(value ?? string.Empty);
+
                     await _emailSender.SendEmailAsync(savedScript.SendErrorEmailTo,
                         "Script Run Alert",
-                        $"An alert was triggered while running script {savedScript.Name} on device {device.DeviceName}. <br /><br />" +
-                            $"Device ID: {device.ID} <br /> " +
-                            $"Device Name: {device.DeviceName} <br /> " +
-                            $"Device Alias: {device.Alias} <br /> " +
-                            $"Device Group (if any): {device.DeviceGroup?.Name} <br /> " +
+                        $"An alert was triggered while running script {Enc(savedScript.Name)} on device {Enc(device.DeviceName)}. <br /><br />" +
+                            $"Device ID: {Enc(device.ID)} <br /> " +
+                            $"Device Name: {Enc(device.DeviceName)} <br /> " +
+                            $"Device Alias: {Enc(device.Alias)} <br /> " +
+                            $"Device Group (if any): {Enc(device.DeviceGroup?.Name)} <br /> " +
 
                             $"Error Output: <br /> <br /> " +
-                            $"{string.Join("<br /> <br />", errorOut)}");
+                            $"{string.Join("<br /> <br />", errorOut.Select(Enc))}");
                 }
             }
         }

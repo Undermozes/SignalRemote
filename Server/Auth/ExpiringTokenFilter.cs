@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Remotely.Server.Extensions;
 using Remotely.Server.Services;
 using Remotely.Shared;
 using Remotely.Shared.Utilities;
@@ -32,13 +33,16 @@ public class ExpiringTokenFilter : ActionFilterAttribute, IAsyncAuthorizationFil
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while authorizing expiring token.");
+            // Fail closed.  Never let a request through when authorization threw.
+            context.HttpContext.Request.Headers.ResetAuthHeaders();
+            context.Result = new UnauthorizedResult();
         }
     }
 
     private async Task Authorize(AuthorizationFilterContext context)
     {
         var http = context.HttpContext;
-        http.Request.Headers["OrganizationID"] = string.Empty;
+        http.Request.Headers.ResetAuthHeaders();
 
         if (http.User.Identity?.IsAuthenticated == true)
         {
@@ -88,15 +92,21 @@ public class ExpiringTokenFilter : ActionFilterAttribute, IAsyncAuthorizationFil
 
         if (http.Request.Headers.TryGetValue(AppConstants.ExpiringTokenHeaderName, out var expiringToken))
         {
-            if (_expiringTokenService.TryGetExpiration(expiringToken.ToString(), out var expiration) &&
-                expiration > Time.Now)
+            if (_expiringTokenService.TryGetToken(expiringToken.ToString(), out var token) &&
+                token.Expiration > Time.Now)
             {
-                _logger.LogDebug("Expiring token authorized.  Token: {token}.  Expiration: {expiration}", expiringToken, expiration);
+                _logger.LogDebug(
+                    "Expiring token authorized.  Device: {deviceId}.  Expiration: {expiration}",
+                    token.DeviceId,
+                    token.Expiration);
+                http.Request.Headers["OrganizationID"] = token.OrganizationId;
+                http.Request.Headers[IHeaderDictionaryExtensions.TokenDeviceIdHeader] = token.DeviceId;
                 return;
             }
         }
 
-        _logger.LogDebug("Expiring token not authorization failed.");
+        _logger.LogDebug("Expiring token authorization failed.");
+        http.Response.StatusCode = (int)HttpStatusCode.Forbidden;
         context.Result = new UnauthorizedResult();
     }
 }

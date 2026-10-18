@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Remotely.Agent.Extensions;
 using Remotely.Agent.Interfaces;
 using Remotely.Shared;
+using Remotely.Shared.Dtos;
 using Remotely.Shared.Enums;
 using Remotely.Shared.Interfaces;
 using Remotely.Shared.Models;
@@ -13,6 +14,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -150,7 +152,7 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
 
                 _logger.LogInformation("Connected to server.");
 
-                var device = await _deviceInfoService.CreateDevice(_connectionInfo.DeviceID, _connectionInfo.OrganizationID);
+                var device = await CreateDeviceDto(_connectionInfo);
 
                 var result = await _hubConnection.InvokeAsync<bool>("DeviceCameOnline", device);
 
@@ -179,7 +181,7 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
                 _heartbeatTimer.Elapsed += HeartbeatTimer_Elapsed;
                 _heartbeatTimer.Start();
 
-                await _hubConnection.SendAsync("CheckForPendingSriptRuns");
+                await _hubConnection.SendAsync("CheckForPendingScriptRuns");
                 await _hubConnection.SendAsync("CheckForPendingRemoteControlSessions");
 
                 break;
@@ -195,6 +197,11 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
     {
         try
         {
+            if (!_isServerVerified)
+            {
+                _logger.LogWarning("Delete logs attempted before server was verified.");
+                return;
+            }
             await _fileLogsManager.DeleteLogs(_appLifetime.ApplicationStopping);
         }
         catch (Exception ex)
@@ -274,6 +281,12 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
         {
             EnsureHubConnection();
 
+            if (!_isServerVerified)
+            {
+                _logger.LogWarning("Get logs attempted before server was verified.");
+                return;
+            }
+
             if (!await _fileLogsManager.AnyLogsExist(_appLifetime.ApplicationStopping))
             {
                 var message = "There are no log entries written.";
@@ -339,6 +352,11 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
     {
         try
         {
+            if (!_isServerVerified)
+            {
+                _logger.LogWarning("Reinstall attempted before server was verified.");
+                return;
+            }
             await _updater.InstallLatestVersion();
         }
         catch (Exception ex)
@@ -457,7 +475,7 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
                 return;
             }
 
-            var currentInfo = await _deviceInfoService.CreateDevice(_connectionInfo.DeviceID, _connectionInfo.OrganizationID);
+            var currentInfo = await CreateDeviceDto(_connectionInfo);
             await _hubConnection
                 .SendAsync("DeviceHeartbeat", currentInfo)
                 .ConfigureAwait(false);
@@ -515,6 +533,8 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
     {
         try
         {
+            // Not gated on _isServerVerified: the server sends this to banned devices
+            // before verification happens.
             _uninstaller.UninstallAgent();
         }
         catch (Exception ex)
@@ -528,6 +548,12 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
     {
         try
         {
+            if (!_isServerVerified)
+            {
+                _logger.LogWarning("Wake device attempted before server was verified.");
+                return;
+            }
+
             _logger.LogInformation(
                     "Received request to wake device with MAC address {macAddress}.",
                     macAddress);
@@ -539,9 +565,29 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
         }
     }
 
+    private async Task<DeviceClientDto> CreateDeviceDto(ConnectionInfo connectionInfo)
+    {
+        if (string.IsNullOrWhiteSpace(connectionInfo.DeviceSecret))
+        {
+            // 48 random bytes, base64 encoded.  The server only stores a hash of it.
+            connectionInfo.DeviceSecret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
+            _configService.SaveConnectionInfo(connectionInfo);
+        }
+
+        var device = await _deviceInfoService.CreateDevice(connectionInfo.DeviceID, $"{connectionInfo.OrganizationID}");
+        device.DeviceSecret = connectionInfo.DeviceSecret;
+        return device;
+    }
+
     private async Task<bool> CheckForServerMigration()
     {
         if (_connectionInfo is null || _hubConnection is null)
+        {
+            return false;
+        }
+
+        // Only a verified server may move us to another host.
+        if (!_isServerVerified)
         {
             return false;
         }
@@ -552,6 +598,20 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
             Uri.TryCreate(_connectionInfo.Host, UriKind.Absolute, out var savedUri) &&
             serverUri.Host != savedUri.Host)
         {
+            if (savedUri.Scheme == Uri.UriSchemeHttps && serverUri.Scheme != Uri.UriSchemeHttps)
+            {
+                _logger.LogWarning(
+                    "Refusing server migration from {savedUrl} to non-HTTPS URL {serverUrl}.",
+                    _connectionInfo.Host,
+                    serverUrl);
+                return false;
+            }
+
+            _logger.LogInformation(
+                "Migrating from server {savedUrl} to {serverUrl}.",
+                _connectionInfo.Host,
+                serverUrl);
+
             _connectionInfo.Host = serverUrl.Trim().TrimEnd('/');
             _connectionInfo.ServerVerificationToken = null;
             _configService.SaveConnectionInfo(_connectionInfo);
@@ -584,7 +644,7 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
         _logger.LogInformation("Reconnected to server.");
         await _updater.CheckForUpdates();
 
-        var device = await _deviceInfoService.CreateDevice(_connectionInfo.DeviceID, $"{_connectionInfo.OrganizationID}");
+        var device = await CreateDeviceDto(_connectionInfo);
 
         if (!await _hubConnection.InvokeAsync<bool>("DeviceCameOnline", device))
         {

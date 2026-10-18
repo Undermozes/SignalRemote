@@ -71,6 +71,11 @@ public class ClientDownloadsController : ControllerBase
     [HttpGet("desktop/{platformId}/{organizationId}")]
     public async Task<IActionResult> GetDesktop(string platformId, string organizationId)
     {
+        if (!await IsValidOrganizationId(organizationId))
+        {
+            return BadRequest("Invalid organization ID.");
+        }
+
         switch (platformId)
         {
             case "WindowsDesktop-x64":
@@ -117,7 +122,25 @@ public class ClientDownloadsController : ControllerBase
     [HttpGet("{platformId}/{organizationId}")]
     public async Task<IActionResult> GetInstaller(string platformId, string organizationId)
     {
+        if (!await IsValidOrganizationId(organizationId))
+        {
+            return BadRequest("Invalid organization ID.");
+        }
         return await GetInstallFile(organizationId, platformId);
+    }
+
+    /// <summary>
+    /// The organization ID is written into generated install scripts, so it must be a
+    /// GUID of an existing organization.  Anything else could inject script code.
+    /// </summary>
+    private async Task<bool> IsValidOrganizationId(string? organizationId)
+    {
+        if (!Guid.TryParse(organizationId, out _))
+        {
+            return false;
+        }
+        var orgResult = await _dataService.GetOrganizationById(organizationId);
+        return orgResult.IsSuccess;
     }
 
     private async Task<IActionResult> GetBashInstaller(string fileName, string organizationId)
@@ -161,6 +184,11 @@ public class ClientDownloadsController : ControllerBase
 
     private async Task<IActionResult> GetInstallFile(string organizationId, string platformID)
     {
+        if (!Guid.TryParse(organizationId, out _))
+        {
+            return BadRequest("Invalid organization ID.");
+        }
+
         var settings = await _dataService.GetSettings();
         await LogRequest(nameof(GetInstallFile));
 

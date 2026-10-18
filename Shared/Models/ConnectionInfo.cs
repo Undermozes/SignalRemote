@@ -20,4 +20,9 @@ public class ConnectionInfo
     public string? OrganizationID { get; set; }
     public string? ServerVerificationToken { get; set; }
 
+    /// <summary>
+    /// Secret the agent authenticates with.  Generated on first connect.
+    /// </summary>
+    public string? DeviceSecret { get; set; }
+
 }

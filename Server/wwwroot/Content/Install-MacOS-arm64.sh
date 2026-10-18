@@ -48,6 +48,8 @@ su - $Owner -c "brew install jq"
 
 if [ -f "$InstallDir/ConnectionInfo.json" ]; then
     SavedGUID=`su - $Owner -c "cat '$InstallDir/ConnectionInfo.json' | jq -r '.DeviceID'"`
+    # Keep the device secret so the agent can still authenticate after an update.
+    SavedSecret=`su - $Owner -c "cat '$InstallDir/ConnectionInfo.json' | jq -r '.DeviceSecret // empty'"`
     if [[ "$SavedGUID" != "null" && -n "$SavedGUID" ]]; then
         GUID="$SavedGUID"
     fi
@@ -77,7 +79,8 @@ connectionInfo="{
     \"DeviceID\":\"$GUID\", 
     \"Host\":\"$HostName\",
     \"OrganizationID\": \"$Organization\",
-    \"ServerVerificationToken\":\"\"
+    \"ServerVerificationToken\":\"\",
+    \"DeviceSecret\":\"$SavedSecret\"
 }"
 
 echo "$connectionInfo" > $InstallDir/ConnectionInfo.json

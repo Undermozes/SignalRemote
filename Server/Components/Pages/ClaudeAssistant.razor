@@ -1,0 +1,236 @@
+@page "/assistant/{deviceId}"
+@attribute [Authorize]
+@inherits AuthComponentBase
+@implements IDisposable
+@using Remotely.Server.Services.ClaudeAssistant
+
+<div class="assistant-page mt-3">
+    <div class="d-flex align-items-baseline mb-3">
+        <h3 class="mb-0">Claude Assistant</h3>
+        @if (_session is not null)
+        {
+            <span class="ms-3 text-muted">
+                @_session.Device.DeviceName
+                @if (!string.IsNullOrWhiteSpace(_session.Device.Alias))
+                {
+                    <span>(@_session.Device.Alias)</span>
+                }
+            </span>
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-warning">@_errorMessage</div>
+    }
+    else if (_session is null)
+    {
+        <div class="text-muted">Loading...</div>
+    }
+    else
+    {
+        <div class="small text-muted mb-2">
+            Claude runs commands on this device through the agent.  Read-only commands
+            @(_autoRunReadOnly ? "run automatically" : "need your approval")
+            ; anything that could change the system always needs your approval.
+            Every command is logged and appears in the device's script history.
+        </div>
+
+        <div class="assistant-log border rounded p-3 mb-3">
+            @foreach (var entry in _session.Entries)
+            {
+                switch (entry.Kind)
+                {
+                    case AssistantEntryKind.User:
+                        <div class="assistant-entry assistant-user">
+                            <div class="assistant-label">@UserName</div>
+                            <div class="assistant-text">@entry.Text</div>
+                        </div>
+                        break;
+
+                    case AssistantEntryKind.Assistant:
+                        <div class="assistant-entry assistant-claude">
+                            <div class="assistant-label">Claude</div>
+                            <div class="assistant-text">@entry.Text</div>
+                        </div>
+                        break;
+
+                    case AssistantEntryKind.Command:
+                        <div class="assistant-entry assistant-command card">
+                            <div class="card-header d-flex align-items-center">
+                                <span class="badge @(entry.IsReadOnly ? "text-bg-secondary" : "text-bg-warning") me-2">
+                                    @(entry.IsReadOnly ? "Read-only" : "Changes system")
+                                </span>
+                                <span class="me-2">@entry.Shell</span>
+                                <span class="ms-auto small">@GetStateLabel(entry)</span>
+                            </div>
+                            <div class="card-body">
+                                @if (!string.IsNullOrWhiteSpace(entry.Purpose))
+                                {
+                                    <div class="mb-2">@entry.Purpose</div>
+                                }
+                                <pre class="assistant-code">@entry.Command</pre>
+                                @if (!entry.IsReadOnly)
+                                {
+                                    <div class="small text-muted mb-2">Why approval is needed: @entry.ClassificationReason</div>
+                                }
+
+                                @if (entry.State == CommandState.AwaitingApproval)
+                                {
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <button class="btn btn-sm btn-success" @onclick="() => Approve(entry)">Approve and run</button>
+                                        <input class="form-control form-control-sm"
+                                               placeholder="Optional note for Claude"
+                                               @bind="_rejectNote" />
+                                        <button class="btn btn-sm btn-danger" @onclick="() => Reject(entry)">Reject</button>
+                                    </div>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(entry.Output))
+                                {
+                                    <details>
+                                        <summary class="small">Output</summary>
+                                        <pre class="assistant-code assistant-output">@entry.Output</pre>
+                                    </details>
+                                }
+                            </div>
+                        </div>
+                        break;
+
+                    case AssistantEntryKind.Info:
+                        <div class="assistant-entry small text-muted fst-italic">@entry.Text</div>
+                        break;
+
+                    case AssistantEntryKind.Error:
+                        <div class="assistant-entry alert alert-danger py-2">@entry.Text</div>
+                        break;
+                }
+            }
+
+            @if (_session.IsBusy)
+            {
+                <div class="assistant-entry small text-muted">
+                    <span class="spinner-border spinner-border-sm me-2"></span>Claude is working...
+                </div>
+            }
+        </div>
+
+        <div class="d-flex gap-2">
+            <textarea class="form-control"
+                      rows="2"
+                      placeholder="Describe the problem, e.g. &quot;The user says Outlook is slow since this morning.&quot;"
+                      disabled="@_session.IsBusy"
+                      @bind="_input"
+                      @bind:event="oninput"
+                      @onkeydown="HandleKeyDown"></textarea>
+            @if (_session.IsBusy)
+            {
+                <button class="btn btn-secondary" @onclick="() => _session.CancelTurn()">Stop</button>
+            }
+            else
+            {
+                <button class="btn btn-primary" @onclick="Send">Send</button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private ClaudeAssistantSession? _session;
+    private string? _errorMessage;
+    private string _input = string.Empty;
+    private string _rejectNote = string.Empty;
+    private bool _autoRunReadOnly;
+
+    [Parameter]
+    public string DeviceId { get; set; } = string.Empty;
+
+    [Inject]
+    private IClaudeAssistantService AssistantService { get; set; } = null!;
+
+    [Inject]
+    private IDataService DataService { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (User is null)
+        {
+            _errorMessage = "You must be signed in.";
+            return;
+        }
+
+        var result = await AssistantService.StartSession(User, DeviceId);
+        if (!result.IsSuccess)
+        {
+            _errorMessage = result.Reason;
+            return;
+        }
+
+        var settings = await DataService.GetSettings();
+        _autoRunReadOnly = settings.ClaudeAutoRunReadOnlyCommands;
+
+        _session = result.Value;
+        _session.Changed += HandleSessionChanged;
+    }
+
+    public void Dispose()
+    {
+        if (_session is not null)
+        {
+            _session.Changed -= HandleSessionChanged;
+            _session.Dispose();
+        }
+    }
+
+    private void HandleSessionChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task Send()
+    {
+        if (_session is null || _session.IsBusy || string.IsNullOrWhiteSpace(_input))
+        {
+            return;
+        }
+
+        var text = _input;
+        _input = string.Empty;
+        await _session.SendMessage(text);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && !args.ShiftKey)
+        {
+            await Send();
+        }
+    }
+
+    private void Approve(AssistantEntry entry)
+    {
+        _session?.Approve(entry);
+    }
+
+    private void Reject(AssistantEntry entry)
+    {
+        _session?.Reject(entry, _rejectNote);
+        _rejectNote = string.Empty;
+    }
+
+    private static string GetStateLabel(AssistantEntry entry)
+    {
+        var label = entry.State switch
+        {
+            CommandState.AwaitingApproval => "Waiting for your approval",
+            CommandState.Running => "Running...",
+            CommandState.Completed => "Done",
+            CommandState.Rejected => "Rejected",
+            CommandState.Failed => "Failed",
+            _ => string.Empty,
+        };
+
+        return entry.DecidedBy is null ? label : $"{label} · {entry.DecidedBy}";
+    }
+}

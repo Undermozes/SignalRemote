@@ -70,15 +70,18 @@ public class DesktopHub : Hub<IDesktopHubClient>
 
         SessionInfo.Mode = RemoteControlMode.Attended;
 
-        var random = new Random();
         var sessionId = string.Empty;
 
         while (true)
         {
+            // Cryptographically random, so session IDs can't be predicted.
             sessionId = "";
             for (var i = 0; i < 3; i++)
             {
-                sessionId += random.Next(0, 999).ToString().PadLeft(3, '0');
+                sessionId += System.Security.Cryptography.RandomNumberGenerator
+                    .GetInt32(0, 1000)
+                    .ToString()
+                    .PadLeft(3, '0');
             }
 
             SessionInfo.AttendedSessionId = sessionId;

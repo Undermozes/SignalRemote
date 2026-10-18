@@ -16,6 +16,7 @@ namespace Remotely.Server.Hubs;
 public class AgentHub : Hub<IAgentHubClient>
 {
     private readonly IDataService _dataService;
+    private readonly IDeviceAuthService _deviceAuthService;
     private readonly ICircuitManager _circuitManager;
     private readonly IExpiringTokenService _expiringTokenService;
     private readonly ILogger<AgentHub> _logger;
@@ -32,9 +33,11 @@ public class AgentHub : Hub<IAgentHubClient>
         IExpiringTokenService expiringTokenService,
         IRemoteControlSessionCache remoteControlSessionCache,
         IMessenger messenger,
+        IDeviceAuthService deviceAuthService,
         ILogger<AgentHub> logger)
     {
         _dataService = dataService;
+        _deviceAuthService = deviceAuthService;
         _serviceSessionCache = serviceSessionCache;
         _viewerHubContext = viewerHubContext;
         _circuitManager = circuitManager;
@@ -62,6 +65,16 @@ public class AgentHub : Hub<IAgentHubClient>
         {
             Context.Items["Device"] = value;
         }
+    }
+
+    /// <summary>
+    /// True when this connection proved it owns the device ID with its device secret.
+    /// False for legacy agents that were let in without one.
+    /// </summary>
+    private bool HasVerifiedDeviceSecret
+    {
+        get => Context.Items["HasVerifiedDeviceSecret"] is true;
+        set => Context.Items["HasVerifiedDeviceSecret"] = value;
     }
 
     public async Task Chat(string messageText, bool disconnected, string browserConnectionId)
@@ -135,7 +148,10 @@ public class AgentHub : Hub<IAgentHubClient>
             return;
         }
 
-        var authToken = _expiringTokenService.GetToken(Time.Now.AddMinutes(AppConstants.ScriptRunExpirationMinutes));
+        var authToken = _expiringTokenService.GetToken(
+            Time.Now.AddMinutes(AppConstants.ScriptRunExpirationMinutes),
+            Device.OrganizationID,
+            Device.ID);
         var scriptRuns = await _dataService.GetPendingScriptRuns(Device.ID);
 
         foreach (var run in scriptRuns)
@@ -174,6 +190,30 @@ public class AgentHub : Hub<IAgentHubClient>
                 return false;
             }
 
+            var authResult = await _deviceAuthService.Authenticate(device.ID, device.DeviceSecret);
+            if (authResult == DeviceAuthResult.Rejected)
+            {
+                Context.Abort();
+                return false;
+            }
+
+            // Without a verified secret, don't let a second connection take over a
+            // device that is already online.  That would hand the caller the device's
+            // remote control sessions, scripts and file transfers.
+            if (authResult == DeviceAuthResult.LegacyAllowed &&
+                _serviceSessionCache.TryGetConnectionId(device.ID, out var existingConnectionId) &&
+                existingConnectionId != Context.ConnectionId)
+            {
+                _logger.LogWarning(
+                    "Legacy agent tried to connect as device {deviceId}, which is already online.  Connection rejected.",
+                    device.ID);
+                Context.Abort();
+                return false;
+            }
+
+            // Never persist the secret on the device entity.
+            device.DeviceSecret = null;
+
             var result = await _dataService.AddOrUpdateDevice(device);
             if (!result.IsSuccess)
             {
@@ -182,6 +222,7 @@ public class AgentHub : Hub<IAgentHubClient>
             }
 
             Device = result.Value;
+            HasVerifiedDeviceSecret = authResult != DeviceAuthResult.LegacyAllowed;
 
             _serviceSessionCache.AddOrUpdateByConnectionId(Context.ConnectionId, Device);
 
@@ -212,6 +253,18 @@ public class AgentHub : Hub<IAgentHubClient>
 
     public async Task DeviceHeartbeat(DeviceClientDto device)
     {
+        // A heartbeat may only update the device this connection registered as.
+        if (Device is null ||
+            !string.Equals(Device.ID, device.ID, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning(
+                "Heartbeat for device {deviceId} rejected.  The connection isn't registered as that device.",
+                device.ID);
+            return;
+        }
+
+        device.DeviceSecret = null;
+
         if (await CheckForDeviceBan(device.ID, device.DeviceName))
         {
             return;
@@ -285,7 +338,11 @@ public class AgentHub : Hub<IAgentHubClient>
 
     public string GetServerVerificationToken()
     {
-        return $"{Device?.ServerVerificationToken}";
+        if (Device is null)
+        {
+            return string.Empty;
+        }
+        return $"{Device.ServerVerificationToken}";
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -320,6 +377,12 @@ public class AgentHub : Hub<IAgentHubClient>
         }
     }
 
+    // Kept for agents built before the method name typo was fixed.
+    public Task CheckForPendingSriptRuns()
+    {
+        return CheckForPendingScriptRuns();
+    }
+
     public Task ReturnPowerShellCompletions(PwshCommandCompletion completion, CompletionIntent intent, string senderConnectionId)
     {
         var message = new PowerShellCompletionsMessage(completion, intent);
@@ -328,9 +391,24 @@ public class AgentHub : Hub<IAgentHubClient>
 
     public async Task ScriptResult(string scriptResultId)
     {
-        var result = await _dataService.GetScriptResult(scriptResultId);
+        if (Device is null)
+        {
+            return;
+        }
+
+        var result = await _dataService.GetScriptResult(scriptResultId, Device.OrganizationID);
         if (!result.IsSuccess)
         {
+            return;
+        }
+
+        // Only relay results that this device produced.
+        if (!string.Equals(result.Value.DeviceID, Device.ID, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning(
+                "Device {deviceId} tried to relay script result {resultId} that belongs to another device.",
+                Device.ID,
+                scriptResultId);
             return;
         }
 
@@ -360,6 +438,18 @@ public class AgentHub : Hub<IAgentHubClient>
         {
             return;
         }
+
+        // A connection without a verified device secret may only set the token once.
+        // Otherwise an impersonator could overwrite it and lock the real agent out.
+        if (!HasVerifiedDeviceSecret &&
+            !string.IsNullOrWhiteSpace(Device.ServerVerificationToken))
+        {
+            _logger.LogWarning(
+                "Unverified connection tried to overwrite the server verification token for device {deviceId}.",
+                Device.ID);
+            return;
+        }
+
         Device.ServerVerificationToken = verificationToken;
         _dataService.SetServerVerificationToken(Device.ID, verificationToken);
     }

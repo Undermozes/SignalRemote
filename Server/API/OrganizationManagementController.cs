@@ -267,6 +267,13 @@ public class OrganizationManagementController : ControllerBase
             return Unauthorized();
         }
 
+        // The default org receives every device installed from the public download page,
+        // so only a server admin may change it.
+        if (!await this.IsServerAdmin(_dataService))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden);
+        }
+
         await _dataService.SetIsDefaultOrganization(orgId, isDefault);
         return NoContent();
     }

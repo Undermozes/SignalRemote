@@ -23,6 +23,7 @@ public partial class DeviceCard : AuthComponentBase
     private Version _currentVersion = new();
     private Theme _theme;
     private DeviceCardState _state;
+    private bool _isClaudeAssistantEnabled;
     private DeviceGroup[] _deviceGroups = Array.Empty<DeviceGroup>();
 
     [Parameter]
@@ -72,6 +73,9 @@ public partial class DeviceCard : AuthComponentBase
 
     [Inject]
     private IUpgradeService UpgradeService { get; init; } = null!;
+
+    [Inject]
+    private IDeviceAuthService DeviceAuthService { get; init; } = null!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -165,6 +169,10 @@ public partial class DeviceCard : AuthComponentBase
         {
             return;
         }
+
+        // Only read settings when a card is expanded, not for every card in the list.
+        var settings = await DataService.GetSettings();
+        _isClaudeAssistantEnabled = settings.ClaudeAssistantEnabled;
 
         await Messenger.Send(
             new DeviceCardStateChangedMessage(Device.ID, DeviceCardState.Expanded),
@@ -274,6 +282,11 @@ public partial class DeviceCard : AuthComponentBase
         InvokeAsync(StateHasChanged);
     }
 
+    private void OpenClaudeAssistant()
+    {
+        JsInterop.OpenWindow($"/assistant/{Device.ID}", "_blank");
+    }
+
     private void OpenDeviceDetails()
     {
         JsInterop.OpenWindow($"/device-details/{Device.ID}", "_blank");
@@ -351,6 +364,26 @@ public partial class DeviceCard : AuthComponentBase
         else
         {
             SelectedCards.Remove(Device.ID);
+        }
+    }
+
+    private async Task ResetDeviceSecret()
+    {
+        if (User?.IsAdministrator != true ||
+            !DataService.DoesUserHaveAccessToDevice(Device.ID, User))
+        {
+            ToastService.ShowToast2("Only organization admins can reset a device secret.", ToastType.Warning);
+            return;
+        }
+
+        var result = await JsInterop.Confirm(
+            "Reset this device's secret?  The next agent that connects with this device ID will be trusted.  " +
+            "Only do this if the real agent can no longer connect (e.g. after restoring it from a backup).");
+        if (result)
+        {
+            await DeviceAuthService.ResetDeviceSecret(Device.ID);
+            Logger.LogWarning("User {user} reset the device secret for device {deviceId}.", User.UserName, Device.ID);
+            ToastService.ShowToast2("Device secret reset.", ToastType.Success);
         }
     }
 

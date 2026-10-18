@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Remotely.Server.Hubs;
 
-[ServiceFilter(typeof(ViewerAuthorizationFilter))]
+// Authentication is enforced by ViewerHubAuthFilter (registered in Program.cs).
+// MVC filter attributes like ServiceFilter have no effect on SignalR hubs.
 public class ViewerHub : Hub<IViewerHubClient>
 {
     private readonly IHubContext<DesktopHub, IDesktopHubClient> _desktopHub;
@@ -244,7 +245,15 @@ public class ViewerHub : Hub<IViewerHubClient>
 
         if (SessionInfo.Mode == RemoteControlMode.Unattended)
         {
-            if (SessionInfo.RequireConsent)
+            // Consent is remembered per signed-in requester, not for the whole session.
+            // Otherwise anyone holding the session link could join after the first
+            // viewer was accepted, without the end user being asked.
+            var requesterKey = Context.User?.Identity?.IsAuthenticated == true
+                ? $"{Context.User.Identity.Name}"
+                : string.Empty;
+
+            if (SessionInfo.RequireConsent &&
+                (requesterKey.Length == 0 || !SessionInfo.ConsentedRequesters.Contains(requesterKey)))
             {
                 var request = new RemoteControlAccessRequest(
                     Context.ConnectionId,
@@ -259,9 +268,12 @@ public class ViewerHub : Hub<IViewerHubClient>
                 {
                     return Result.Fail($"Access request failed.  Reason: {result}");
                 }
-            }
 
-            SessionInfo.RequireConsent = false;
+                if (requesterKey.Length > 0)
+                {
+                    SessionInfo.ConsentedRequesters.Add(requesterKey);
+                }
+            }
 
             await _desktopHub.Clients
                 .Client(SessionInfo.DesktopConnectionId)

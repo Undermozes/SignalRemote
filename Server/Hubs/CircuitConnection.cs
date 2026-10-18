@@ -130,7 +130,6 @@ public class CircuitConnection : CircuitHandler, ICircuitConnection
     public async Task ExecuteCommandOnAgent(ScriptingShell shell, string command, string[] deviceIDs)
     {
         deviceIDs = _dataService.FilterDeviceIdsByUserPermission(deviceIDs, User);
-        var connections = GetActiveConnectionsForUserOrg(deviceIDs);
 
         _logger.LogInformation("Command executed by {username}.  Shell: {shell}.  Command: {command}.  Devices: {deviceIds}",
               User.UserName,
@@ -138,14 +137,21 @@ public class CircuitConnection : CircuitHandler, ICircuitConnection
               command,
               string.Join(", ", deviceIDs));
 
-        var authTokenForUploadingResults = _expiringTokenService.GetToken(Time.Now.AddMinutes(5));
+        foreach (var (device, connectionId) in GetActiveDevicesForUserOrg(deviceIDs))
+        {
+            // One token per device, so a device can only post results as itself.
+            var authTokenForUploadingResults = _expiringTokenService.GetToken(
+                Time.Now.AddMinutes(5),
+                device.OrganizationID,
+                device.ID);
 
-        await _agentHubContext.Clients.Clients(connections).ExecuteCommand(
-            shell,
-            command,
-            authTokenForUploadingResults,
-            $"{User.UserName}",
-            ConnectionId);
+            await _agentHubContext.Clients.Client(connectionId).ExecuteCommand(
+                shell,
+                command,
+                authTokenForUploadingResults,
+                $"{User.UserName}",
+                ConnectionId);
+        }
     }
 
     public Task GetPowerShellCompletions(string inputText, int currentIndex, CompletionIntent intent, bool? forward)
@@ -319,20 +325,31 @@ public class CircuitConnection : CircuitHandler, ICircuitConnection
             deviceIds = _dataService.FilterDeviceIdsByUserPermission(deviceIds.ToArray(), User);
         }
 
-        var authToken = _expiringTokenService.GetToken(Time.Now.AddMinutes(AppConstants.ScriptRunExpirationMinutes));
-
-        var connectionIds = _agentSessionCache.GetConnectionIdsByDeviceIds(deviceIds).ToArray();
-
-        if (connectionIds.Any())
+        foreach (var deviceId in deviceIds)
         {
-            await _agentHubContext.Clients.Clients(connectionIds).RunScript(
+            if (!_agentSessionCache.TryGetByDeviceId(deviceId, out var device) ||
+                !_agentSessionCache.TryGetConnectionId(deviceId, out var connectionId))
+            {
+                continue;
+            }
+
+            if (User is not null && device.OrganizationID != User.OrganizationID)
+            {
+                continue;
+            }
+
+            var authToken = _expiringTokenService.GetToken(
+                Time.Now.AddMinutes(AppConstants.ScriptRunExpirationMinutes),
+                device.OrganizationID,
+                device.ID);
+
+            await _agentHubContext.Clients.Client(connectionId).RunScript(
                 savedScriptId,
                 scriptRunId,
                 $"{username}",
                 scriptInputType,
                 authToken);
         }
-
     }
 
     public async Task SendChat(string message, string deviceId, bool isDisconnecting = false)
@@ -387,7 +404,16 @@ public class CircuitConnection : CircuitHandler, ICircuitConnection
             return false;
         }
 
-        var authToken = _expiringTokenService.GetToken(Time.Now.AddMinutes(5));
+        if (!_agentSessionCache.TryGetByDeviceId(deviceId, out var device) ||
+            device.OrganizationID != User.OrganizationID)
+        {
+            return false;
+        }
+
+        var authToken = _expiringTokenService.GetToken(
+            Time.Now.AddMinutes(5),
+            device.OrganizationID,
+            device.ID);
 
         await _agentHubContext.Clients
             .Client(connectionId)
@@ -545,6 +571,23 @@ public class CircuitConnection : CircuitHandler, ICircuitConnection
 
 
         return (true, connectionId);
+    }
+
+    private IEnumerable<(Device Device, string ConnectionId)> GetActiveDevicesForUserOrg(IEnumerable<string> deviceIds)
+    {
+        foreach (var deviceId in deviceIds)
+        {
+            if (!_agentSessionCache.TryGetByDeviceId(deviceId, out var device) ||
+                device.OrganizationID != User.OrganizationID)
+            {
+                continue;
+            }
+
+            if (_agentSessionCache.TryGetConnectionId(device.ID, out var connectionId))
+            {
+                yield return (device, connectionId);
+            }
+        }
     }
 
     private IEnumerable<string> GetActiveConnectionsForUserOrg(IEnumerable<string> deviceIds)

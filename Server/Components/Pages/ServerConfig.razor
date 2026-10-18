@@ -92,6 +92,41 @@
                 <ValidationMessage For="() => Input.AllowApiLogin" />
             </div>
             <div class="form-group">
+                <label>Enable Claude Assistant</label>
+                <br />
+                <InputCheckbox @bind-Value="Input.ClaudeAssistantEnabled" autocomplete="off" />
+                <br />
+                <small class="text-muted">
+                    Lets technicians ask Claude to investigate a device.  Claude runs commands through the agent;
+                    commands that may change the system always need approval.  Device data is sent to the Anthropic API.
+                </small>
+                <ValidationMessage For="() => Input.ClaudeAssistantEnabled" />
+            </div>
+            <div class="form-group">
+                <label class="control-label">Claude API Key</label>
+                <br />
+                <InputText type="password" @bind-Value="Input.ClaudeApiKey" class="form-control" autocomplete="new-password" placeholder="Leave empty to use ANTHROPIC_API_KEY" />
+                <br />
+                <ValidationMessage For="() => Input.ClaudeApiKey" />
+            </div>
+            <div class="form-group">
+                <label class="control-label">Claude Model</label>
+                <br />
+                <InputText @bind-Value="Input.ClaudeModel" class="form-control" autocomplete="off" />
+                <br />
+                <ValidationMessage For="() => Input.ClaudeModel" />
+            </div>
+            <div class="form-group">
+                <label>Claude: Auto-Run Read-Only Commands</label>
+                <br />
+                <InputCheckbox @bind-Value="Input.ClaudeAutoRunReadOnlyCommands" autocomplete="off" />
+                <br />
+                <small class="text-muted">
+                    When off, every command Claude wants to run needs approval.
+                </small>
+                <ValidationMessage For="() => Input.ClaudeAutoRunReadOnlyCommands" />
+            </div>
+            <div class="form-group">
                 <label class="control-label">Banned Devices</label>
                 <br />
                 <select size="4" class="form-control" @bind="_bannedDeviceSelected">
@@ -200,6 +235,16 @@
                 <InputCheckbox @bind-Value="Input.RedirectToHttps" autocomplete="off" />
                 <br />
                 <ValidationMessage For="() => Input.RedirectToHttps" />
+            </div>
+            <div class="form-group">
+                <label>Allow Agents Without Device Secret</label>
+                <br />
+                <InputCheckbox @bind-Value="Input.AllowAgentsWithoutDeviceSecret" autocomplete="off" />
+                <br />
+                <small class="text-muted">
+                    Legacy agents don't authenticate with a device secret.  Disable this once all agents are updated.
+                </small>
+                <ValidationMessage For="() => Input.AllowAgentsWithoutDeviceSecret" />
             </div>
             <div class="form-group">
                 <label>Remote Control Notify User</label>
