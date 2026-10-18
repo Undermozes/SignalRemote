@@ -573,7 +573,7 @@ public class DataService : IDataService
     {
         var fileContents = new byte[file.Length];
         using var stream = file.OpenReadStream();
-        await stream.ReadAsync(fileContents.AsMemory(0, (int)file.Length));
+        await stream.ReadExactlyAsync(fileContents);
 
         return await AddSharedFileImpl(file.Name, fileContents, file.ContentType, organizationId);
     }
