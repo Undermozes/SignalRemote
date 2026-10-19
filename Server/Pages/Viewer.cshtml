@@ -4,20 +4,30 @@
 
 @{
     Layout = null;
+
+    // Toolbar button: icon above a small label on phones, icon + label in one row from md up.
+    const string ToolButton = "sr-btn sr-btn-ghost min-h-16 flex-col gap-1 px-1 py-2 text-lg md:min-h-11 md:flex-row md:gap-2 md:px-3 md:py-1 md:text-sm";
+    const string ToolLabel = "text-[11px] leading-tight md:text-sm";
+    const string PopupButton = "sr-btn sr-btn-ghost w-full justify-start gap-3 text-left whitespace-nowrap";
+    const string KeyButton = "sr-btn sr-btn-secondary sr-btn-sm min-h-11 min-w-11 shrink-0 px-3 font-mono text-sm";
+    const string KeySeparator = "mx-0.5 w-px shrink-0 self-stretch bg-border";
 }
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en" class="dark">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=0.9, user-scalable=no" />
+    @* Zooming stays off: the viewer has its own pinch-zoom for the remote screen. *@
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>@(Model.PageTitle)</title>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#16181d" />
     <meta name="description" content="@(Model.PageDescription)" />
     <link href="/manifest.json" rel="manifest" />
     <link rel="icon" href="@(Model.FaviconUrl)" />
+    <link href="/css/app.css" rel="stylesheet" asp-append-version="true" />
     <link href="/css/remote-control.css" rel="stylesheet" asp-append-version="true" />
 
     @if (!string.IsNullOrWhiteSpace(Model.ThemeUrl))
@@ -39,264 +49,345 @@
         <script src="/lib/msgpack/dist.es5+umd/msgpack.min.js"></script>
     </environment>
 </head>
-<body>
+<body class="viewer-body text-fg">
     <div id="backgroundLayers" class="background-layers">
         <div class="background-layer-1"></div>
         <div class="background-layer-2"></div>
         <div class="background-layer-3"></div>
+        <footer class="pointer-events-none absolute inset-x-0 bottom-[max(1.5rem,env(safe-area-inset-bottom))] text-center text-xs text-white/50">
+            &copy; @(DateTime.Now.Year) - Immense Networks
+        </footer>
     </div>
 
+    @* Popup menus.  Positioned under their toolbar button from md up, bottom sheets on phones. *@
     <div id="screenSelectMenu" class="popup-menu">
     </div>
 
     <div id="clipboardTransferMenu" class="popup-menu">
-        <button id="typeClipboardButton">Type Clipboard</button>
+        <button id="typeClipboardButton" class="@PopupButton">
+            <i class="fas fa-keyboard w-5"></i>
+            Type Clipboard
+        </button>
     </div>
 
     <div id="fileTransferMenu" class="popup-menu">
-        <button id="fileUploadButton">Upload File</button>
-        <button id="fileDownloadButton">Download File</button>
+        <button id="fileUploadButton" class="@PopupButton">
+            <i class="fas fa-upload w-5"></i>
+            Upload File
+        </button>
+        <button id="fileDownloadButton" class="@PopupButton">
+            <i class="fas fa-download w-5"></i>
+            Download File
+        </button>
     </div>
 
     <div id="windowsSessionMenu" class="popup-menu">
-        <div class="text-center" style="margin-bottom: 5px;">
+        <label for="windowsSessionSelect" class="sr-label px-1">
             Change Windows Session
-        </div>
+        </label>
         <select id="windowsSessionSelect"
+                class="sr-select md:w-72"
                 title="Switch to a different Windows session.">
         </select>
     </div>
 
     <div id="qualityModeMenu" class="popup-menu">
-        <div class="text-center" style="margin-bottom: 5px;">
+        <div class="px-1 pb-1 text-sm font-semibold text-muted">
             Streaming Quality
         </div>
-        <button id="qualityAutoButton" class="quality-mode-option toggled"
+        <button id="qualityAutoButton" class="quality-mode-option toggled @PopupButton"
                 title="Automatically adapts quality based on network conditions.">
-            <i class="fas fa-magic"></i>
+            <i class="fas fa-magic w-5"></i>
             Auto (Adaptive)
         </button>
-        <button id="qualityPerformanceButton" class="quality-mode-option"
+        <button id="qualityPerformanceButton" class="quality-mode-option @PopupButton"
                 title="Lower image quality, reduces bandwidth and improves performance on slow networks.">
-            <i class="fas fa-tachometer-alt"></i>
+            <i class="fas fa-tachometer-alt w-5"></i>
             Performance (Lower Quality)
         </button>
-        <button id="qualityHighButton" class="quality-mode-option"
+        <button id="qualityHighButton" class="quality-mode-option @PopupButton"
                 title="Highest image quality, uses more bandwidth. Best for fast local networks.">
-            <i class="fas fa-star"></i>
+            <i class="fas fa-star w-5"></i>
             Quality (Higher Bandwidth)
         </button>
     </div>
 
     <div id="extrasMenu" class="popup-menu">
-
-        <button id="audioButton"
+        <button id="audioButton" class="@PopupButton"
                 title="Windows only.  Stream the remote audio to the browser.">
-            <i class="fas fa-volume-up"></i>
+            <i class="fas fa-volume-up w-5"></i>
             Audio
         </button>
 
-        <button id="fileTransferButton"
+        <button id="fileTransferButton" class="@PopupButton"
                 title="Transfer files to the remote computer.">
-            <i class="fas fa-file-upload"></i>
+            <i class="fas fa-file-upload w-5"></i>
             File Transfer
         </button>
 
-        <button id="inviteButton"
+        <button id="inviteButton" class="@PopupButton"
                 title="Copy a link that lets another person view the remote screen.">
-            <i class="fas fa-user-plus"></i>
+            <i class="fas fa-user-plus w-5"></i>
             Invite Others
         </button>
 
-        <button id="metricsButton"
-            title="Toggle display of session metrics.">
-            <i class="fas fa-gauge"></i>
+        <button id="metricsButton" class="@PopupButton"
+                title="Toggle display of session metrics.">
+            <i class="fas fa-gauge w-5"></i>
             Metrics
         </button>
 
-        <button id="qualityModeButton"
+        <button id="qualityModeButton" class="@PopupButton"
                 title="Change the streaming quality mode.">
-            <i class="fas fa-sliders"></i>
+            <i class="fas fa-sliders w-5"></i>
             Quality: <span id="qualityModeLabel">Auto</span>
         </button>
     </div>
 
-    <div id="metricsFrame" class="d-none">
-        <div>
-            Mbps:
-        </div>
-        <div id="mbpsDiv">
-        </div>
-        <div>
-            FPS:
-        </div>
-        <div id="fpsDiv">
-        </div>
-        <div>
-            Latency:
-        </div>
-        <div id="latencyDiv">
-        </div>
-        <div>
-            GPU:
-        </div>
-        <div id="gpuAcceleratedDiv">
-        </div>
+    <div id="metricsFrame"
+         class="d-none pointer-events-none fixed bottom-[env(safe-area-inset-bottom)] left-[env(safe-area-inset-left)] z-[5] grid grid-cols-[auto_1fr] gap-x-2 rounded-tr-lg bg-black/60 px-3 py-2 text-left font-mono text-xs whitespace-nowrap text-white select-none">
+        <div>Mbps:</div>
+        <div id="mbpsDiv"></div>
+        <div>FPS:</div>
+        <div id="fpsDiv"></div>
+        <div>Latency:</div>
+        <div id="latencyDiv"></div>
+        <div>GPU:</div>
+        <div id="gpuAcceleratedDiv"></div>
     </div>
 
-    <div class="connection-box-wrapper">
-        <div class="text-center">
-            <h2 id="connectHeader" class="connect-header" style="display: none">
-                Connect to a Client
-            </h2>
-        </div>
-        <div id="connectBox" class="center-connection-box" style="display: none">
+    <div class="connection-box-wrapper fixed inset-x-0 top-[max(12vh,env(safe-area-inset-top))] z-[1] flex flex-col items-center px-4 text-center">
+        <h2 id="connectHeader" class="mb-4 text-2xl font-light text-white" style="display: none">
+            Connect to a Client
+        </h2>
+        <div id="connectBox" class="sr-card mb-5 w-full max-w-sm p-6 text-left" style="display: none">
             <form id="connectForm">
-                <div class="form-block">
-                    <label class="input-label">Your Name (shown to client)</label>
-                    <input id="nameInput" type="text" required value="@Model.UserDisplayName" />
+                <div class="sr-field">
+                    <label for="nameInput" class="sr-label">Your Name (shown to client)</label>
+                    <input id="nameInput" class="sr-input" type="text" required autocomplete="name" value="@Model.UserDisplayName" />
                 </div>
-                <div class="form-block">
-                    <label class="input-label">Session ID</label>
-                    <input id="sessionIDInput" required type="text" pattern="[0-9 ]+" />
+                <div class="sr-field">
+                    <label for="sessionIDInput" class="sr-label">Session ID</label>
+                    <input id="sessionIDInput" class="sr-input font-mono tracking-widest" required type="text"
+                           inputmode="numeric" autocomplete="off" pattern="[0-9 ]+" />
                 </div>
-                <div>
-                    <button id="connectButton" disabled>
-                        Connect
-                    </button>
-                </div>
-
+                <button id="connectButton" class="sr-btn sr-btn-primary w-full uppercase tracking-wide" disabled>
+                    Connect
+                </button>
             </form>
         </div>
 
-        <div id="statusMessage" class="status-message">
+        <div id="statusMessage" class="status-message max-w-full px-2 text-lg text-sky-400">
         </div>
-
     </div>
 
-    <div id="workAreaGrid" style="display: none;">
-        <div>
-            <div id="menuFrame">
-                <div class="menu-column menu-column-left">
+    <div id="workAreaGrid" class="fixed inset-0 z-[2]" style="display: none;">
+        <div id="screenViewerWrapper">
+            <canvas id="screenViewer" class="fit"></canvas>
+            <input id="fileTransferInput" hidden="hidden" type="file" multiple />
+            <input id="touchKeyboardInput" type="text" autocomplete="off" autocapitalize="off"
+                   autocorrect="off" spellcheck="false" enterkeyhint="send" aria-label="Touch keyboard input" />
+        </div>
+    </div>
 
-                </div>
-                <div class="menu-column menu-column-middle">
-                    <button id="changeScreenButton"
-                            title="Switch monitors on remote multi-monitor setups.">
-                        <i class="fas fa-desktop"></i>
-                        Monitors
-                    </button>
+    @* Session controls.  Only shown while connected (body.in-session, set by UI.ts). *@
+    <div id="sessionChrome">
+        @* Floating buttons.  Bottom right on phones, top center from md up.  Drag the toolbar button to move them. *@
+        <div id="fabCluster" class="fixed z-20 flex flex-col-reverse items-center gap-2 md:flex-row">
+            <button id="menuButton"
+                    class="sr-btn size-12 touch-none rounded-full border-border bg-surface-raised/90 p-0 text-lg text-fg shadow-lg backdrop-blur hover:bg-surface-sunken md:h-11 md:w-14"
+                    title="Show the toolbar.  Drag to move this button."
+                    aria-label="Show the toolbar"
+                    aria-controls="menuFrame">
+                <i class="fas fa-bars"></i>
+            </button>
 
-                    <button id="viewOnlyButton"
-                            title="If toggled, prevents sending commnads and input to the remote computer.">
-                        <i class="fas fa-eye"></i>
-                        View Only
-                    </button>
-
-                    <button id="clipboardTransferButton"
-                            title="Type the current clipboard text on the remote computer.">
-                        <i class="fas fa-clipboard"></i>
-                        Clipboard
-                    </button>
-
-                    <button id="blockInputButton"
-                            title="Prevent remote user from using keyboard and mouse.">
-                        <i class="fas fa-mouse"></i>
-                        Block Remote Input
-                    </button>
-
-                    <button id="ctrlAltDelButton"
-                            title="Simulate the Ctrl+Alt+Del command on the remote computer.  Must be running as SYSTEM."
-                            class="d-none">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Ctrl+Alt+Del
-                    </button>
-                </div>
-
-                <div class="menu-column menu-column-right">
-                    @if (!string.IsNullOrWhiteSpace(Model.AssistantDeviceId))
-                    {
-                        <button id="assistantButton" title="Ask Claude to investigate this computer.">
-                            <i class="fas fa-robot"></i>
-                        </button>
-                    }
-
-                    <button id="disconnectButton"
-                            title="Disconnect from the current session.">
-                        x
-                    </button>
-
-                    <button id="extrasMenuButton">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-
-                    <button id="windowsSessionMenuButton">
-                        <i class="fa-brands fa-windows"></i>
-                    </button>
-
-                    <button id="fullScreenButton" title="Enter fullscreen mode.">
-                        <i class="fas fa-window-maximize"></i>
-                    </button>
-
-                    <button id="fitToScreenButton"
-                            class="toggled"
-                            title="If toggled, will resize image to fit in the window.">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="text-center">
-                <button id="menuButton">
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-
-                <button 
-                    id="keyboardButton" 
+            <button id="keyboardButton"
+                    class="d-none sr-btn size-12 rounded-full border-border bg-surface-raised/90 p-0 text-lg text-fg shadow-lg backdrop-blur hover:bg-surface-sunken md:size-11"
                     title="Invoke the mobile touch keyboard."
-                    class="d-none">
-                    <i class="fas fa-keyboard align-middle"></i>
+                    aria-label="Touch keyboard">
+                <i class="fas fa-keyboard"></i>
+            </button>
+        </div>
+
+        <div id="menuBackdrop" class="fixed inset-0 z-[29] bg-black/40 md:hidden" hidden></div>
+
+        <div id="menuFrame"
+             role="toolbar"
+             aria-label="Session toolbar"
+             class="fixed inset-x-0 bottom-0 z-30 hidden max-h-[80dvh] overflow-y-auto rounded-t-2xl border-t border-border bg-surface-raised/95 px-[max(0.75rem,env(safe-area-inset-left))] pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-fg shadow-2xl backdrop-blur [&.open]:block md:inset-x-auto md:top-0 md:bottom-auto md:left-1/2 md:max-w-[calc(100vw-1rem)] md:-translate-x-1/2 md:rounded-t-none md:rounded-b-2xl md:border-t-0 md:border-b md:px-2 md:pt-[max(0.5rem,env(safe-area-inset-top))] md:pb-2">
+            <div class="mb-1 flex items-center justify-between md:hidden">
+                <span class="mx-auto h-1.5 w-10 rounded-full bg-muted/40"></span>
+            </div>
+
+            <div class="grid grid-cols-4 gap-1 md:flex md:flex-wrap md:items-center md:justify-center">
+                <button id="changeScreenButton" class="@ToolButton"
+                        title="Switch monitors on remote multi-monitor setups.">
+                    <i class="fas fa-desktop"></i>
+                    <span class="@ToolLabel">Monitors</span>
                 </button>
 
-            </div>
-        </div>
-        <div>
-            <div id="screenViewerWrapper">
-                <canvas id="screenViewer" class="fit"></canvas>
-                <input id="fileTransferInput" hidden="hidden" type="file" multiple />
-                <input id="touchKeyboardInput" type="text" autocomplete="off" autocapitalize="off"  />
+                <button id="fitToScreenButton"
+                        class="toggled @ToolButton"
+                        title="If toggled, will resize image to fit in the window.">
+                    <i class="fas fa-expand"></i>
+                    <span class="@ToolLabel">Fit</span>
+                </button>
+
+                <button id="fullScreenButton" class="@ToolButton" title="Enter fullscreen mode.">
+                    <i class="fas fa-window-maximize"></i>
+                    <span class="@ToolLabel">Fullscreen</span>
+                </button>
+
+                <button id="viewOnlyButton" class="@ToolButton"
+                        title="If toggled, prevents sending commnads and input to the remote computer.">
+                    <i class="fas fa-eye"></i>
+                    <span class="@ToolLabel">View Only</span>
+                </button>
+
+                <button id="clipboardTransferButton" class="@ToolButton"
+                        title="Type the current clipboard text on the remote computer.">
+                    <i class="fas fa-clipboard"></i>
+                    <span class="@ToolLabel">Clipboard</span>
+                </button>
+
+                <button id="blockInputButton" class="@ToolButton"
+                        title="Prevent remote user from using keyboard and mouse.">
+                    <i class="fas fa-mouse"></i>
+                    <span class="@ToolLabel">Block Input</span>
+                </button>
+
+                <button id="ctrlAltDelButton"
+                        title="Simulate the Ctrl+Alt+Del command on the remote computer.  Must be running as SYSTEM."
+                        class="d-none @ToolButton">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span class="@ToolLabel">Ctrl+Alt+Del</span>
+                </button>
+
+                <button id="windowsSessionMenuButton" class="@ToolButton"
+                        title="Switch to a different Windows session.">
+                    <i class="fa-brands fa-windows"></i>
+                    <span class="@ToolLabel">Session</span>
+                </button>
+
+                @if (!string.IsNullOrWhiteSpace(Model.AssistantDeviceId))
+                {
+                    <button id="assistantButton" class="@ToolButton" title="Ask Claude to investigate this computer.">
+                        <i class="fas fa-robot"></i>
+                        <span class="@ToolLabel">Claude</span>
+                    </button>
+                }
+
+                <button id="extrasMenuButton" class="@ToolButton" title="More options.">
+                    <i class="fas fa-ellipsis-v"></i>
+                    <span class="@ToolLabel">More</span>
+                </button>
+
+                <button id="disconnectButton"
+                        class="@ToolButton text-red-400 hover:bg-red-500/15"
+                        title="Disconnect from the current session.">
+                    <i class="fas fa-power-off"></i>
+                    <span class="@ToolLabel">Disconnect</span>
+                </button>
+
+                <button class="menu-close-button @ToolButton"
+                        title="Hide the toolbar."
+                        aria-label="Hide the toolbar">
+                    <i class="fas fa-chevron-down md:rotate-180"></i>
+                    <span class="@ToolLabel">Hide</span>
+                </button>
             </div>
         </div>
 
+        @* Special keys for the touch keyboard.  Shown while the touch keyboard is on, above the
+           on-screen keyboard.  Ctrl/Alt/Shift/Win are sticky: they apply to the next key. *@
+        <div id="touchKeyboardBar"
+             class="fixed inset-x-0 z-[25] border-t border-border bg-surface-raised/95 shadow-2xl backdrop-blur"
+             hidden>
+            <div class="flex items-center gap-1 overflow-x-auto overscroll-x-contain px-[max(0.5rem,env(safe-area-inset-left))] py-1.5 [scrollbar-width:none]">
+                <button class="@KeyButton" data-key="Escape" title="Escape">Esc</button>
+                <button class="@KeyButton" data-key="Tab" title="Tab">Tab</button>
+                <span class="@KeySeparator"></span>
+                <button class="@KeyButton" data-modifier="Control" title="Ctrl: applies to the next key" aria-pressed="false">Ctrl</button>
+                <button class="@KeyButton" data-modifier="Alt" title="Alt: applies to the next key" aria-pressed="false">Alt</button>
+                <button class="@KeyButton" data-modifier="Shift" title="Shift: applies to the next key" aria-pressed="false">Shift</button>
+                <button class="@KeyButton" data-modifier="Meta" title="Windows key: applies to the next key.  Tap twice to press it by itself." aria-pressed="false">
+                    <i class="fa-brands fa-windows"></i>
+                </button>
+                <span class="@KeySeparator"></span>
+                <button class="@KeyButton" data-key="ArrowLeft" title="Left arrow" aria-label="Left arrow"><i class="fas fa-arrow-left"></i></button>
+                <button class="@KeyButton" data-key="ArrowUp" title="Up arrow" aria-label="Up arrow"><i class="fas fa-arrow-up"></i></button>
+                <button class="@KeyButton" data-key="ArrowDown" title="Down arrow" aria-label="Down arrow"><i class="fas fa-arrow-down"></i></button>
+                <button class="@KeyButton" data-key="ArrowRight" title="Right arrow" aria-label="Right arrow"><i class="fas fa-arrow-right"></i></button>
+                <span class="@KeySeparator"></span>
+                <button class="@KeyButton" data-key="Delete" title="Delete">Del</button>
+                <button class="@KeyButton" data-key="Backspace" title="Backspace" aria-label="Backspace"><i class="fas fa-delete-left"></i></button>
+                <button class="@KeyButton" data-key="Enter" title="Enter">Enter</button>
+                <button class="@KeyButton" data-key="Home" title="Home">Home</button>
+                <button class="@KeyButton" data-key="End" title="End">End</button>
+                <button class="@KeyButton" data-key="PageUp" title="Page Up">PgUp</button>
+                <button class="@KeyButton" data-key="PageDown" title="Page Down">PgDn</button>
+                <span class="@KeySeparator"></span>
+                @for (var i = 1; i <= 12; i++)
+                {
+                    <button class="@KeyButton" data-key="F@(i)" title="F@(i)">F@(i)</button>
+                }
+                <span class="@KeySeparator"></span>
+                <button id="touchKeyboardCloseButton" class="@KeyButton" title="Hide the touch keyboard" aria-label="Hide the touch keyboard">
+                    <i class="fas fa-keyboard"></i><i class="fas fa-chevron-down text-xs"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.AssistantDeviceId))
     {
-        <div id="assistantPanel" hidden>
-            <div class="assistant-panel-header">
-                <span><i class="fas fa-robot me-1"></i> Claude</span>
-                <button id="assistantCloseButton" title="Close the assistant.">x</button>
+        @* Bottom sheet (closed / half / full) on phones and tablets, side panel from lg up.
+           See viewer-assistant.js. *@
+        <div id="assistantPanel" hidden data-size="half"
+             class="z-[15] flex flex-col overflow-hidden bg-surface text-fg shadow-2xl">
+            <div id="assistantSheetHandle"
+                 class="flex h-5 shrink-0 cursor-grab touch-none items-center justify-center lg:hidden"
+                 title="Drag to resize, tap to toggle full height"
+                 aria-hidden="true">
+                <span class="h-1.5 w-10 rounded-full bg-muted/50"></span>
+            </div>
+            <div class="assistant-panel-header flex shrink-0 touch-none items-center justify-between gap-2 border-b border-border pr-1 pl-3 lg:py-1">
+                <span class="flex items-center gap-2 text-sm font-semibold">
+                    <i class="fas fa-robot"></i> Claude
+                </span>
+                <div class="flex items-center">
+                    <button id="assistantSizeButton"
+                            class="sr-btn sr-btn-ghost size-11 p-0 lg:hidden"
+                            title="Full screen / half height"
+                            aria-label="Full screen / half height">
+                        <i class="fas fa-up-right-and-down-left-from-center"></i>
+                    </button>
+                    <button id="assistantCloseButton"
+                            class="sr-btn sr-btn-ghost size-11 p-0"
+                            title="Close the assistant."
+                            aria-label="Close the assistant">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </div>
             </div>
             <iframe id="assistantFrame"
+                    class="block min-h-0 w-full flex-1 border-0 bg-surface"
                     title="Claude assistant"
                     data-src="/assistant/@(Uri.EscapeDataString(Model.AssistantDeviceId))/embed"></iframe>
         </div>
     }
 
-    <div id="toastsWrapper">
+    <div id="toastsWrapper"
+         class="pointer-events-none fixed inset-x-0 top-[max(0.75rem,env(safe-area-inset-top))] z-50 flex flex-col items-center gap-2 px-4 md:inset-x-auto md:top-auto md:right-6 md:bottom-6 md:items-end">
     </div>
 
-
-    <div id="fileTransferDiv" hidden="hidden">
-        <span id="fileTransferNameSpan" class="me-1 font-weight-bold" style="vertical-align: middle;"></span>
-        <progress id="fileTransferProgress"></progress>
+    <div id="fileTransferDiv"
+         class="fixed right-[max(0.75rem,env(safe-area-inset-right))] bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex w-72 max-w-[calc(100vw-1.5rem)] flex-col gap-1 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-fg shadow-lg"
+         hidden="hidden">
+        <span id="fileTransferNameSpan" class="truncate font-semibold"></span>
+        <progress id="fileTransferProgress" class="w-full accent-brand"></progress>
     </div>
-
-    <footer>
-        <div class="copyright-text">
-            &copy; @(DateTime.Now.Year) - Immense Networks
-        </div>
-    </footer>
 
     <script src="/src/App.js" type="module"></script>
     @if (!string.IsNullOrWhiteSpace(Model.AssistantDeviceId))

@@ -1,4 +1,4 @@
-import { AudioButton, ChangeScreenButton, ScreenSelectMenu, ClipboardTransferButton, ClipboardTransferMenu, TypeClipboardButton, ConnectButton, CtrlAltDelButton, DisconnectButton, FileTransferButton, FileTransferInput, FitToScreenButton, ScreenViewer, BlockInputButton, InviteButton, KeyboardButton, TouchKeyboardInput, MenuFrame, MenuButton, ScreenViewerWrapper, WindowsSessionSelect, FileTransferMenu, FileUploadButtton, FileDownloadButton, ViewOnlyButton, FullScreenButton, RequesterNameInput, SessionIDInput, ConnectForm, CloseAllPopupMenus, ExtrasMenu, ExtrasMenuButton, WindowsSessionMenuButton, WindowsSessionMenu, MetricsButton, MetricsFrame, SetStatusMessage, BetaPillPullDown, QualityModeButton, QualityModeMenu, QualityModeLabel, QualityAutoButton, QualityPerformanceButton, QualityHighButton, } from "./UI.js";
+import { AudioButton, ChangeScreenButton, ScreenSelectMenu, ClipboardTransferButton, ClipboardTransferMenu, TypeClipboardButton, ConnectButton, CtrlAltDelButton, DisconnectButton, FileTransferButton, FileTransferInput, FitToScreenButton, ScreenViewer, BlockInputButton, InviteButton, KeyboardButton, TouchKeyboardInput, MenuFrame, MenuButton, ScreenViewerWrapper, WindowsSessionSelect, FileTransferMenu, FileUploadButtton, FileDownloadButton, ViewOnlyButton, FullScreenButton, RequesterNameInput, SessionIDInput, ConnectForm, CloseAllPopupMenus, ExtrasMenu, ExtrasMenuButton, WindowsSessionMenuButton, WindowsSessionMenu, MetricsButton, MetricsFrame, SetStatusMessage, QualityModeButton, QualityModeMenu, QualityModeLabel, QualityAutoButton, QualityPerformanceButton, QualityHighButton, FabCluster, MenuBackdrop, TouchKeyboardBar, TouchKeyboardCloseButton, SetMenuOpen, Confirm, } from "./UI.js";
 import { Sound } from "./Sound.js";
 import { ViewerApp } from "./App.js";
 import { UploadFiles } from "./FileTransferService.js";
@@ -24,6 +24,32 @@ var lastScrollTouchY1;
 var lastScrollTouchY2;
 var lastPointerMove = Date.now();
 var pointerMoveTimeout = -1;
+// Touch gestures that don't depend on the contextmenu event (iOS Safari doesn't fire it):
+// long-press = right-click, long-press then move = left-button drag, two-finger tap = right-click.
+const LongPressDelayMs = 500;
+const TouchMoveTolerance = 10;
+const TwoFingerTapMaxMs = 350;
+var longPressTimer = -1;
+var touchStartClientX;
+var touchStartClientY;
+var twoFingerTapCandidate = false;
+var twoFingerTapStartTime = 0;
+var twoFingerStart1;
+var twoFingerStart2;
+var touchLongPressFinishedAt = 0;
+var lastDragPercentX = 0;
+var lastDragPercentY = 0;
+// Touch keyboard.  The input keeps one invisible character so Backspace on an "empty" field still
+// produces a deleteContentBackward beforeinput event on Android keyboards.
+const KeyboardSentinel = "\u200B";
+const ModifierOrder = ["Control", "Alt", "Shift", "Meta"];
+const activeModifiers = new Set();
+// Floating toolbar button dragging.
+const FabPositionStorageKey = "viewerFabPosition";
+const FabDragThreshold = 8;
+var fabDragStart = null;
+var fabDragging = false;
+var suppressMenuClickUntil = 0;
 export function ApplyInputHandlers() {
     AudioButton.addEventListener("click", async (ev) => {
         AudioButton.classList.toggle("toggled");
@@ -36,16 +62,7 @@ export function ApplyInputHandlers() {
     ChangeScreenButton.addEventListener("click", (ev) => {
         ev.stopPropagation();
         CloseAllPopupMenus(ScreenSelectMenu.id);
-        // This could be put into a re-usable "openPopup" function that takes
-        // "target element" and "placement" as inputs, but all this is
-        // temporary, so I don't think it's worth the time.
-        const x = ChangeScreenButton.getBoundingClientRect().left;
-        const left = `${x.toFixed(0)}px`;
-        const y = ChangeScreenButton.getBoundingClientRect().bottom;
-        const top = `${y.toFixed(0)}px`;
-        ScreenSelectMenu.style.left = left;
-        ScreenSelectMenu.style.top = top;
-        ScreenSelectMenu.classList.toggle("open");
+        togglePopupBelow(ScreenSelectMenu, ChangeScreenButton, "left");
         window.addEventListener("click", () => {
             CloseAllPopupMenus(null);
         }, { once: true });
@@ -53,13 +70,7 @@ export function ApplyInputHandlers() {
     ClipboardTransferButton.addEventListener("click", (ev) => {
         ev.stopPropagation();
         CloseAllPopupMenus(ClipboardTransferMenu.id);
-        const x = ClipboardTransferButton.getBoundingClientRect().left;
-        const left = `${x.toFixed(0)}px`;
-        const y = ClipboardTransferButton.getBoundingClientRect().bottom;
-        const top = `${y.toFixed(0)}px`;
-        ClipboardTransferMenu.style.left = left;
-        ClipboardTransferMenu.style.top = top;
-        ClipboardTransferMenu.classList.toggle("open");
+        togglePopupBelow(ClipboardTransferMenu, ClipboardTransferButton, "left");
         window.addEventListener("click", () => {
             CloseAllPopupMenus(null);
         }, { once: true });
@@ -91,6 +102,10 @@ export function ApplyInputHandlers() {
             console.log("Unable to read clipboard.  Reason: " + reason);
         });
     });
+    // The connect button is a submit button; never let the form reload the page.
+    ConnectForm.addEventListener("submit", (ev) => {
+        ev.preventDefault();
+    });
     ConnectButton.addEventListener("click", () => {
         if (!ConnectForm.checkValidity()) {
             return;
@@ -105,7 +120,14 @@ export function ApplyInputHandlers() {
         CloseAllPopupMenus(null);
         await ViewerApp.MessageSender.SendCtrlAltDel();
     });
-    DisconnectButton.addEventListener("click", (ev) => {
+    DisconnectButton.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
+        CloseAllPopupMenus(null);
+        // On touch a mis-tap here would drop the session, so always ask first.
+        if (!await Confirm("Disconnect from this computer?", "Disconnect")) {
+            return;
+        }
+        SetMenuOpen(false);
         ConnectButton.removeAttribute("disabled");
         ConnectButton.innerText = "Connect";
         SetStatusMessage("Connection closed.");
@@ -135,28 +157,14 @@ export function ApplyInputHandlers() {
     ExtrasMenuButton.addEventListener("click", (ev) => {
         ev.stopPropagation();
         CloseAllPopupMenus(ExtrasMenu.id);
-        const x = document.body.clientWidth -
-            ExtrasMenuButton.getBoundingClientRect().right;
-        const right = `${x.toFixed(0)}px`;
-        const y = ExtrasMenuButton.getBoundingClientRect().bottom;
-        const top = `${y.toFixed(0)}px`;
-        ExtrasMenu.style.right = right;
-        ExtrasMenu.style.top = top;
-        ExtrasMenu.classList.toggle("open");
+        togglePopupBelow(ExtrasMenu, ExtrasMenuButton, "right");
         window.addEventListener("click", () => {
             CloseAllPopupMenus(null);
         }, { once: true });
     });
     FileTransferButton.addEventListener("click", (ev) => {
         ev.stopPropagation();
-        const x = document.body.clientWidth -
-            FileTransferButton.getBoundingClientRect().right;
-        const right = `${x.toFixed(0)}px`;
-        const y = FileTransferButton.getBoundingClientRect().bottom;
-        const top = `${y.toFixed(0)}px`;
-        FileTransferMenu.style.right = right;
-        FileTransferMenu.style.top = top;
-        FileTransferMenu.classList.toggle("open");
+        togglePopupBelow(FileTransferMenu, FileTransferButton, "right");
         const buttonZindex = Number.parseInt(getComputedStyle(FileTransferButton.parentElement).zIndex);
         FileTransferMenu.style.zIndex = `${buttonZindex + 1}`;
         window.addEventListener("click", () => {
@@ -185,6 +193,10 @@ export function ApplyInputHandlers() {
             ScreenViewer.classList.remove("fit");
         }
     });
+    // iPhone Safari has no element fullscreen.
+    if (!document.fullscreenEnabled) {
+        FullScreenButton.classList.add("d-none");
+    }
     FullScreenButton.addEventListener("click", () => {
         if (!document.fullscreenElement) {
             document.body.requestFullscreen();
@@ -201,8 +213,7 @@ export function ApplyInputHandlers() {
             if (enterIcon) {
                 enterIcon.className = "fas fa-compress";
             }
-            MenuFrame.classList.remove("open");
-            MenuButton.classList.remove("open");
+            SetMenuOpen(false);
         }
         else {
             FullScreenButton.classList.remove("toggled");
@@ -239,39 +250,38 @@ export function ApplyInputHandlers() {
     });
     KeyboardButton.addEventListener("click", (ev) => {
         CloseAllPopupMenus(null);
-        KeyboardButton.classList.toggle("toggled");
-        if (KeyboardButton.classList.contains("toggled")) {
-            TouchKeyboardInput.focus();
-        }
-        else {
-            TouchKeyboardInput.blur();
-        }
+        setTouchKeyboard(!KeyboardButton.classList.contains("toggled"));
+    });
+    TouchKeyboardCloseButton.addEventListener("click", () => {
+        setTouchKeyboard(false);
     });
     MenuButton.addEventListener("click", (ev) => {
-        MenuFrame.classList.toggle("open");
-        MenuButton.classList.toggle("open");
-        if (MenuFrame.classList.contains("open")) {
-            BetaPillPullDown.classList.add("d-none");
+        if (Date.now() < suppressMenuClickUntil) {
+            // The button was dragged, not tapped.
+            return;
         }
-        else {
-            BetaPillPullDown.classList.remove("d-none");
-        }
-        CloseAllPopupMenus(null);
+        ev.stopPropagation();
+        SetMenuOpen(!MenuFrame.classList.contains("open"));
     });
+    document.querySelectorAll(".menu-close-button").forEach(x => {
+        x.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            SetMenuOpen(false);
+        });
+    });
+    MenuBackdrop === null || MenuBackdrop === void 0 ? void 0 : MenuBackdrop.addEventListener("click", () => {
+        SetMenuOpen(false);
+    });
+    applyFabDragHandlers();
+    applyTouchKeyboardBarHandlers();
+    applyViewportTracking();
     MetricsButton.addEventListener("click", () => {
         MetricsFrame.classList.toggle("d-none");
     });
     QualityModeButton.addEventListener("click", (ev) => {
         ev.stopPropagation();
         CloseAllPopupMenus(QualityModeMenu.id);
-        const x = document.body.clientWidth -
-            QualityModeButton.getBoundingClientRect().right;
-        const right = `${x.toFixed(0)}px`;
-        const y = QualityModeButton.getBoundingClientRect().bottom;
-        const top = `${y.toFixed(0)}px`;
-        QualityModeMenu.style.right = right;
-        QualityModeMenu.style.top = top;
-        QualityModeMenu.classList.toggle("open");
+        togglePopupBelow(QualityModeMenu, QualityModeButton, "right");
         window.addEventListener("click", () => {
             CloseAllPopupMenus(null);
         }, { once: true });
@@ -305,6 +315,15 @@ export function ApplyInputHandlers() {
         await setQualityMode(RemoteControlQualityMode.Quality, "Quality");
     });
     ScreenViewer.addEventListener("pointerup", async (ev) => {
+        if (ev.pointerType == "touch") {
+            // Finish a touch long-press (right-click) or drag here, as before; touchend does
+            // it if this didn't run (finishTouchLongPress only acts once).
+            if (currentTouchCount <= 1) {
+                cancelLongPressTimer();
+                await finishTouchLongPress(ev.clientX, ev.clientY);
+            }
+            return;
+        }
         if (ViewerApp.ViewOnlyMode) {
             return;
         }
@@ -321,17 +340,44 @@ export function ApplyInputHandlers() {
         resetTouchState();
     });
     ScreenViewer.addEventListener("pointercancel", ev => {
+        if (ev.pointerType == "touch") {
+            // The browser took over the gesture (pan/zoom).  Don't leave a button stuck down.
+            cancelLongPressTimer();
+            if (isDragging && !ViewerApp.ViewOnlyMode) {
+                ViewerApp.MessageSender.SendMouseUp(0, lastDragPercentX, lastDragPercentY);
+            }
+        }
         resetTouchState();
     });
     ScreenViewer.addEventListener("pointerout", ev => {
+        // For touch these fire right after pointerup, before touchend needs the state.
+        if (ev.pointerType == "touch") {
+            return;
+        }
         resetTouchState();
     });
     ScreenViewer.addEventListener("pointerleave", ev => {
+        if (ev.pointerType == "touch") {
+            return;
+        }
         resetTouchState();
     });
     ScreenViewer.addEventListener("touchmove", async function (e) {
         currentTouchCount = e.touches.length;
-        if (longPressStarted || isDragging) {
+        if (longPressTimer > -1 && e.touches.length == 1) {
+            const moved = GetDistanceBetween(touchStartClientX, touchStartClientY, e.touches[0].clientX, e.touches[0].clientY);
+            if (moved > TouchMoveTolerance) {
+                cancelLongPressTimer();
+            }
+        }
+        if (twoFingerTapCandidate) {
+            if (e.touches.length != 2 ||
+                GetDistanceBetween(twoFingerStart1.X, twoFingerStart1.Y, e.touches[0].clientX, e.touches[0].clientY) > TouchMoveTolerance ||
+                GetDistanceBetween(twoFingerStart2.X, twoFingerStart2.Y, e.touches[1].clientX, e.touches[1].clientY) > TouchMoveTolerance) {
+                twoFingerTapCandidate = false;
+            }
+        }
+        if ((longPressStarted || isDragging) && e.cancelable) {
             e.preventDefault();
         }
         if (e.touches.length == 1 && longPressStarted && !isDragging) {
@@ -348,6 +394,8 @@ export function ApplyInputHandlers() {
                 // Move the mouse to the initial touch point to start the drag operation.
                 const percentX = longPressStartOffsetX / ScreenViewer.clientWidth;
                 const percentY = longPressStartOffsetY / ScreenViewer.clientHeight;
+                lastDragPercentX = percentX;
+                lastDragPercentY = percentY;
                 await ViewerApp.MessageSender.SendMouseMove(percentX, percentY);
                 await ViewerApp.MessageSender.SendMouseDown(0, percentX, percentY);
             }
@@ -362,6 +410,8 @@ export function ApplyInputHandlers() {
             var screenViewerTop = ScreenViewer.getBoundingClientRect().top;
             var pagePercentX = (e.touches[0].pageX - screenViewerLeft) / ScreenViewer.clientWidth;
             var pagePercentY = (e.touches[0].pageY - screenViewerTop) / ScreenViewer.clientHeight;
+            lastDragPercentX = pagePercentX;
+            lastDragPercentY = pagePercentY;
             ViewerApp.MessageSender.SendMouseMove(pagePercentX, pagePercentY);
             return;
         }
@@ -489,6 +539,31 @@ export function ApplyInputHandlers() {
     });
     ScreenViewer.addEventListener("touchstart", function (e) {
         currentTouchCount = e.touches.length;
+        cancelLongPressTimer();
+        if (currentTouchCount == 1) {
+            isDragging = false;
+            twoFingerTapCandidate = false;
+            touchStartClientX = e.touches[0].clientX;
+            touchStartClientY = e.touches[0].clientY;
+            if (!ViewerApp.ViewOnlyMode) {
+                longPressTimer = window.setTimeout(() => {
+                    longPressTimer = -1;
+                    if (currentTouchCount == 1 && !isPinchZooming && !isScrolling) {
+                        const rect = ScreenViewer.getBoundingClientRect();
+                        startLongPress(touchStartClientX - rect.left, touchStartClientY - rect.top);
+                    }
+                }, LongPressDelayMs);
+            }
+        }
+        if (currentTouchCount == 2) {
+            twoFingerTapCandidate = !longPressStarted && !isDragging;
+            twoFingerTapStartTime = Date.now();
+            twoFingerStart1 = { X: e.touches[0].clientX, Y: e.touches[0].clientY, IsEmpty: false };
+            twoFingerStart2 = { X: e.touches[1].clientX, Y: e.touches[1].clientY, IsEmpty: false };
+        }
+        else if (currentTouchCount > 2) {
+            twoFingerTapCandidate = false;
+        }
         if (currentTouchCount == 2) {
             lastScrollTouchY1 = e.touches[0].pageY;
             lastScrollTouchY2 = e.touches[1].pageY;
@@ -506,7 +581,6 @@ export function ApplyInputHandlers() {
             lastPinchCenterX = (startPinchPoint1.X + startPinchPoint2.X) / 2;
             lastPinchCenterY = (startPinchPoint1.Y + startPinchPoint2.Y) / 2;
         }
-        isDragging = false;
         var focusedInput = document.querySelector("input:focus");
         if (focusedInput) {
             focusedInput.blur();
@@ -514,6 +588,30 @@ export function ApplyInputHandlers() {
     });
     ScreenViewer.addEventListener("touchend", async function (e) {
         currentTouchCount = e.touches.length;
+        // Lifted before the long-press delay: a normal tap, sent by the compatibility mouse events.
+        cancelLongPressTimer();
+        const isTwoFingerTap = twoFingerTapCandidate &&
+            currentTouchCount == 0 &&
+            !isPinchZooming &&
+            Date.now() - twoFingerTapStartTime <= TwoFingerTapMaxMs;
+        if (currentTouchCount == 0) {
+            twoFingerTapCandidate = false;
+        }
+        // We handle these gestures ourselves; stop the browser's synthesized mouse click.
+        const handledByPointerUp = Date.now() - touchLongPressFinishedAt < 500;
+        if ((isTwoFingerTap || longPressStarted || isDragging || handledByPointerUp) && e.cancelable) {
+            e.preventDefault();
+        }
+        if (isTwoFingerTap && !ViewerApp.ViewOnlyMode) {
+            const rect = ScreenViewer.getBoundingClientRect();
+            const tapPercentX = (twoFingerStart1.X - rect.left) / ScreenViewer.clientWidth;
+            const tapPercentY = (twoFingerStart1.Y - rect.top) / ScreenViewer.clientHeight;
+            resetTouchState();
+            await ViewerApp.MessageSender.SendMouseMove(tapPercentX, tapPercentY);
+            await ViewerApp.MessageSender.SendMouseDown(2, tapPercentX, tapPercentY);
+            await ViewerApp.MessageSender.SendMouseUp(2, tapPercentX, tapPercentY);
+            return;
+        }
         if (currentTouchCount == 0) {
             isPinchZooming = false;
             isScrolling = false;
@@ -522,19 +620,15 @@ export function ApplyInputHandlers() {
             startPinchPoint1 = null;
             startPinchPoint2 = null;
         }
-        var percentX = (e.changedTouches[0].pageX - ScreenViewer.getBoundingClientRect().left) /
-            ScreenViewer.clientWidth;
-        var percentY = (e.changedTouches[0].pageY - ScreenViewer.getBoundingClientRect().top) /
-            ScreenViewer.clientHeight;
-        if (longPressStarted && !isDragging && !ViewerApp.ViewOnlyMode) {
-            await ViewerApp.MessageSender.SendMouseDown(2, percentX, percentY);
-            await ViewerApp.MessageSender.SendMouseUp(2, percentX, percentY);
-        }
+        await finishTouchLongPress(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    });
+    ScreenViewer.addEventListener("touchcancel", () => {
+        cancelLongPressTimer();
+        twoFingerTapCandidate = false;
         if (isDragging && !ViewerApp.ViewOnlyMode) {
-            await ViewerApp.MessageSender.SendMouseUp(0, percentX, percentY);
+            ViewerApp.MessageSender.SendMouseUp(0, lastDragPercentX, lastDragPercentY);
         }
-        longPressStarted = false;
-        isDragging = false;
+        resetTouchState();
     });
     ScreenViewer.addEventListener("contextmenu", async (ev) => {
         ev.preventDefault();
@@ -542,16 +636,10 @@ export function ApplyInputHandlers() {
             return;
         }
         if (currentPointerDevice == "touch") {
-            // We're either starting a right-click or left-button drag.
-            // Either way, we'll move the cursor to the initial touch point.
-            const percentX = (ev.pageX - ScreenViewer.getBoundingClientRect().left) /
-                ScreenViewer.clientWidth;
-            const percentY = (ev.pageY - ScreenViewer.getBoundingClientRect().top) /
-                ScreenViewer.clientHeight;
-            await ViewerApp.MessageSender.SendMouseMove(percentX, percentY);
-            longPressStarted = true;
-            longPressStartOffsetX = ev.offsetX;
-            longPressStartOffsetY = ev.offsetY;
+            // Android fires this on long-press; iOS doesn't, so the touchstart timer
+            // does the same thing.  Whichever comes first starts the long-press.
+            const rect = ScreenViewer.getBoundingClientRect();
+            await startLongPress(ev.clientX - rect.left, ev.clientY - rect.top);
         }
     });
     ScreenViewer.addEventListener("wheel", async function (e) {
@@ -562,34 +650,94 @@ export function ApplyInputHandlers() {
         await ViewerApp.MessageSender.SendMouseWheel(e.deltaX, e.deltaY);
     });
     TouchKeyboardInput.addEventListener("keydown", async (ev) => {
-        if (ev.key === "Enter" || ev.key === "Backspace") {
-            await ViewerApp.MessageSender.SendKeyPress(ev.key);
-        }
-    });
-    TouchKeyboardInput.addEventListener("input", async (ev) => {
-        if (ViewerApp.ViewOnlyMode) {
+        // Android keyboards often report "Unidentified" (keyCode 229) here; beforeinput and
+        // input handle those.
+        if (ev.isComposing || ev.key === "Unidentified" || ev.keyCode === 229) {
             return;
         }
-        const text = TouchKeyboardInput.value;
-        TouchKeyboardInput.value = "";
-        await ViewerApp.MessageSender.SendTextTransfer(text, true);
-    });
-    TouchKeyboardInput.addEventListener("blur", () => {
-        if (KeyboardButton.classList.contains("toggled")) {
-            TouchKeyboardInput.focus();
+        if (ev.key.length == 1 && (ev.ctrlKey || ev.altKey || ev.metaKey)) {
+            // Hardware keyboard shortcut, e.g. Ctrl+C on a tablet keyboard.
+            ev.preventDefault();
+            if (ev.ctrlKey)
+                activeModifiers.add("Control");
+            if (ev.altKey)
+                activeModifiers.add("Alt");
+            if (ev.shiftKey)
+                activeModifiers.add("Shift");
+            if (ev.metaKey)
+                activeModifiers.add("Meta");
+            await sendKeyWithModifiers(ev.key.toLowerCase());
+            return;
         }
+        if (ev.key.length > 1 && TouchKeyboardSpecialKeys.has(ev.key)) {
+            ev.preventDefault();
+            await sendKeyWithModifiers(ev.key);
+        }
+    });
+    TouchKeyboardInput.addEventListener("beforeinput", async (ev) => {
+        let key;
+        switch (ev.inputType) {
+            case "deleteContentBackward":
+            case "deleteWordBackward":
+            case "deleteSoftLineBackward":
+            case "deleteHardLineBackward":
+                key = "Backspace";
+                break;
+            case "deleteContentForward":
+            case "deleteWordForward":
+                key = "Delete";
+                break;
+            case "insertLineBreak":
+            case "insertParagraph":
+                key = "Enter";
+                break;
+            default:
+                return;
+        }
+        // When it can't be cancelled, the input handler restores the field.
+        if (ev.cancelable) {
+            ev.preventDefault();
+        }
+        await sendKeyWithModifiers(key);
+    });
+    TouchKeyboardInput.addEventListener("input", async (ev) => {
+        const text = TouchKeyboardInput.value.split(KeyboardSentinel).join("");
+        resetTouchKeyboardInput();
+        if (ViewerApp.ViewOnlyMode || !text) {
+            return;
+        }
+        await sendTouchKeyboardText(text);
+    });
+    TouchKeyboardInput.addEventListener("blur", (ev) => {
+        if (!KeyboardButton.classList.contains("toggled")) {
+            return;
+        }
+        const next = ev.relatedTarget;
+        if (next && isTextEntryTarget(next)) {
+            // Focus moved to another field (e.g. the Windows session list); let it have it.
+            return;
+        }
+        if (next) {
+            TouchKeyboardInput.focus();
+            return;
+        }
+        // No related target: focus may have moved into the assistant iframe.  Check once it
+        // has settled instead of stealing it back right away.
+        window.setTimeout(() => {
+            if (!KeyboardButton.classList.contains("toggled")) {
+                return;
+            }
+            const active = document.activeElement;
+            if (active && active !== document.body && isTextEntryTarget(active)) {
+                return;
+            }
+            TouchKeyboardInput.focus();
+        }, 0);
     });
     WindowsSessionMenuButton.addEventListener("click", (ev) => {
         ev.stopPropagation();
         CloseAllPopupMenus(WindowsSessionMenu.id);
-        const x = document.body.clientWidth -
-            WindowsSessionMenuButton.getBoundingClientRect().right;
-        const right = `${x.toFixed(0)}px`;
-        const y = WindowsSessionMenuButton.getBoundingClientRect().bottom;
-        const top = `${y.toFixed(0)}px`;
-        WindowsSessionMenu.style.right = right;
-        WindowsSessionMenu.style.top = top;
-        WindowsSessionMenu.classList.toggle("open");
+        togglePopupBelow(WindowsSessionMenu, WindowsSessionMenuButton, "right");
         window.addEventListener("click", () => {
             CloseAllPopupMenus(null);
         }, { once: true });
@@ -612,7 +760,8 @@ export function ApplyInputHandlers() {
             return;
         }
         if (document.querySelector("input:focus") ||
-            document.querySelector("textarea:focus")) {
+            document.querySelector("textarea:focus") ||
+            document.querySelector("dialog[open]")) {
             return;
         }
         if (ViewerApp.ViewOnlyMode) {
@@ -643,6 +792,9 @@ export function ApplyInputHandlers() {
     window.addEventListener("touchstart", () => {
         KeyboardButton.classList.remove("d-none");
     });
+    if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+        KeyboardButton.classList.remove("d-none");
+    }
     window.ondragover = function (e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = "copy";
@@ -660,5 +812,300 @@ function resetTouchState() {
     isDragging = false;
     isPinchZooming = false;
     isScrolling = false;
+}
+function cancelLongPressTimer() {
+    if (longPressTimer > -1) {
+        window.clearTimeout(longPressTimer);
+        longPressTimer = -1;
+    }
+}
+/**
+ * Ends a touch long-press: right-click when the finger didn't move, mouse up after a drag.
+ * Called from pointerup and touchend; only the first call does anything.
+ */
+async function finishTouchLongPress(clientX, clientY) {
+    if (!longPressStarted && !isDragging) {
+        return;
+    }
+    const wasDragging = isDragging;
+    longPressStarted = false;
+    isDragging = false;
+    touchLongPressFinishedAt = Date.now();
+    if (ViewerApp.ViewOnlyMode) {
+        return;
+    }
+    const rect = ScreenViewer.getBoundingClientRect();
+    const percentX = (clientX - rect.left) / ScreenViewer.clientWidth;
+    const percentY = (clientY - rect.top) / ScreenViewer.clientHeight;
+    if (wasDragging) {
+        await ViewerApp.MessageSender.SendMouseUp(0, percentX, percentY);
+    }
+    else {
+        await ViewerApp.MessageSender.SendMouseDown(2, percentX, percentY);
+        await ViewerApp.MessageSender.SendMouseUp(2, percentX, percentY);
+    }
+}
+/** Starts a touch long-press at a point on the canvas: right-click on release, drag on move. */
+async function startLongPress(offsetX, offsetY) {
+    var _a;
+    cancelLongPressTimer();
+    if (longPressStarted || ViewerApp.ViewOnlyMode) {
+        return;
+    }
+    longPressStarted = true;
+    longPressStartOffsetX = offsetX;
+    longPressStartOffsetY = offsetY;
+    try {
+        // Haptic hint on Android; iOS doesn't support vibrate.
+        (_a = navigator.vibrate) === null || _a === void 0 ? void 0 : _a.call(navigator, 15);
+    }
+    catch (_b) { }
+    // We're either starting a right-click or left-button drag.
+    // Either way, move the cursor to the touch point.
+    await ViewerApp.MessageSender.SendMouseMove(offsetX / ScreenViewer.clientWidth, offsetY / ScreenViewer.clientHeight);
+}
+/** Opens (or closes) a popup menu under its button.  On phones CSS turns it into a bottom sheet. */
+function togglePopupBelow(menu, anchor, align) {
+    const rect = anchor.getBoundingClientRect();
+    const margin = 8;
+    if (align == "left") {
+        menu.style.right = "";
+        menu.style.left = `${rect.left.toFixed(0)}px`;
+    }
+    else {
+        menu.style.left = "";
+        menu.style.right = `${(document.body.clientWidth - rect.right).toFixed(0)}px`;
+    }
+    menu.style.top = `${rect.bottom.toFixed(0)}px`;
+    menu.classList.toggle("open");
+    if (!menu.classList.contains("open") || window.innerWidth < 768) {
+        return;
+    }
+    // Keep it on screen.
+    const menuRect = menu.getBoundingClientRect();
+    if (menuRect.right > window.innerWidth - margin || menuRect.left < margin) {
+        const left = Math.max(margin, Math.min(menuRect.left, window.innerWidth - margin - menuRect.width));
+        menu.style.right = "";
+        menu.style.left = `${left.toFixed(0)}px`;
+    }
+}
+// ---------- Touch keyboard and special-keys bar ----------
+const TouchKeyboardSpecialKeys = new Set([
+    "Enter", "Backspace", "Delete", "Escape", "Tab",
+    "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
+    "Home", "End", "PageUp", "PageDown", "Insert",
+    "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
+]);
+function isTextEntryTarget(element) {
+    return element.tagName == "IFRAME" ||
+        element.matches("input, textarea, select, [contenteditable]") ||
+        !!element.closest("dialog");
+}
+function resetTouchKeyboardInput() {
+    TouchKeyboardInput.value = KeyboardSentinel;
+    try {
+        TouchKeyboardInput.setSelectionRange(KeyboardSentinel.length, KeyboardSentinel.length);
+    }
+    catch (_a) { }
+}
+function setTouchKeyboard(on) {
+    KeyboardButton.classList.toggle("toggled", on);
+    document.body.classList.toggle("touch-keyboard-on", on);
+    TouchKeyboardBar.hidden = !on;
+    updateKeyBarHeight();
+    if (on) {
+        resetTouchKeyboardInput();
+        TouchKeyboardInput.focus();
+    }
+    else {
+        clearModifiers();
+        TouchKeyboardInput.blur();
+    }
+}
+function updateKeyBarHeight() {
+    const height = TouchKeyboardBar.hidden ? 0 : TouchKeyboardBar.offsetHeight;
+    document.documentElement.style.setProperty("--keybar-h", `${height}px`);
+}
+function clearModifiers() {
+    activeModifiers.clear();
+    updateModifierButtons();
+}
+function updateModifierButtons() {
+    TouchKeyboardBar.querySelectorAll("button[data-modifier]").forEach(btn => {
+        const active = activeModifiers.has(btn.dataset.modifier);
+        btn.classList.toggle("toggled", active);
+        btn.setAttribute("aria-pressed", String(active));
+    });
+}
+async function toggleModifier(modifier) {
+    if (!activeModifiers.has(modifier)) {
+        activeModifiers.add(modifier);
+        updateModifierButtons();
+        return;
+    }
+    if (modifier == "Meta") {
+        // Tapping Win twice presses it by itself (opens the Start menu).
+        clearModifiers();
+        if (!ViewerApp.ViewOnlyMode) {
+            await ViewerApp.MessageSender.SendKeyPress("Meta");
+        }
+        return;
+    }
+    activeModifiers.delete(modifier);
+    updateModifierButtons();
+}
+/** Sends one key, holding the sticky modifiers, then releases the modifiers. */
+async function sendKeyWithModifiers(key) {
+    const modifiers = ModifierOrder.filter(x => activeModifiers.has(x));
+    clearModifiers();
+    if (ViewerApp.ViewOnlyMode) {
+        return;
+    }
+    if (modifiers.length == 0) {
+        await ViewerApp.MessageSender.SendKeyPress(key);
+        return;
+    }
+    for (const modifier of modifiers) {
+        await ViewerApp.MessageSender.SendKeyDown(modifier);
+    }
+    await ViewerApp.MessageSender.SendKeyDown(key);
+    await ViewerApp.MessageSender.SendKeyUp(key);
+    for (const modifier of modifiers.slice().reverse()) {
+        await ViewerApp.MessageSender.SendKeyUp(modifier);
+    }
+}
+/** Text typed on the on-screen keyboard.  With Ctrl/Alt/Win active, the first character becomes a shortcut. */
+async function sendTouchKeyboardText(text) {
+    const chars = Array.from(text);
+    if (activeModifiers.has("Control") || activeModifiers.has("Alt") || activeModifiers.has("Meta")) {
+        await sendKeyWithModifiers(chars[0].toLowerCase());
+        if (chars.length > 1) {
+            await ViewerApp.MessageSender.SendTextTransfer(chars.slice(1).join(""), true);
+        }
+        return;
+    }
+    if (activeModifiers.has("Shift")) {
+        clearModifiers();
+        text = text.toUpperCase();
+    }
+    await ViewerApp.MessageSender.SendTextTransfer(text, true);
+}
+function applyTouchKeyboardBarHandlers() {
+    resetTouchKeyboardInput();
+    TouchKeyboardBar.querySelectorAll("button").forEach(btn => {
+        // Keep focus (and the on-screen keyboard) on the hidden input.
+        btn.addEventListener("pointerdown", ev => ev.preventDefault());
+        btn.addEventListener("mousedown", ev => ev.preventDefault());
+        const key = btn.dataset.key;
+        const modifier = btn.dataset.modifier;
+        if (!key && !modifier) {
+            return;
+        }
+        btn.addEventListener("click", async (ev) => {
+            ev.stopPropagation();
+            if (KeyboardButton.classList.contains("toggled") && document.activeElement !== TouchKeyboardInput) {
+                TouchKeyboardInput.focus();
+            }
+            if (modifier) {
+                await toggleModifier(modifier);
+                return;
+            }
+            await sendKeyWithModifiers(key);
+        });
+    });
+}
+// ---------- On-screen keyboard tracking ----------
+/**
+ * Sets --kb-inset (how much of the page the on-screen keyboard covers) so the key bar,
+ * the floating buttons and the assistant sheet stay above it.  iOS doesn't resize the
+ * layout viewport for the keyboard, only the visual viewport.
+ */
+function applyViewportTracking() {
+    var _a, _b;
+    const update = () => {
+        const viewport = window.visualViewport;
+        let inset = 0;
+        if (viewport && (!viewport.scale || viewport.scale < 1.05)) {
+            inset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+        }
+        document.documentElement.style.setProperty("--kb-inset", `${Math.round(inset)}px`);
+        // Over the keyboard there's no need for the home-indicator safe area.
+        document.body.classList.toggle("kb-open", inset > 40);
+        updateKeyBarHeight();
+        clampFabPosition();
+    };
+    (_a = window.visualViewport) === null || _a === void 0 ? void 0 : _a.addEventListener("resize", update);
+    (_b = window.visualViewport) === null || _b === void 0 ? void 0 : _b.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    update();
+}
+// ---------- Floating toolbar button ----------
+function applyFabDragHandlers() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(FabPositionStorageKey) || "null");
+        if (saved && typeof saved.x == "number" && typeof saved.y == "number") {
+            setFabPosition(saved.x * window.innerWidth, saved.y * window.innerHeight);
+        }
+    }
+    catch (_a) { }
+    MenuButton.addEventListener("pointerdown", (ev) => {
+        if (ev.button != 0) {
+            return;
+        }
+        const rect = FabCluster.getBoundingClientRect();
+        fabDragStart = { x: ev.clientX, y: ev.clientY, left: rect.left, top: rect.top };
+        fabDragging = false;
+        try {
+            MenuButton.setPointerCapture(ev.pointerId);
+        }
+        catch (_a) { }
+    });
+    MenuButton.addEventListener("pointermove", (ev) => {
+        if (!fabDragStart) {
+            return;
+        }
+        const dx = ev.clientX - fabDragStart.x;
+        const dy = ev.clientY - fabDragStart.y;
+        if (!fabDragging && Math.hypot(dx, dy) < FabDragThreshold) {
+            return;
+        }
+        fabDragging = true;
+        setFabPosition(fabDragStart.left + dx, fabDragStart.top + dy);
+    });
+    const endDrag = () => {
+        if (fabDragging) {
+            suppressMenuClickUntil = Date.now() + 400;
+            const rect = FabCluster.getBoundingClientRect();
+            try {
+                localStorage.setItem(FabPositionStorageKey, JSON.stringify({
+                    x: rect.left / window.innerWidth,
+                    y: rect.top / window.innerHeight
+                }));
+            }
+            catch (_a) { }
+        }
+        fabDragStart = null;
+        fabDragging = false;
+    };
+    MenuButton.addEventListener("pointerup", endDrag);
+    MenuButton.addEventListener("pointercancel", endDrag);
+}
+function setFabPosition(left, top) {
+    var _a;
+    const width = FabCluster.offsetWidth || 48;
+    const height = FabCluster.offsetHeight || 48;
+    const viewportHeight = ((_a = window.visualViewport) === null || _a === void 0 ? void 0 : _a.height) || window.innerHeight;
+    const margin = 4;
+    left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+    top = Math.max(margin, Math.min(top, viewportHeight - height - margin));
+    FabCluster.classList.add("moved");
+    FabCluster.style.left = `${Math.round(left)}px`;
+    FabCluster.style.top = `${Math.round(top)}px`;
+}
+function clampFabPosition() {
+    if (!FabCluster.classList.contains("moved")) {
+        return;
+    }
+    setFabPosition(parseFloat(FabCluster.style.left) || 0, parseFloat(FabCluster.style.top) || 0);
 }
 //# sourceMappingURL=InputEventHandlers.js.map

@@ -1,485 +1,177 @@
-body {
-    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-    margin: 0;
-    padding: 0;
-    -ms-touch-action: none;
+/*
+ * Remote control viewer (Pages/Viewer.cshtml).
+ *
+ * Most styling is Tailwind utilities / sr-* classes in the markup (css/app.css, loaded first).
+ * This file is unlayered, so its rules beat utilities: keep it to geometry that needs CSS
+ * variables or media queries, and to state classes that the viewer scripts toggle:
+ *   .d-none, .open (#menuFrame, .popup-menu), .toggled (buttons), .fit and .switching
+ *   (#screenViewer), body.in-session, body.menu-open, body.touch-keyboard-on,
+ *   body.assistant-open / .assistant-half / .assistant-full.
+ *
+ * Variables set by the scripts:
+ *   --kb-inset       height of the on-screen keyboard over the page (InputEventHandlers.ts)
+ *   --keybar-h       height of the special-keys bar while it's shown (InputEventHandlers.ts)
+ *   --assistant-h    height of the assistant bottom sheet (viewer-assistant.js)
+ */
+
+:root {
+    --kb-inset: 0px;
+    --keybar-h: 0px;
+    --assistant-h: 50dvh;
+}
+
+body.viewer-body {
     touch-action: none;
-    overscroll-behavior-y: contain;
-    background-position: 0 0;
-    background-size: 40px 40px;
-}
-
-.background-layers {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-}
-
-.background-layer-1 {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-position: 0 0;
-    background-size: 40px 40px;
-}
-
-.background-layer-2 {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-}
-
-.logo-frame {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    top: 32px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.connection-box-wrapper {
-    position: fixed;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    z-index: 1;
-}
-
-.center-connection-box {
-    display: inline-block;
-    text-align: left;
-    width: 350px;
-    padding: 30px;
-    margin-bottom: 20px;
-}
-
-    .center-connection-box input {
-        width: 100%;
-    }
-
-.status-message {
-    font-size: 1.25em;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    white-space: nowrap;
-}
-
-input, select {
-    font-style: normal;
-    font-weight: 300;
-    font-size: 14px;
-    line-height: 16px;
-    height: 40px;
-    border-style: solid;
-    border-width: 1px;
-    padding-left: 1em;
-    padding-right: 1em;
-    box-sizing: border-box;
-    outline: none;
-}
-
-input:focus {
-    transition: .1s linear all;
-}
-
-
-.input-label {
-    display: block;
-    font-style: normal;
-    font-weight: 300;
-    font-size: 16px;
-    line-height: 16px;
-    margin-bottom: .5em;
-}
-
-.form-block {
-    margin-bottom: 2em;
-}
-
-.connect-header {
-    font-style: normal;
-    font-weight: 100;
-    font-size: 28px;
-    line-height: 32px;
-}
-
-#connectButton {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-style: normal;
-    font-weight: 700;
-    font-size: 12px;
-    line-height: 14px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    width: 100%;
-}
-
-#windowsSessionSelect {
-    width: 200px;
-}
-
-button {
-    cursor: pointer;
-    border: none;
-    height: 40px;
-    min-width: 40px;
-}
-
-#menuButton {
-    pointer-events: all;
-    cursor: pointer;
-    z-index: 3;
-    transition: .5s ease all;
-    width: 50px;
-    height: 30px;
-}
-
-    #menuButton:focus {
-        outline: none;
-    }
-
-    #menuButton i {
-        transform: rotateX(0);
-        transition: .5s ease all;
-    }
-
-    #menuButton.open i {
-        transform: rotateX(180deg);
-        transition: .5s ease all;
-    }
-
-#menuFrame {
-    display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    grid-column-gap: 10px;
+    overscroll-behavior: none;
     overflow: hidden;
-    text-align: center;
-    height: 0;
-    z-index: 3;
-}
-
-    #menuFrame.open {
-        padding-left: 10px;
-        height: auto;
-    }
-
-    #menuFrame #disconnectButton {
-        background-color: #a61930;
-        border: 1px solid #a61930;
-        color: #fff;
-        font-size: 16px;
-    }
-
-        #menuFrame #disconnectButton:hover {
-            border: 1px solid #384346;
-        }
-        #menuFrame #disconnectButton:active {
-            border: 1px solid #009888;
-        }
-
-.menu-column {
-  display: flex;
-  flex-wrap: wrap;
-  overflow: hidden;
-}
-
-.menu-column-left {
-  align-items: center;
-  align-content: center;
-}
-
-.menu-column-right {
-    flex-direction: row-reverse;
-    align-items: flex-start;
-}
-
-.menu-column-middle {
-    justify-content: center;
-}
-
-.popup-menu {
-    position: absolute;
-    overflow: hidden;
-    height: 0;
-}
-
-.popup-menu.open {
-    height: auto;
-    z-index: 5;
-    padding: 10px;
-    transition: .2s ease all;
-}
-
-.popup-menu button {
-    display: block;
-    white-space: nowrap;
-    width: 100%;
-}
-
-#extrasMenu button {
-    text-align: left;
-}
-#extrasMenu button i {
-    margin-right: 8px;
-}
-
-#fileTransferProgress {
-    vertical-align: middle;
-    width: 100%;
-    background-color: limegreen;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .d-none {
     display: none !important;
 }
 
-.ms-1 {
-    margin-left: .25rem;
+/* Plain dark around the remote screen (the dotted theme background is for the connect screen). */
+body.viewer-body.in-session {
+    background-image: none;
+    background-color: #0b0c0e;
 }
 
-.text-center {
-    text-align: center;
+/* Connect screen background */
+.background-layers {
+    position: fixed;
+    inset: 0;
 }
 
-.text-left {
-    text-align: left;
-}
-
-.text-end {
-    text-align: right;
-}
-
-.right-aligned {
-  text-align: right;
-}
-
-.absolute-right-middle {
+.background-layer-1,
+.background-layer-2 {
     position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translate(110%, -50%);
+    width: 100%;
+    height: 100%;
 }
 
-.menu-options-header {
-  text-align: center;
-  margin: 20px 0 5px 0;
-  font-family: monospace;
-  font-size: .9em;
+.background-layer-1 {
+    background-position: 0 0;
+    background-size: 40px 40px;
 }
 
-#metricsFrame {
-    position: fixed;
-    display: grid;
-    right: 0;
-    bottom: 0;
-    padding: 10px;
-    grid-template-columns: auto 1fr;
-    column-gap: 10px;
-    white-space: nowrap;
-    text-align: left;
-    font-size: 0.8em;
-    white-space: nowrap;
-    background-color: rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-    user-select: none;
-    z-index: 5;
+.background-layer-2 {
+    background-size: cover;
+    background-position: center;
 }
 
-
-#keyboardButton {
-    height: 30px;
+.status-message {
+    overflow-wrap: anywhere;
 }
 
-
-.horizontal-button-bar {
-    position: fixed;
-    height: 0;
-    padding: 0;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 3;
-    transition: all 250ms;
-    border-radius: 5px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-align: center;
+/* Toggle state of toolbar, popup and key buttons. */
+button.toggled {
+    color: #60a5fa;
+    background-color: rgb(37 99 235 / 0.18);
+    border-color: rgb(37 99 235 / 0.45);
 }
 
-    .horizontal-button-bar.open {
-        height: auto;
-        min-height: 40px;
-        padding: 10px;
-        transition: all 250ms;
+/* Session controls only while connected. */
+body:not(.in-session) #sessionChrome {
+    display: none;
+}
+
+body.menu-open #fabCluster {
+    display: none;
+}
+
+/* Floating toolbar/keyboard buttons.  Default spot: bottom right on phones (above the key bar,
+   the on-screen keyboard and the assistant sheet), top center from md up.  Dragging the
+   toolbar button sets left/top inline. */
+#fabCluster {
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: calc(max(var(--kb-inset) + var(--keybar-h), var(--assistant-inset, 0px)) + max(1rem, env(safe-area-inset-bottom)));
+    opacity: 0.85;
+}
+
+    #fabCluster:hover,
+    #fabCluster:focus-within {
+        opacity: 1;
     }
 
-#workAreaGrid {
-    position: fixed;
-    display: grid;
-    text-align: left;
-    grid-template-rows: auto 1fr;
-    grid-row-gap: 5px;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 2;
+@media (min-width: 768px) {
+    #fabCluster {
+        right: auto;
+        bottom: auto;
+        top: max(0.5rem, env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+    }
 }
 
+#fabCluster.moved {
+    right: auto;
+    bottom: auto;
+    transform: none;
+}
+
+/* Popup menus: anchored under their button by the scripts (inline left/right/top). */
+.popup-menu {
+    position: fixed;
+    z-index: 40;
+    display: none;
+    min-width: 14rem;
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 5rem);
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 1px solid var(--sr-border);
+    border-radius: 0.75rem;
+    background-color: var(--sr-surface-raised);
+    color: var(--sr-fg);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+}
+
+    .popup-menu.open {
+        display: block;
+    }
+
+/* Phones: popup menus become bottom sheets over the toolbar sheet. */
+@media (max-width: 767.98px) {
+    .popup-menu {
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        bottom: 0;
+        max-width: none;
+        max-height: 70dvh;
+        border-radius: 1rem 1rem 0 0;
+        padding: 0.75rem max(0.75rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+    }
+}
+
+/* Screen */
 #screenViewerWrapper {
     position: relative;
     width: 100%;
     height: 100%;
     overflow: auto;
-    -ms-touch-action: pan-x pan-y;
     touch-action: pan-x pan-y;
 }
 
 #screenViewer {
     position: absolute;
-    -ms-touch-action: pan-x pan-y;
     touch-action: pan-x pan-y;
-}
-#screenViewer.fit {
-    max-width: 99%;
-    max-height: 99%;
-    left: 50%;
-    transform: translateX(-50%);
-    object-fit: contain;
-}
-
-.beta-pill {
-    display: inline-block;
-    font-size: .9em;
-    padding: 5px 10px;
-    border-radius: 5px;
-    background-color: rgb(40, 35, 21);
-    color: rgb(245, 222, 137);
-}
-
-#betaPillPullDown {
-    position: absolute;
-    left: 10px;
-    margin-top: 5px;
-}
-
-
-
-.toast-message {
-    transform: translate(0, 0);
-    padding: 10px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    opacity: 1;
-    color: white;
+    /* Long-press is right-click / drag: no iOS callout, magnifier or text selection. */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
     user-select: none;
-    pointer-events: none;
-    animation-name: toast-message;
-    animation-delay: 2s;
-    animation-duration: .5s;
-    animation-fill-mode: forwards;
-    animation-timing-function: ease-in;
 }
 
-@keyframes toast-message {
-    from {
-        transform: translate(0, 0);
+    #screenViewer.fit {
+        max-width: 99%;
+        max-height: 99%;
+        left: 50%;
+        transform: translateX(-50%);
+        object-fit: contain;
+        /* Nothing to pan when the screen fits; lets touchmove stay cancelable for dragging. */
+        touch-action: none;
     }
-
-    to {
-        transform: translate(calc(100% + 50px), 0);
-    }
-}
-
-.modal-prompt {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 10px;
-    border: 2px solid white;
-    border-radius: 5px;
-    box-shadow: 10px 10px 5px rgba(50,50,50,0.9);
-    z-index: 3;
-    min-height: 100px;
-}
-
-    .modal-prompt input {
-        margin-top: 15px;
-        width: 100%;
-    }
-
-.buttons-footer {
-    text-align: right;
-    margin-top: 10px
-}
-
-    .buttons-footer button {
-        height: 30px;
-        width: 60px;
-        margin-left: 10px;
-    }
-
-#touchKeyboardInput {
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    top: -100%;
-}
-
-
-footer {
-    position: fixed;
-    bottom: 40px;
-    width: 100vw;
-    text-align: center;
-    pointer-events: none;
-    font-size: .9em;
-}
-
-.copyright-text {
-    font-style: normal;
-    font-weight: 400;
-    font-size: 12px;
-    line-height: 14px;
-    color: #FFFFFF;
-    opacity: 0.5;
-}
-
-#toastsWrapper {
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    z-index: 4;
-}
-
-#fileTransferDiv {
-    position: fixed;
-    right: 5px;
-    bottom: 5px;
-    background-color: rgb(50, 50, 50);
-    color: white;
-    z-index: 3;
-    padding: 10px;
-    border-radius: 5px;
-}
-
-
-@media only screen and (max-width : 667px) {
-    /* Hide the logo column on mobile.  Not enough screen space for it. */
-  #menuFrame {
-    grid-template-columns: 0 2fr 1fr;
-  }
-}
 
 /* Monitor switch animation */
 @keyframes switching-fade {
@@ -492,7 +184,37 @@ footer {
     animation: switching-fade 0.3s ease-in-out;
 }
 
-/* Monitor layout diagram */
+/* Kept off screen; it only exists to open the on-screen keyboard. */
+#touchKeyboardInput {
+    position: fixed;
+    left: 50%;
+    top: -100%;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    font-size: 16px; /* iOS zooms in on focus below 16px. */
+}
+
+#touchKeyboardBar {
+    bottom: var(--kb-inset);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+body.kb-open #touchKeyboardBar,
+body.kb-open #assistantPanel {
+    padding-bottom: 0;
+}
+
+    #touchKeyboardBar > div::-webkit-scrollbar {
+        display: none;
+    }
+
+/* While the touch keyboard is on, keep the remote screen above it and the key bar. */
+body.touch-keyboard-on #workAreaGrid {
+    bottom: calc(var(--kb-inset) + var(--keybar-h));
+}
+
+/* Monitor layout diagram (screenSelectMenu) */
 .monitor-layout-diagram {
     display: flex;
     justify-content: center;
@@ -508,100 +230,97 @@ footer {
     transition: fill 0.15s ease;
 }
 
-.monitor-layout-rect:hover {
-    fill: rgba(80, 120, 200, 0.6);
-}
+    .monitor-layout-rect:hover {
+        fill: rgba(80, 120, 200, 0.6);
+    }
 
 .monitor-layout-rect-selected {
     fill: rgba(0, 160, 120, 0.45);
     stroke: rgba(0, 200, 150, 0.9);
 }
 
-/* Monitor thumbnail buttons */
-#screenSelectMenu button {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 6px;
-    gap: 4px;
-    width: 100%;
-    height: auto;
-    min-height: 40px;
-}
-
 .monitor-thumbnail {
     max-width: 160px;
     width: 100%;
     height: auto;
-    border-radius: 3px;
-    display: block;
-    background-color: rgba(40, 40, 40, 0.5);
     min-height: 20px;
+    border-radius: 3px;
+    background-color: rgba(40, 40, 40, 0.5);
 }
 
-/* Claude assistant panel */
-#assistantPanel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 420px;
-    z-index: 3;
-    display: flex;
-    flex-direction: column;
-    background-color: #fff;
-    border-left: 1px solid rgba(128, 128, 128, 0.4);
-    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.35);
+/* Toasts (UI.ShowToast) slide out after 2s. */
+.toast-message {
+    animation-name: toast-message;
+    animation-delay: 2s;
+    animation-duration: .5s;
+    animation-fill-mode: forwards;
+    animation-timing-function: ease-in;
 }
 
-#assistantPanel[hidden] {
-    display: none;
-}
-
-.assistant-panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 10px;
-    background-color: #2b2b2b;
-    color: #eee;
-    font-weight: 600;
-}
-
-.assistant-panel-header button {
-    background: none;
-    border: none;
-    color: inherit;
-    font-size: 1.1rem;
-    cursor: pointer;
-}
-
-#assistantFrame {
-    flex: 1 1 auto;
-    width: 100%;
-    border: 0;
-}
-
-body.assistant-open #workAreaGrid {
-    right: 420px;
-}
-
-/* On phones the panel covers the lower half, so the screen stays visible above it. */
-@media (max-width: 800px) {
-    #assistantPanel {
-        top: auto;
-        left: 0;
-        width: auto;
-        height: 55vh;
-        height: 55dvh;
-        border-left: none;
-        border-top: 1px solid rgba(128, 128, 128, 0.4);
-        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.35);
+@keyframes toast-message {
+    from {
+        transform: translate(0, 0);
+        opacity: 1;
     }
 
+    to {
+        transform: translate(calc(100% + 50px), 0);
+        opacity: 0;
+    }
+}
+
+/* Claude assistant panel (viewer-assistant.js).
+   Below lg: bottom sheet, half or full height, above the on-screen keyboard.
+   From lg: side panel; the remote screen shrinks so fit-to-screen stays correct. */
+#assistantPanel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--kb-inset);
+    height: var(--assistant-h);
+    border-top: 1px solid var(--sr-border);
+    border-radius: 1rem 1rem 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    transition: height 0.2s ease;
+}
+
+    #assistantPanel.dragging {
+        transition: none;
+    }
+
+    #assistantPanel[data-size="full"] {
+        border-radius: 0;
+        padding-top: env(safe-area-inset-top);
+    }
+
+@media (max-width: 1023.98px) {
+    body.assistant-open.assistant-half #workAreaGrid {
+        bottom: calc(var(--assistant-h) + var(--kb-inset));
+    }
+
+    body.assistant-full #fabCluster {
+        display: none;
+    }
+}
+
+@media (min-width: 1024px) {
+    #assistantPanel {
+        top: 0;
+        bottom: 0;
+        left: auto;
+        width: 420px;
+        height: auto;
+        border-top: 0;
+        border-left: 1px solid var(--sr-border);
+        border-radius: 0;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) 0;
+    }
+
+        #assistantPanel[data-size="full"] {
+            padding-top: env(safe-area-inset-top);
+        }
+
     body.assistant-open #workAreaGrid {
-        right: 0;
-        bottom: 55vh;
-        bottom: 55dvh;
+        right: 420px;
     }
 }

@@ -63,6 +63,10 @@ export var QualityModeLabel = document.getElementById("qualityModeLabel") as HTM
 export var QualityAutoButton = document.getElementById("qualityAutoButton") as HTMLButtonElement;
 export var QualityPerformanceButton = document.getElementById("qualityPerformanceButton") as HTMLButtonElement;
 export var QualityHighButton = document.getElementById("qualityHighButton") as HTMLButtonElement;
+export var FabCluster = document.getElementById("fabCluster") as HTMLDivElement;
+export var MenuBackdrop = document.getElementById("menuBackdrop") as HTMLDivElement;
+export var TouchKeyboardBar = document.getElementById("touchKeyboardBar") as HTMLDivElement;
+export var TouchKeyboardCloseButton = document.getElementById("touchKeyboardCloseButton") as HTMLButtonElement;
 
 const _thumbnailMap = new Map<string, string>();
 
@@ -84,23 +88,41 @@ export function CloseAllPopupMenus(exceptMenuId: string) {
     })
 }
 
+/** Opens or closes the session toolbar (bottom sheet on phones, top bar from md up). */
+export function SetMenuOpen(open: boolean) {
+    MenuFrame.classList.toggle("open", open);
+    MenuButton.classList.toggle("open", open);
+    MenuButton.setAttribute("aria-expanded", String(open));
+    document.body.classList.toggle("menu-open", open);
+    if (MenuBackdrop) {
+        MenuBackdrop.hidden = !open;
+    }
+    BetaPillPullDown?.classList.toggle("d-none", open);
+    if (!open) {
+        CloseAllPopupMenus(null);
+    }
+}
+
 export function Prompt(promptMessage: string): Promise<string> {
     return new Promise((resolve, reject) => {
         var modalDiv = document.createElement("div");
-        modalDiv.classList.add("modal-prompt");
+        modalDiv.className = "modal-prompt fixed top-1/2 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface-raised p-4 text-fg shadow-xl";
 
         var messageDiv = document.createElement("div");
         messageDiv.innerHTML = promptMessage;
 
         var responseInput = document.createElement("input");
+        responseInput.className = "sr-input mt-3";
 
         var buttonsDiv = document.createElement("div");
-        buttonsDiv.classList.add("buttons-footer");
+        buttonsDiv.className = "buttons-footer mt-4 flex justify-end gap-2";
 
         var cancelButton = document.createElement("button");
+        cancelButton.className = "sr-btn sr-btn-secondary";
         cancelButton.innerHTML = "Cancel";
 
         var okButton = document.createElement("button");
+        okButton.className = "sr-btn sr-btn-primary";
         okButton.innerHTML = "OK";
 
         buttonsDiv.appendChild(okButton);
@@ -123,6 +145,78 @@ export function Prompt(promptMessage: string): Promise<string> {
     });
 }
 
+/**
+ * Asks the user to confirm an action in a modal dialog.  Resolves true when confirmed.
+ * Escape, Cancel and tapping the backdrop resolve false.
+ */
+export function Confirm(message: string, confirmLabel: string, danger: boolean = true): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+        const dialog = document.createElement("dialog");
+        if (typeof dialog.showModal !== "function") {
+            resolve(window.confirm(message));
+            return;
+        }
+
+        dialog.className = "sr-dialog";
+
+        const body = document.createElement("div");
+        body.className = "p-5";
+
+        const messageP = document.createElement("p");
+        messageP.className = "mb-5 text-base";
+        messageP.innerText = message;
+
+        const buttons = document.createElement("div");
+        buttons.className = "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end";
+
+        const cancelButton = document.createElement("button");
+        cancelButton.type = "button";
+        cancelButton.className = "sr-btn sr-btn-secondary w-full sm:w-auto";
+        cancelButton.innerText = "Cancel";
+
+        const okButton = document.createElement("button");
+        okButton.type = "button";
+        okButton.className = `sr-btn ${danger ? "sr-btn-danger" : "sr-btn-primary"} w-full sm:w-auto`;
+        okButton.innerText = confirmLabel;
+
+        buttons.appendChild(cancelButton);
+        buttons.appendChild(okButton);
+        body.appendChild(messageP);
+        body.appendChild(buttons);
+        dialog.appendChild(body);
+
+        let done = false;
+        const finish = (result: boolean) => {
+            if (done) {
+                return;
+            }
+            done = true;
+            if (dialog.open) {
+                dialog.close();
+            }
+            dialog.remove();
+            resolve(result);
+        };
+
+        okButton.addEventListener("click", () => finish(true));
+        cancelButton.addEventListener("click", () => finish(false));
+        dialog.addEventListener("cancel", (ev) => {
+            ev.preventDefault();
+            finish(false);
+        });
+        dialog.addEventListener("click", (ev) => {
+            // A click on the dialog element itself is a click on the backdrop.
+            if (ev.target === dialog) {
+                finish(false);
+            }
+        });
+
+        document.body.appendChild(dialog);
+        dialog.showModal();
+        cancelButton.focus();
+    });
+}
+
 
 export function SetScreenSize(width: number, height: number) {
     ScreenViewer.width = width;
@@ -136,7 +230,7 @@ export function SetStatusMessage(message: string) {
 
 export function ShowToast(message: string) {
     var messageDiv = document.createElement("div");
-    messageDiv.classList.add("toast-message");
+    messageDiv.className = "toast-message max-w-full rounded-lg border border-border bg-surface-raised/95 px-4 py-2 text-sm text-fg shadow-lg select-none";
     messageDiv.innerHTML = message;
     ToastsWrapper.appendChild(messageDiv);
     window.setTimeout(() => {
@@ -158,7 +252,8 @@ export function ToggleConnectUI(shown: boolean) {
         AudioButton.classList.remove("toggled");
         WorkAreaGrid.style.display = "none";
         BackgroundLayers.classList.remove("d-none");
-        CloseAllPopupMenus(null);
+        document.body.classList.remove("in-session");
+        SetMenuOpen(false);
     }
     else {
         ConnectBox.style.display = "none";
@@ -167,6 +262,7 @@ export function ToggleConnectUI(shown: boolean) {
         StatusMessage.innerHTML = "";
         WorkAreaGrid.style.removeProperty("display");
         BackgroundLayers.classList.add("d-none");
+        document.body.classList.add("in-session");
     }
 
     ConnectButton.disabled = !ViewerApp.RequesterName || !ViewerApp.SessionId;
@@ -195,6 +291,7 @@ export function UpdateDisplays(selectedDisplay: string, displayNames: string[], 
 
     for (let i = 0; i < displayNames.length; i++) {
         var button = document.createElement("button");
+        button.className = "sr-btn sr-btn-ghost h-auto w-full flex-col gap-1 p-2";
         button.setAttribute("data-display", displayNames[i]);
 
         var img = document.createElement("img");
