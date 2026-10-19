@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Remotely.Shared.Entities;
 
@@ -18,6 +18,8 @@ public enum ClaudeAssistantEventKind
     SessionEnded,
     /// <summary>Token usage of one Claude API call; JSON in <see cref="ClaudeAssistantEvent.Output"/>.</summary>
     Usage,
+    /// <summary>A technician continued this session later from the history.</summary>
+    SessionResumed,
 }
 
 /// <summary>
