@@ -2,6 +2,7 @@
 @inject IDataService DataService
 @inject IDataService DataService
 @inject IThemeProvider ThemeProvider
+@inject Microsoft.AspNetCore.Mvc.ViewFeatures.IFileVersionProvider FileVersion
 
 <!DOCTYPE html>
 <html lang="en" class="@(_theme == Theme.Dark ? "dark" : null)">
@@ -10,10 +11,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Remotely</title>
     <base href="/" />
-    <link href="css/site.css" rel="stylesheet" />
+    <link href="@Versioned("/css/site.css")" rel="stylesheet" />
     <link href="Remotely_Server.styles.css" rel="stylesheet" />
-    <script src="interop.js"></script>
-    <link rel="stylesheet" href="/css/app.css" />
+    <script src="@Versioned("/interop.js")"></script>
+    <link rel="stylesheet" href="@Versioned("/css/app.css")" />
 
     <HeadOutlet @rendermode="RenderModeForPage" />
 </head>
@@ -46,6 +47,11 @@
         await base.OnInitializedAsync();
     }
 
+
+    // Adds ?v=<content hash>, so a new version is fetched right after an update
+    // instead of a copy cached by Cloudflare or the browser.
+    private string Versioned(string path) =>
+        FileVersion.AddFileVersionToPath(HttpContext.Request.PathBase, path);
 
     private IComponentRenderMode? RenderModeForPage => 
         HttpContext.Request.Path.StartsWithSegments("/Account")

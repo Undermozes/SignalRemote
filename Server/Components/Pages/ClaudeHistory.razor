@@ -274,6 +274,9 @@
     [Inject]
     private IJSRuntime JS { get; set; } = null!;
 
+    [Inject]
+    private Microsoft.AspNetCore.Mvc.ViewFeatures.IFileVersionProvider FileVersion { get; set; } = null!;
+
     private int TotalPages => _page is null ? 0 : (int)Math.Ceiling(_page.TotalSessions / (double)PageSize);
 
     // Admins see the whole organization, technicians only their own sessions.
@@ -308,7 +311,7 @@
         // Show times in the viewer's own time zone; the server renders UTC.
         try
         {
-            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./claude-history.js");
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", FileVersion.AddFileVersionToPath(Microsoft.AspNetCore.Http.PathString.Empty, "/claude-history.js"));
             await _module.InvokeVoidAsync("localizeTimes");
         }
         catch (JSDisconnectedException)

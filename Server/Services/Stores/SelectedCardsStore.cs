@@ -30,17 +30,29 @@ public class SelectedCardsStore : ISelectedCardsStore
 
     public event EventHandler? SelectedDevicesChanged;
 
+    // Changes raise SelectedDevicesChanged (outside the lock), e.g. so the terminal
+    // can show which devices a command will run on.
     public bool Add(string deviceId)
     {
+        bool added;
         lock (_lock)
         {
-            return _selectedDevices.Add(deviceId);
+            added = _selectedDevices.Add(deviceId);
         }
+        if (added)
+        {
+            InvokeSelectionsChanged();
+        }
+        return added;
     }
 
     public void Clear()
     {
-        _selectedDevices.Clear();
+        lock (_lock)
+        {
+            _selectedDevices.Clear();
+        }
+        InvokeSelectionsChanged();
     }
 
     public bool Contains(string deviceId)
@@ -58,9 +70,15 @@ public class SelectedCardsStore : ISelectedCardsStore
 
     public bool Remove(string deviceId)
     {
+        bool removed;
         lock (_lock)
         {
-            return _selectedDevices.Remove(deviceId);
+            removed = _selectedDevices.Remove(deviceId);
         }
+        if (removed)
+        {
+            InvokeSelectionsChanged();
+        }
+        return removed;
     }
 }

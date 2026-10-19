@@ -369,7 +369,25 @@ void ConfigureStaticFiles()
     provider.Mappings[".zip"] = "application/octet-stream";
     provider.Mappings[".config"] = "application/octet-stream";
     provider.Mappings[".apk"] = "application/vnd.android.package-archive";
-    app.UseStaticFiles();
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        // Cloudflare (and browsers) otherwise keep stale CSS/JS for hours after an update.
+        // Versioned URLs (?v=hash) are immutable; everything else must be revalidated.
+        OnPrepareResponse = ctx =>
+        {
+            var headers = ctx.Context.Response.Headers;
+            if (ctx.Context.Request.Query.ContainsKey("v"))
+            {
+                headers.CacheControl = "public, max-age=31536000, immutable";
+            }
+            else if (ctx.File.Name.EndsWith(".js", StringComparison.OrdinalIgnoreCase) ||
+                     ctx.File.Name.EndsWith(".css", StringComparison.OrdinalIgnoreCase) ||
+                     ctx.File.Name.EndsWith(".map", StringComparison.OrdinalIgnoreCase))
+            {
+                headers.CacheControl = "no-cache";
+            }
+        }
+    });
     var contentPath = Path.Combine(app.Environment.WebRootPath, "Content");
 
     if (Directory.Exists(contentPath))

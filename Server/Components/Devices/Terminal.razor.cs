@@ -20,6 +20,8 @@ public partial class Terminal : AuthComponentBase, IDisposable
     private string? _lastCompletionInput;
     private int _lastCursorIndex;
     private ScriptingShell _shell;
+    private List<Device> _targets = [];
+    private readonly Dictionary<string, string> _pending = new(StringComparer.OrdinalIgnoreCase);
 
     private ElementReference _terminalInput;
     private string? _terminalOpenClass;
@@ -100,8 +102,48 @@ public partial class Terminal : AuthComponentBase, IDisposable
         await Register<PowerShellCompletionsMessage, string>(
             CircuitConnection.ConnectionId, 
             HandlePowerShellCompletionsMessage);
+        await Register<ScriptResultMessage, string>(
+            CircuitConnection.ConnectionId,
+            HandleScriptResultMessage);
         TerminalStore.TerminalLinesChanged += TerminalStore_TerminalLinesChanged;
+        CardStore.SelectedDevicesChanged += CardStore_SelectedDevicesChanged;
+        LoadTargets();
     }
+
+    void IDisposable.Dispose()
+    {
+        TerminalStore.TerminalLinesChanged -= TerminalStore_TerminalLinesChanged;
+        CardStore.SelectedDevicesChanged -= CardStore_SelectedDevicesChanged;
+        Dispose();
+    }
+
+    private void CardStore_SelectedDevicesChanged(object? sender, EventArgs e)
+    {
+        _ = InvokeAsync(() =>
+        {
+            LoadTargets();
+            StateHasChanged();
+        });
+    }
+
+    private void LoadTargets()
+    {
+        _targets = DataService
+            .GetDevices(CardStore.SelectedDevices)
+            .OrderBy(x => string.IsNullOrWhiteSpace(x.Alias) ? x.DeviceName : x.Alias)
+            .ToList();
+    }
+
+    private Task HandleScriptResultMessage(object subscriber, ScriptResultMessage message)
+    {
+        if (_pending.Remove(message.ScriptResult.DeviceID))
+        {
+            return InvokeAsync(StateHasChanged);
+        }
+        return Task.CompletedTask;
+    }
+
+    private static string Plural(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
 
     private void ApplyCompletion(PwshCommandCompletion completion)
     {
@@ -168,6 +210,15 @@ public partial class Terminal : AuthComponentBase, IDisposable
                 ToastService.ShowToast("You must select at least one device.", classString: "bg-warning");
                 return;
             }
+            // Echo the command with its targets, so the history shows what ran where.
+            LoadTargets();
+            var names = _targets.Select(x => string.IsNullOrWhiteSpace(x.Alias) ? x.DeviceName : x.Alias);
+            TerminalStore.AddTerminalLine($"> [{_shell}] {InputText}   → {string.Join(", ", names)}", "text-gray-400");
+            foreach (var target in _targets)
+            {
+                _pending[target.ID] = string.IsNullOrWhiteSpace(target.Alias) ? target.DeviceName ?? target.ID : target.Alias;
+            }
+
             CircuitConnection.ExecuteCommandOnAgent(_shell, InputText, devices);
             TerminalStore.AddTerminalHistory(InputText);
             InputText = string.Empty;

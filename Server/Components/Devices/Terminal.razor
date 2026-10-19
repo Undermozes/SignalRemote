@@ -31,8 +31,37 @@
             }
         </div>
 
+        @* Which devices a command runs on, and which haven't answered yet. *@
+        <div class="flex flex-wrap items-center gap-1.5 border-t border-border bg-surface-raised px-2 pt-2 text-xs text-fg">
+            @if (_targets.Count == 0)
+            {
+                <span class="sr-badge sr-badge-warning">
+                    <i class="oi oi-warning" aria-hidden="true"></i>
+                    No device selected: tick the checkbox on a device card first
+                </span>
+            }
+            else
+            {
+                <span class="font-medium text-muted">Runs on @Plural(_targets.Count, "device"):</span>
+                @foreach (var device in _targets)
+                {
+                    <span @key="device.ID" class="sr-badge sr-badge-neutral max-w-[12rem]" title="@(device.IsOnline ? "Online" : "Offline: the command waits until it connects")">
+                        <span class="size-2 shrink-0 rounded-full @(device.IsOnline ? "bg-success" : "bg-gray-400")"></span>
+                        <span class="truncate">@(string.IsNullOrWhiteSpace(device.Alias) ? device.DeviceName : device.Alias)</span>
+                    </span>
+                }
+            }
+            @if (_pending.Count > 0)
+            {
+                <span class="inline-flex items-center gap-1.5 text-sky-500 sm:ml-auto" role="status">
+                    <span class="size-3 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"></span>
+                    Waiting for @string.Join(", ", _pending.Values)
+                </span>
+            }
+        </div>
+
         @* Phones: help + shell on one row, the command input full width below.  One row from md up. *@
-        <div class="grid grid-cols-[auto_1fr] gap-2 border-t border-border bg-surface-raised p-2 md:grid-cols-[auto_auto_1fr]">
+        <div class="grid grid-cols-[auto_1fr] gap-2 bg-surface-raised p-2 md:grid-cols-[auto_auto_1fr]">
             <button class="sr-btn sr-btn-secondary w-11 px-0"
                     title="Terminal Help"
                     aria-label="Terminal Help"

@@ -183,6 +183,9 @@
     private IJSRuntime JS { get; set; } = null!;
 
     [Inject]
+    private Microsoft.AspNetCore.Mvc.ViewFeatures.IFileVersionProvider FileVersion { get; set; } = null!;
+
+    [Inject]
     private IClaudeAssistantService AssistantService { get; set; } = null!;
 
     [Inject]
@@ -251,7 +254,7 @@
         {
             try
             {
-                _embedModule ??= await JS.InvokeAsync<IJSObjectReference>("import", cancellationToken, "./assistant-embed.js");
+                _embedModule ??= await JS.InvokeAsync<IJSObjectReference>("import", cancellationToken, FileVersion.AddFileVersionToPath(Microsoft.AspNetCore.Http.PathString.Empty, "/assistant-embed.js"));
 
                 var info = await _embedModule.InvokeAsync<CaptureInfo>("captureViewerScreen", cancellationToken, 10_000);
                 if (!info.Ok)
@@ -290,7 +293,7 @@
             _renderedEntryCount = _session.Entries.Count;
             try
             {
-                _embedModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./assistant-embed.js");
+                _embedModule ??= await JS.InvokeAsync<IJSObjectReference>("import", FileVersion.AddFileVersionToPath(Microsoft.AspNetCore.Http.PathString.Empty, "/assistant-embed.js"));
                 await _embedModule.InvokeVoidAsync("scrollToBottom", _logElement);
             }
             catch (JSDisconnectedException)
