@@ -1,4 +1,5 @@
 using Anthropic;
+using System.Net.Sockets;
 using Remotely.Shared;
 using Remotely.Shared.Entities;
 
@@ -13,6 +14,38 @@ public interface IClaudeAssistantService
 
 public class ClaudeAssistantService : IClaudeAssistantService
 {
+    /// <summary>
+    /// One HTTP client for all sessions.  TCP keepalive every 30 seconds keeps long Claude
+    /// calls alive through NAT routers (the server sits behind a 4G/5G modem) that drop
+    /// connections without traffic.
+    /// </summary>
+    private static readonly HttpClient _httpClient = new(new SocketsHttpHandler
+    {
+        PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+        ConnectCallback = async (context, cancellationToken) =>
+        {
+            var socket = new Socket(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
+            try
+            {
+                socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+                socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 30);
+                socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 10);
+                socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount, 3);
+                await socket.ConnectAsync(context.DnsEndPoint, cancellationToken);
+                return new NetworkStream(socket, ownsSocket: true);
+            }
+            catch
+            {
+                socket.Dispose();
+                throw;
+            }
+        },
+    })
+    {
+        // The SDK applies its own timeout; the session also stops a stream that stalls.
+        Timeout = System.Threading.Timeout.InfiniteTimeSpan,
+    };
+
     private readonly IAgentCommandRunner _commandRunner;
     private readonly IAgentHubSessionCache _agentSessionCache;
     private readonly IClaudeAssistantHistory _history;
@@ -90,7 +123,13 @@ public class ClaudeAssistantService : IClaudeAssistantService
             resumedFrom = ClaudeConversationRestorer.Restore(sessionId, events);
         }
 
-        var client = new AnthropicClient { ApiKey = apiKey };
+        var client = new AnthropicClient
+        {
+            ApiKey = apiKey,
+            HttpClient = _httpClient,
+            // Long agent turns stream for minutes; stalls are caught by the session itself.
+            Timeout = TimeSpan.FromMinutes(20),
+        };
         var model = string.IsNullOrWhiteSpace(settings.ClaudeModel) ? "claude-opus-5-5" : settings.ClaudeModel.Trim();
 
         var session = new ClaudeAssistantSession(

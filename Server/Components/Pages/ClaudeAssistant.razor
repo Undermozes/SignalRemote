@@ -131,9 +131,13 @@
 
             @if (_session.IsBusy)
             {
-                <div class="flex items-center gap-2 text-sm text-muted">
+                <div class="flex items-center gap-2 text-sm text-muted" role="status">
                     <span class="size-4 animate-spin rounded-full border-2 border-muted border-t-transparent"></span>
-                    Claude is working...
+                    <span>@(string.IsNullOrWhiteSpace(_session.Status) ? "Claude is working..." : _session.Status)</span>
+                    @if (_session.BusySince is DateTimeOffset since)
+                    {
+                        <span class="tabular-nums">@FormatElapsed(DateTimeOffset.Now - since)</span>
+                    }
                 </div>
             }
         </div>
@@ -168,6 +172,7 @@
     private IJSObjectReference? _embedModule;
     private ElementReference _logElement;
     private int _renderedEntryCount;
+    private System.Threading.Timer? _ticker;
 
     [Parameter]
     public string DeviceId { get; set; } = string.Empty;
@@ -205,6 +210,13 @@
             return;
         }
 
+        // The page is prerendered first, then rendered again interactively.  Start the
+        // session only in the interactive render, or every visit logs an empty extra session.
+        if (!RendererInfo.IsInteractive)
+        {
+            return;
+        }
+
         var result = await AssistantService.StartSession(User, DeviceId, ContinueSessionId);
         if (!result.IsSuccess)
         {
@@ -221,10 +233,24 @@
             _session.ScreenshotProvider = CaptureViewerScreenshot;
         }
         _session.Changed += HandleSessionChanged;
+
+        // Keep the elapsed time ticking while Claude works.
+        _ticker = new System.Threading.Timer(_ =>
+        {
+            if (_session?.IsBusy == true)
+            {
+                _ = InvokeAsync(StateHasChanged);
+            }
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
     }
+
+    private static string FormatElapsed(TimeSpan elapsed) =>
+        elapsed.TotalHours >= 1 ? elapsed.ToString(@"h\:mm\:ss") : elapsed.ToString(@"m\:ss");
 
     public void Dispose()
     {
+        _ticker?.Dispose();
+
         if (_session is not null)
         {
             _session.Changed -= HandleSessionChanged;

@@ -1,5 +1,6 @@
 using Anthropic;
 using Anthropic.Exceptions;
+using Anthropic.Helpers;
 using Anthropic.Models.Beta.Messages;
 using Remotely.Shared.Entities;
 using Remotely.Shared.Enums;
@@ -62,6 +63,9 @@ public sealed class ClaudeAssistantSession : IDisposable
     private const int MaxToolIterationsPerMessage = 30;
     private const int MaxToolOutputChars = 30_000;
     private const string ServerSideFallbackBeta = "server-side-fallback-2026-07-01";
+
+    // A stream that sends nothing for this long is treated as dead and retried once.
+    private static readonly TimeSpan StreamIdleTimeout = TimeSpan.FromMinutes(3);
 
     private static readonly string _systemPrompt = """
         You are an IT support assistant built into a remote management (RMM) tool used by a
@@ -179,6 +183,12 @@ public sealed class ClaudeAssistantSession : IDisposable
     public Device Device { get; }
     public List<AssistantEntry> Entries { get; } = [];
     public bool IsBusy { get; private set; }
+
+    /// <summary>What Claude is doing in the current turn, e.g. "Thinking...".</summary>
+    public string Status { get; private set; } = string.Empty;
+
+    /// <summary>When the current turn started; null when idle.</summary>
+    public DateTimeOffset? BusySince { get; private set; }
     public Guid SessionId { get; }
     public RemotelyUser User { get; }
 
@@ -226,6 +236,8 @@ public sealed class ClaudeAssistantSession : IDisposable
         try
         {
             IsBusy = true;
+            BusySince = DateTimeOffset.Now;
+            Status = "Sending...";
             AddEntry(new AssistantEntry { Kind = AssistantEntryKind.User, Text = text });
 
             _logger.LogInformation(
@@ -262,6 +274,8 @@ public sealed class ClaudeAssistantSession : IDisposable
         finally
         {
             IsBusy = false;
+            BusySince = null;
+            Status = string.Empty;
             _turnCts.Dispose();
             _turnCts = null;
             _turnLock.Release();
@@ -273,7 +287,7 @@ public sealed class ClaudeAssistantSession : IDisposable
     {
         for (var i = 0; i < MaxToolIterationsPerMessage; i++)
         {
-            var response = await _client.Beta.Messages.Create(BuildRequest(), cancellationToken);
+            var response = await CreateMessage(cancellationToken);
 
             LogUsage(response);
 
@@ -356,12 +370,16 @@ public sealed class ClaudeAssistantSession : IDisposable
 
             // All results go back in a single user message.
             var toolResults = new List<BetaContentBlockParam>();
+            Status = "Running steps on the device...";
+            Changed?.Invoke();
             foreach (var toolUse in toolUses)
             {
                 toolResults.Add(await ExecuteTool(toolUse, cancellationToken));
             }
             _messages.Add(new BetaMessageParam { Role = Role.User, Content = toolResults });
             _pendingToolUseIds.Clear();
+            Status = "Reading the results...";
+            Changed?.Invoke();
         }
 
         AddEntry(new AssistantEntry
@@ -369,6 +387,73 @@ public sealed class ClaudeAssistantSession : IDisposable
             Kind = AssistantEntryKind.Info,
             Text = $"Stopped after {MaxToolIterationsPerMessage} steps.  Send a message to continue.",
         });
+    }
+
+    /// <summary>
+    /// Streams the response instead of waiting for it in one piece.  A long, silent request
+    /// (Claude thinking for minutes) gets dropped by NAT routers such as 4G/5G modems, and the
+    /// answer then never arrives.  A stream keeps data flowing; one that stalls anyway is
+    /// retried once.
+    /// </summary>
+    private async Task<BetaMessage> CreateMessage(CancellationToken cancellationToken)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            using var idleCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            idleCts.CancelAfter(StreamIdleTimeout);
+            try
+            {
+                var aggregator = new BetaMessageContentAggregator();
+                var stream = _client.Beta.Messages.CreateStreaming(BuildRequest(), idleCts.Token);
+                await foreach (var streamEvent in aggregator.CollectAsync(stream).WithCancellation(idleCts.Token))
+                {
+                    idleCts.CancelAfter(StreamIdleTimeout);
+                    UpdateStatus(streamEvent);
+                }
+                return aggregator.Message();
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(
+                    "Claude stream for session {sessionId} stalled for {timeout} (attempt {attempt}).",
+                    SessionId, StreamIdleTimeout, attempt);
+
+                if (attempt >= 2)
+                {
+                    throw new TimeoutException(
+                        $"Claude didn't respond for {StreamIdleTimeout.TotalMinutes:0} minutes, twice.  " +
+                        "Check the server's internet connection and send your message again.");
+                }
+
+                AddEntry(new AssistantEntry
+                {
+                    Kind = AssistantEntryKind.Info,
+                    Text = "Claude stopped responding.  Trying again...",
+                });
+            }
+        }
+    }
+
+    private void UpdateStatus(BetaRawMessageStreamEvent streamEvent)
+    {
+        if (!streamEvent.TryPickContentBlockStart(out var start))
+        {
+            return;
+        }
+
+        var status = start.ContentBlock switch
+        {
+            var block when block.TryPickBetaThinking(out _) || block.TryPickBetaRedactedThinking(out _) => "Thinking...",
+            var block when block.TryPickBetaToolUse(out _) => "Preparing a step...",
+            var block when block.TryPickBetaText(out _) => "Writing...",
+            _ => Status,
+        };
+
+        if (status != Status)
+        {
+            Status = status;
+            Changed?.Invoke();
+        }
     }
 
     private MessageCreateParams BuildRequest()
