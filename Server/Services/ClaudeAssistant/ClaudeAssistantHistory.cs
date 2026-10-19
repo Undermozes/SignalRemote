@@ -81,6 +81,9 @@ public interface IClaudeAssistantHistory
 
     Task<byte[]?> GetScreenshot(string organizationId, string? userName, Guid eventId);
 
+    /// <summary>Removes a session and all its events, screenshots included.  Returns the number of events removed.</summary>
+    Task<int> DeleteSession(string organizationId, Guid sessionId);
+
     /// <summary>All sessions that started in [fromUtc, toUtc), oldest first, e.g. for billing.</summary>
     Task<IReadOnlyList<ClaudeHistorySessionSummary>> GetSessionsInRange(
         string organizationId,
@@ -269,6 +272,18 @@ public class ClaudeAssistantHistory : IClaudeAssistantHistory
             .ToListAsync();
 
         return events;
+    }
+
+    public async Task<int> DeleteSession(string organizationId, Guid sessionId)
+    {
+        using var dbContext = _appDbFactory.GetContext();
+        // Load and remove rather than ExecuteDelete, which not every provider supports.
+        var events = await dbContext.ClaudeAssistantEvents
+            .Where(x => x.OrganizationId == organizationId && x.SessionId == sessionId)
+            .ToListAsync();
+        dbContext.ClaudeAssistantEvents.RemoveRange(events);
+        await dbContext.SaveChangesAsync();
+        return events.Count;
     }
 
     public async Task<byte[]?> GetScreenshot(string organizationId, string? userName, Guid eventId)

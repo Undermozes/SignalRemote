@@ -194,3 +194,16 @@
     @apply block min-h-14 w-full rounded-xl border border-border bg-surface px-3 text-center font-mono text-2xl tracking-[0.4em] text-fg;
     @apply placeholder:tracking-[0.4em] placeholder:text-muted/50 focus:border-brand focus:outline-2 focus:outline-brand/30;
 }
+
+/* Reconnect dialog (App.razor): Blazor sets the state classes on the dialog. */
+#components-reconnect-modal :is(.sr-reconnect-spinner, .sr-reconnect-first, .sr-reconnect-retrying,
+    .sr-reconnect-failed, .sr-reconnect-paused, .sr-reconnect-resume-failed) {
+    display: none;
+}
+#components-reconnect-modal.components-reconnect-show :is(.sr-reconnect-spinner, .sr-reconnect-first),
+#components-reconnect-modal.components-reconnect-retrying :is(.sr-reconnect-spinner, .sr-reconnect-retrying),
+#components-reconnect-modal.components-reconnect-failed .sr-reconnect-failed,
+#components-reconnect-modal.components-reconnect-paused .sr-reconnect-paused,
+#components-reconnect-modal.components-reconnect-resume-failed .sr-reconnect-resume-failed {
+    display: block;
+}

@@ -137,10 +137,34 @@
             var first = _events[0];
             <div class="mb-1 flex flex-wrap items-start justify-between gap-3">
                 <h3 class="sr-page-title mb-0">@(first.DeviceName ?? first.DeviceId)</h3>
-                <a class="sr-btn sr-btn-primary w-full sm:w-auto" href="@($"assistant/{Uri.EscapeDataString(first.DeviceId)}?continue={SessionId}")">
-                    <Icon Name="sparkles" Class="size-4" /> Continue conversation
-                </a>
+                <div class="flex w-full gap-2 sm:w-auto">
+                    <a class="sr-btn sr-btn-primary flex-1 sm:flex-none" href="@($"assistant/{Uri.EscapeDataString(first.DeviceId)}?continue={SessionId}")">
+                        <Icon Name="sparkles" Class="size-4" /> Continue conversation
+                    </a>
+                    @if (_isAdmin)
+                    {
+                        <button class="sr-btn sr-btn-secondary text-danger dark:text-red-400" title="Delete conversation"
+                                aria-label="Delete conversation" @onclick="() => _confirmDelete = true">
+                            <Icon Name="trash" Class="size-4" />
+                        </button>
+                    }
+                </div>
             </div>
+            @if (_confirmDelete)
+            {
+                <div class="sr-alert sr-alert-danger mt-3 flex-col sm:flex-row sm:items-center" role="alertdialog" aria-label="Confirm delete">
+                    <div class="flex-1">
+                        <strong>Delete this conversation for good?</strong>
+                        <div class="text-muted">All messages, commands, outputs and screenshots are removed, and it no longer counts in the billing export.  This can't be undone.</div>
+                    </div>
+                    <div class="flex w-full gap-2 sm:w-auto">
+                        <button class="sr-btn sr-btn-secondary flex-1 sm:flex-none" @onclick="() => _confirmDelete = false" disabled="@_deleting">Cancel</button>
+                        <button class="sr-btn sr-btn-danger flex-1 sm:flex-none" @onclick="DeleteSession" disabled="@_deleting">
+                            @(_deleting ? "Deleting..." : "Delete")
+                        </button>
+                    </div>
+                </div>
+            }
             <div class="mb-4 mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
                 <span><span class="oi oi-person" aria-hidden="true"></span> @first.UserName</span>
                 <time data-local-time datetime="@first.Timestamp.ToString("o")"><span class="utc">@first.Timestamp.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</span></time>
@@ -267,6 +291,8 @@
     private bool _isAdmin;
     private IJSObjectReference? _module;
     private ClaudeUsage _sessionUsage = new(0, 0, 0, 0);
+    private bool _confirmDelete;
+    private bool _deleting;
     private DateOnly _exportFrom = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private DateOnly _exportTo = DateOnly.FromDateTime(DateTime.Today);
 
@@ -278,6 +304,15 @@
 
     [Inject]
     private IJSRuntime JS { get; set; } = null!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = null!;
+
+    [Inject]
+    private IToastService ToastService { get; set; } = null!;
+
+    [Inject]
+    private ILogger<ClaudeHistory> Logger { get; set; } = null!;
 
     [Inject]
     private Microsoft.AspNetCore.Mvc.ViewFeatures.IFileVersionProvider FileVersion { get; set; } = null!;
@@ -299,6 +334,7 @@
 
         if (SessionId is Guid sessionId)
         {
+            _confirmDelete = false;
             _events = null;
             _events = await History.GetSessionEvents(User.OrganizationID, UserFilter, sessionId);
             _sessionUsage = ClaudeUsage.Sum(_events
@@ -337,6 +373,25 @@
             {
             }
         }
+    }
+
+    private async Task DeleteSession()
+    {
+        // Only admins delete history: it is the audit trail of what Claude did on devices.
+        if (User is null || !User.IsAdministrator || SessionId is not Guid sessionId)
+        {
+            return;
+        }
+
+        _deleting = true;
+        var removed = await History.DeleteSession(User.OrganizationID, sessionId);
+        Logger.LogInformation(
+            "[ClaudeAudit] Session {sessionId} deleted from the history by {user} ({count} events).",
+            sessionId, User.UserName, removed);
+        _deleting = false;
+
+        ToastService.ShowToast2("Conversation deleted.", ToastType.Success);
+        Navigation.NavigateTo("assistant-history");
     }
 
     private async Task LoadPage()

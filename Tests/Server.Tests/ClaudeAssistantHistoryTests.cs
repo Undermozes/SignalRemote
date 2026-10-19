@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Remotely.Server.Data;
@@ -182,5 +182,25 @@ public class ClaudeAssistantHistoryTests
 
         Assert.AreEqual(1, page.TotalSessions);
         Assert.AreEqual(resengo, page.Sessions[0].SessionId);
+    }
+
+    [TestMethod]
+    public async Task DeleteSession_RemovesOnlyThatSessionInTheOrganization()
+    {
+        var start = DateTimeOffset.Now.AddHours(-2);
+        var keep = await AddSession("alice", "PC-1", "Keep me", start);
+        var remove = await AddSession("alice", "PC-2", "Remove me", start.AddMinutes(5));
+
+        // Another organization can't delete it.
+        Assert.AreEqual(0, await _history.DeleteSession(Guid.NewGuid().ToString(), remove));
+
+        var removed = await _history.DeleteSession(_orgId, remove);
+
+        Assert.AreEqual(10, removed);
+        Assert.AreEqual(0, (await _history.GetSessionEvents(_orgId, null, remove)).Count);
+        Assert.IsNull(await _history.GetScreenshot(_orgId, null, remove));
+        var page = await _history.GetSessions(_orgId, null, null, 0, 20);
+        Assert.AreEqual(1, page.TotalSessions);
+        Assert.AreEqual(keep, page.Sessions[0].SessionId);
     }
 }

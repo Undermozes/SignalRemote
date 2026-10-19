@@ -20,6 +20,32 @@
 </head>
 <body>
     <Routes @rendermode="RenderModeForPage" />
+
+    @* Our own reconnect dialog: Blazor uses an element with this id instead of its default UI. *@
+    <dialog id="components-reconnect-modal" data-nosnippet
+            class="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-border bg-surface-raised p-6 text-center text-fg shadow-2xl
+                   backdrop:bg-black/40 backdrop:backdrop-blur-sm">
+        <div class="sr-reconnect-spinner mx-auto mb-4 size-10 animate-spin rounded-full border-4 border-brand/20 border-t-brand" aria-hidden="true"></div>
+        <p class="sr-reconnect-first m-0 font-medium">Reconnecting...</p>
+        <p class="sr-reconnect-retrying m-0 font-medium">
+            Still reconnecting...
+            <span class="mt-1 block text-sm font-normal text-muted">Next try in <span id="components-seconds-to-next-attempt"></span> s.</span>
+        </p>
+        <p class="sr-reconnect-failed m-0 font-medium">
+            The connection was lost.
+            <span class="mt-1 block text-sm font-normal text-muted">Check your network and try again.</span>
+        </p>
+        <button id="components-reconnect-button" class="sr-reconnect-failed sr-btn sr-btn-primary mt-4 w-full">Try again</button>
+        <p class="sr-reconnect-paused m-0 font-medium">The session was paused.</p>
+        <button id="components-resume-button" class="sr-reconnect-paused sr-btn sr-btn-primary mt-4 w-full">Resume</button>
+        <p class="sr-reconnect-resume-failed m-0 font-medium">
+            The session couldn't be resumed.
+            <span class="mt-1 block text-sm font-normal text-muted">Reload the page to continue.</span>
+        </p>
+        <button class="sr-reconnect-resume-failed sr-btn sr-btn-primary mt-4 w-full" onclick="location.reload()">Reload</button>
+    </dialog>
+    <script src="@Versioned("/reconnect-modal.js")"></script>
+
     <script src="_framework/blazor.web.js"></script>
 </body>
 </html>
