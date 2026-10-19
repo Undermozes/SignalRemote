@@ -132,6 +132,10 @@ class MainActivity : AppCompatActivity() {
 
     // ── UI setup ──────────────────────────────────────────────────────────────
 
+    // True while a setup link fills in the fields: the values are only saved after the
+    // user confirms, so a link alone can never re-point the agent to another server.
+    private var applyingSetupLink = false
+
     private fun populateFields() {
         val info = store.load()
         binding.editTextHost.setText(info.host)
@@ -142,7 +146,9 @@ class MainActivity : AppCompatActivity() {
     private fun setupListeners() {
         // Save settings on text change
         val watcher = object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) = saveSettings()
+            override fun afterTextChanged(s: Editable?) {
+                if (!applyingSetupLink) saveSettings()
+            }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         }
@@ -229,14 +235,19 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // The text watchers save the new values.
-        binding.editTextHost.setText(host)
-        binding.editTextOrgId.setText(orgId)
-        Toast.makeText(
-            this,
-            "Server filled in: $host. Check it and tap Start Agent.",
-            Toast.LENGTH_LONG
-        ).show()
+        AlertDialog.Builder(this)
+            .setTitle("Connect to this server?")
+            .setMessage("Server: $host\nOrganization: $orgId\n\nOnly continue if your IT provider gave you this link.")
+            .setPositiveButton("Use these settings") { _, _ ->
+                applyingSetupLink = true
+                binding.editTextHost.setText(host)
+                binding.editTextOrgId.setText(orgId)
+                applyingSetupLink = false
+                saveSettings()
+                Toast.makeText(this, "Settings saved. Tap Start Agent to connect.", Toast.LENGTH_LONG).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun saveSettings() {

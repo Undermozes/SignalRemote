@@ -47,7 +47,7 @@ export class ViewerHubConnection {
         }).catch(err => {
             console.error(err.toString());
             console.log("Connection closed.");
-            UI.StatusMessage.innerHTML = `Connection error: ${err.message}`;
+            UI.StatusMessage.textContent = `Connection error: ${err.message}`;
             UI.ToggleConnectUI(true);
         });
 

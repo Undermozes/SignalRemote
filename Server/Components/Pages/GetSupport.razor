@@ -1,4 +1,5 @@
 ﻿@page "/get-support/{deviceId?}"
+@attribute [Authorize]
 @using System.ComponentModel.DataAnnotations
 
 @inject IDataService DataService

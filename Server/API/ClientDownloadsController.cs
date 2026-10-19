@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Remotely.Server.Auth;
 using Remotely.Server.Extensions;
+using Remotely.Server.Filters;
 using Remotely.Server.Services;
 using Remotely.Shared.Extensions;
 using Remotely.Shared.Models;
@@ -32,6 +33,7 @@ public class ClientDownloadsController : ControllerBase
         _logger = logger;
     }
 
+    [ServiceFilter(typeof(DownloadAccessFilter))]
     [HttpGet("desktop/{platformID}")]
     public async Task<IActionResult> GetDesktop(string platformID)
     {
@@ -72,6 +74,7 @@ public class ClientDownloadsController : ControllerBase
     }
 
 
+    [ServiceFilter(typeof(DownloadAccessFilter))]
     [HttpGet("desktop/{platformId}/{organizationId}")]
     public async Task<IActionResult> GetDesktop(string platformId, string organizationId)
     {
@@ -127,6 +130,7 @@ public class ClientDownloadsController : ControllerBase
         return await GetInstallFile(orgId, platformID);
     }
 
+    [ServiceFilter(typeof(DownloadAccessFilter))]
     [HttpGet("{platformId}/{organizationId}")]
     public async Task<IActionResult> GetInstaller(string platformId, string organizationId)
     {
@@ -157,6 +161,7 @@ public class ClientDownloadsController : ControllerBase
     /// The Downloads page shows a QR code to this page.  The organization ID is the same
     /// one the desktop installers embed.
     /// </summary>
+    [ServiceFilter(typeof(DownloadAccessFilter))]
     [HttpGet("AndroidSetup/{organizationId}")]
     public async Task<IActionResult> GetAndroidSetup(string organizationId)
     {
@@ -173,7 +178,10 @@ public class ClientDownloadsController : ControllerBase
         }
         var host = $"{scheme}://{Request.Host}";
         var setupLink = $"signalremote://setup?host={Uri.EscapeDataString(host)}&org={Uri.EscapeDataString(organizationId)}";
-        var apkLink = "/api/ClientDownloads/Desktop/AndroidApk";
+        // Pass the time-limited link on to the APK download (same organization).
+        var token = Request.Query[DownloadLinkService.QueryKey].ToString();
+        var apkLink = $"/api/ClientDownloads/desktop/AndroidApk/{Uri.EscapeDataString(organizationId)}" +
+            (string.IsNullOrEmpty(token) ? "" : $"?{DownloadLinkService.QueryKey}={Uri.EscapeDataString(token)}");
         var apkAvailable = FileIO.Exists(Path.Combine(_hostEnv.WebRootPath, "Content", "Android", "SignalRemote-Agent.apk"));
 
         Func<string?, string?> e = System.Net.WebUtility.HtmlEncode;
@@ -220,6 +228,7 @@ public class ClientDownloadsController : ControllerBase
             </html>
             """;
 
+        Response.Headers.CacheControl = "no-store";
         return Content(html, "text/html; charset=utf-8");
     }
 

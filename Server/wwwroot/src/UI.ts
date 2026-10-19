@@ -109,7 +109,7 @@ export function Prompt(promptMessage: string): Promise<string> {
         modalDiv.className = "modal-prompt fixed top-1/2 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface-raised p-4 text-fg shadow-xl";
 
         var messageDiv = document.createElement("div");
-        messageDiv.innerHTML = promptMessage;
+        messageDiv.textContent = promptMessage;
 
         var responseInput = document.createElement("input");
         responseInput.className = "sr-input mt-3";
@@ -231,7 +231,7 @@ export function SetStatusMessage(message: string) {
 export function ShowToast(message: string) {
     var messageDiv = document.createElement("div");
     messageDiv.className = "toast-message max-w-full rounded-lg border border-border bg-surface-raised/95 px-4 py-2 text-sm text-fg shadow-lg select-none";
-    messageDiv.innerHTML = message;
+    messageDiv.textContent = message;
     ToastsWrapper.appendChild(messageDiv);
     window.setTimeout(() => {
         messageDiv.remove();

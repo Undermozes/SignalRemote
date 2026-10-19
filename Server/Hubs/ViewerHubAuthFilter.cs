@@ -33,13 +33,8 @@ public class ViewerHubAuthFilter : IHubFilter
 
     private static async Task<bool> IsAuthorized(HubLifetimeContext context)
     {
-        var dataService = context.ServiceProvider.GetRequiredService<IDataService>();
-        var settings = await dataService.GetSettings();
-        if (!settings.RemoteControlRequiresAuthentication)
-        {
-            return true;
-        }
-
+        // Never public: a signed-in user or a valid one-time link (see ViewerAuthorizationFilter).
+        await Task.CompletedTask;
         if (context.Context.User?.Identity?.IsAuthenticated == true)
         {
             return true;

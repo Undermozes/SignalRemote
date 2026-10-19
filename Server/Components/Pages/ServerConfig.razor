@@ -238,13 +238,9 @@
         <section class="sr-card mb-6">
             <h4 class="sr-card-header text-base">Remote Control</h4>
             <div class="sr-card-body">
-                <div class="sr-field">
-                    <div class="flex min-h-11 items-center justify-between gap-4">
-                        <label class="cursor-pointer text-sm font-medium" for="cfg-rc-requires-auth">Require Authentication on Remote Control Page</label>
-                        <InputCheckbox id="cfg-rc-requires-auth" class="sr-checkbox" @bind-Value="Input.RemoteControlRequiresAuthentication" autocomplete="off" />
-                    </div>
-                    <ValidationMessage For="() => Input.RemoteControlRequiresAuthentication" />
-                </div>
+                <p class="sr-help mt-0 mb-4">
+                    The remote control page always requires sign-in (or a one-time link created through the API).
+                </p>
                 <div class="sr-field">
                     <div class="flex min-h-11 items-center justify-between gap-4">
                         <label class="cursor-pointer text-sm font-medium" for="cfg-enforce-attended">Enforce Attended Access</label>

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Remotely.Server.Filters;
 using Remotely.Server.Services;
 using Remotely.Shared.Models;
 using Remotely.Shared.Services;
@@ -6,6 +7,7 @@ using Remotely.Shared.Services;
 namespace Remotely.Server.API;
 
 [Route("api/custom-binaries")]
+[ServiceFilter(typeof(DownloadAccessFilter))]
 [ApiController]
 public class CustomBinariesController(
     IDataService _dataService,

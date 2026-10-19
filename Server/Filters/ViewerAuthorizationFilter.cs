@@ -20,12 +20,10 @@ internal class ViewerAuthorizationFilter(
 
     private async Task<bool> IsAuthorized(AuthorizationFilterContext context)
     {
-        var settings = await _dataService.GetSettings();
-        if (!settings.RemoteControlRequiresAuthentication)
-        {
-            return true;
-        }
-
+        // Remote control is never public: a signed-in user, or a one-time link (OTP)
+        // created through the authenticated API.  RemoteControlRequiresAuthentication
+        // is no longer used to open it up.
+        await Task.CompletedTask;
         if (context.HttpContext.User.Identity?.IsAuthenticated == true)
         {
             return true;

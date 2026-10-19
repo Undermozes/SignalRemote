@@ -17,7 +17,7 @@ export async function UploadFiles(fileList: FileList) {
 
     try {
         for (var i = 0; i < fileList.length; i++) {
-            FileTransferNameSpan.innerHTML = fileList[i].name;
+            FileTransferNameSpan.textContent = fileList[i].name;
             var buffer = await fileList[i].arrayBuffer();
             await ViewerApp.MessageSender.SendFile(new Uint8Array(buffer), fileList[i].name);
         }

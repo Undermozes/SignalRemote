@@ -9,6 +9,7 @@
 @inject IToastService Toasts
 @inject IWebHostEnvironment HostEnv
 @inject ILogger<Deploy> Logger
+@inject IDownloadLinkService DownloadLinks
 
 @if (_isLoading)
 {
@@ -19,9 +20,27 @@
     <h4 class="sr-section-title mt-2 text-success">
         Persistent Agents
     </h4>
-    <p class="mb-4 text-sm text-muted">
+    <p class="mb-3 text-sm text-muted">
         Copy and paste on a remote computer to install the agent.
     </p>
+
+    @* Installers are never public: every link below only works for a limited time. *@
+    <div class="sr-alert sr-alert-info items-center">
+        <div class="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+                Links and scripts on this page work until
+                <strong>@_linksExpireAt.ToLocalTime().ToString("ddd d MMM HH:mm")</strong>.
+            </span>
+            <label class="flex items-center gap-2 text-sm" for="linkLifetime">
+                Valid for
+                <select id="linkLifetime" class="sr-select w-auto" @bind="_linkLifetimeHours" @bind:after="RefreshLinks">
+                    <option value="1">1 hour</option>
+                    <option value="24">24 hours</option>
+                    <option value="168">7 days</option>
+                </select>
+            </label>
+        </div>
+    </div>
 
     <div class="flex flex-col gap-4">
         @foreach (var (title, script) in new[]
@@ -177,6 +196,9 @@
 @code {
     private static readonly SemaphoreSlim _writeLock = new(1, 1);
     private string _organizationId = string.Empty;
+    private int _linkLifetimeHours = 24;
+    private DateTimeOffset _linksExpireAt;
+    private string _tokenQuery = string.Empty;
     private string _androidSetupUrl = string.Empty;
     private string _androidSetupQr = string.Empty;
     private string _windowsScript = string.Empty;
@@ -206,15 +228,9 @@
         _isServerAdmin = userResult.Value.IsServerAdmin;
         _organizationId = userResult.Value.OrganizationID;
         _appDataDir = Path.Combine(HostEnv.ContentRootPath, "AppData");
-        _winX64Uri = $"{NavMan.BaseUri}api/custom-binaries/win-x64/desktop/{_organizationId}";
-        _androidSetupUrl = $"{NavMan.BaseUri}api/ClientDownloads/AndroidSetup/{Uri.EscapeDataString(_organizationId)}";
-        _androidSetupQr = "data:image/png;base64," + Convert.ToBase64String(
-            QRCoder.PngByteQRCodeHelper.GetQRCode(_androidSetupUrl, QRCoder.QRCodeGenerator.ECCLevel.M, 8));
-        _winX86Uri = $"{NavMan.BaseUri}api/custom-binaries/win-x86/desktop/{_organizationId}";
-
         SetFileInfos();
 
-        SetScriptContent();
+        RefreshLinks();
 
         await base.OnInitializedAsync();
     }
@@ -255,11 +271,30 @@
         Toasts.ShowToast2("Failed to set clipboard content", ToastType.Error);
     }
 
+    /// <summary>
+    /// Creates a new time-limited token and rebuilds every link and script with it.
+    /// </summary>
+    private void RefreshLinks()
+    {
+        var lifetime = TimeSpan.FromHours(Math.Clamp(_linkLifetimeHours, 1, 168));
+        _linksExpireAt = DateTimeOffset.UtcNow + lifetime;
+        var token = DownloadLinks.CreateToken(_organizationId, lifetime);
+        _tokenQuery = $"?{DownloadLinkService.QueryKey}={Uri.EscapeDataString(token)}";
+
+        _winX64Uri = $"{NavMan.BaseUri}api/custom-binaries/win-x64/desktop/{_organizationId}{_tokenQuery}";
+        _winX86Uri = $"{NavMan.BaseUri}api/custom-binaries/win-x86/desktop/{_organizationId}{_tokenQuery}";
+        _androidSetupUrl = $"{NavMan.BaseUri}api/ClientDownloads/AndroidSetup/{Uri.EscapeDataString(_organizationId)}{_tokenQuery}";
+        _androidSetupQr = "data:image/png;base64," + Convert.ToBase64String(
+            QRCoder.PngByteQRCodeHelper.GetQRCode(_androidSetupUrl, QRCoder.QRCodeGenerator.ECCLevel.M, 8));
+
+        SetScriptContent();
+    }
+
     private string GetLinuxScript(string platformId)
     {
         return
             $"sudo rm -f /tmp/Install-Remotely.sh && " +
-            $"sudo wget -q -O /tmp/Install-Remotely.sh {NavMan.BaseUri}api/ClientDownloads/{platformId}/{_organizationId} && " +
+            $"sudo wget -q -O /tmp/Install-Remotely.sh '{NavMan.BaseUri}api/ClientDownloads/{platformId}/{_organizationId}{_tokenQuery}' && " +
             $"sudo chmod +x /tmp/Install-Remotely.sh && " +
             $"sudo /tmp/Install-Remotely.sh";
     }
@@ -295,7 +330,7 @@
     private void SetScriptContent()
     {
         _windowsScript =
-            $"irm '{NavMan.BaseUri}api/ClientDownloads/WindowsInstaller/{_organizationId}'|iex";
+            $"irm '{NavMan.BaseUri}api/ClientDownloads/WindowsInstaller/{_organizationId}{_tokenQuery}'|iex";
 
         _ubuntuScript = GetLinuxScript("UbuntuInstaller-x64");
 

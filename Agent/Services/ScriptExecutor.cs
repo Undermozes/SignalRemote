@@ -52,8 +52,9 @@ public class ScriptExecutor : IScriptExecutor
             result.InputType = ScriptInputType.Api;
             result.SenderUserName = senderUsername;
 
-            _ = await SendResultsToApi(result, authToken);
-            await hubConnection.SendAsync("ScriptResultViaApi", requestID);
+            // The hub method takes (commandID, requestID); sending only requestID failed to bind.
+            var response = await SendResultsToApi(result, authToken);
+            await hubConnection.SendAsync("ScriptResultViaApi", response?.Id, requestID);
         }
         catch (Exception ex)
         {

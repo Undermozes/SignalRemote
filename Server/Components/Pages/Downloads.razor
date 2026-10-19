@@ -1,4 +1,5 @@
 ﻿@page "/downloads"
+@attribute [Authorize]
 @using Microsoft.AspNetCore.Hosting
 @using Microsoft.Extensions.Logging 
 
@@ -7,6 +8,7 @@
 @inject UserManager<RemotelyUser> UserManager
 @inject IWebHostEnvironment HostEnv
 @inject NavigationManager NavManager
+@inject IDownloadLinkService DownloadLinks
 @inject ILogger<Downloads> Logger 
 
 @if (_isAuthenticated)
@@ -22,12 +24,18 @@
     <p class="mb-4 text-sm text-muted">
         Instant desktop sharing.  No account required.
     </p>
+    <div class="sr-alert sr-alert-info">
+        <div>
+            These links work until <strong>@_linksExpireAt.ToLocalTime().ToString("ddd d MMM HH:mm")</strong>.
+            Copy a link to send it to a customer. For other durations, use <a href="deploy">Deploy</a>.
+        </div>
+    </div>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div class="sr-card flex flex-col">
             <div class="sr-card-header">Windows (64-Bit)</div>
             <div class="sr-card-body flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/api/ClientDownloads/Desktop/WindowsDesktop-x64/@_organizationId">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="@($"/api/ClientDownloads/Desktop/WindowsDesktop-x64/{_organizationId}{_tokenQuery}")">
                         <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
                         <span>Windows EXE</span>
                     </a>
@@ -38,7 +46,7 @@
             <div class="sr-card-header">Windows (32-Bit)</div>
             <div class="sr-card-body flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/api/ClientDownloads/Desktop/WindowsDesktop-x86/@_organizationId">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="@($"/api/ClientDownloads/Desktop/WindowsDesktop-x86/{_organizationId}{_tokenQuery}")">
                         <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
                         <span>Windows EXE</span>
                     </a>
@@ -49,7 +57,7 @@
             <div class="sr-card-header">Linux 64-Bit</div>
             <div class="sr-card-body flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/api/ClientDownloads/Desktop/UbuntuDesktop/@_organizationId">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="@($"/api/ClientDownloads/Desktop/UbuntuDesktop/{_organizationId}{_tokenQuery}")">
                         <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
                         <span>Ubuntu Executable</span>
                     </a>
@@ -86,11 +94,11 @@
         @*<div class="sr-card">
         <strong>macOS x64 (10.12 - 10.15)</strong>
         <p>
-        <a target="_blank" href="/api/ClientDownloads/Desktop/MacOS-x64/@_organizationId">macOS x64 Executable</a>
+        <a target="_blank" href="@($"/api/ClientDownloads/Desktop/MacOS-x64/{_organizationId}{_tokenQuery}")">macOS x64 Executable</a>
         </p>
         <strong>macOS arm64 (11.01)</strong>
         <p>
-        <a target="_blank" href="/api/ClientDownloads/Desktop/MacOS-arm64/@_organizationId">macOS arm64 Executable</a>
+        <a target="_blank" href="@($"/api/ClientDownloads/Desktop/MacOS-arm64/{_organizationId}{_tokenQuery}")">macOS arm64 Executable</a>
         </p>
         </div>*@
     </div>
@@ -118,7 +126,7 @@
             <div class="sr-card-header">Windows 10 / 11 (64-Bit and 32-Bit)</div>
             <div class="sr-card-body flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/API/ClientDownloads/WindowsInstaller/@_organizationId">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="@($"/API/ClientDownloads/WindowsInstaller/{_organizationId}{_tokenQuery}")">
                         <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
                         <span>Windows PowerShell Installer</span>
                     </a>
@@ -170,11 +178,11 @@
             <div class="sr-card-header">Linux 64-Bit</div>
             <div class="sr-card-body flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/API/ClientDownloads/UbuntuInstaller-x64/@_organizationId">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="@($"/API/ClientDownloads/UbuntuInstaller-x64/{_organizationId}{_tokenQuery}")">
                         <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
                         <span>Ubuntu x64 Bash Installer</span>
                     </a>
-                    <a target="_blank" class="sr-btn sr-btn-secondary w-full justify-start" href="/API/ClientDownloads/ManjaroInstaller-x64/@_organizationId">
+                    <a target="_blank" class="sr-btn sr-btn-secondary w-full justify-start" href="@($"/API/ClientDownloads/ManjaroInstaller-x64/{_organizationId}{_tokenQuery}")">
                         <i class="oi oi-box" aria-hidden="true"></i>
                         <span>Manjaro x64 Bash Installer</span>
                     </a>
@@ -203,7 +211,7 @@
             <div class="sr-card-header">Linux ARM64 (e.g., Raspberry Pi)</div>
             <div class="sr-card-body flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/API/ClientDownloads/LinuxArm64Installer/@_organizationId">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="@($"/API/ClientDownloads/LinuxArm64Installer/{_organizationId}{_tokenQuery}")">
                         <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
                         <span>Linux ARM64 Bash Installer</span>
                     </a>
@@ -232,7 +240,7 @@
             <div class="sr-card-header">macOS x64 (10.12 - 10.15)</div>
             <div class="sr-card-body flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/API/ClientDownloads/MacOSInstaller-x64/@_organizationId">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="@($"/API/ClientDownloads/MacOSInstaller-x64/{_organizationId}{_tokenQuery}")">
                         <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
                         <span>macOS x64 Bash Installer</span>
                     </a>
@@ -261,7 +269,7 @@
             <div class="sr-card-header">macOS arm64</div>
             <div class="sr-card-body flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="/API/ClientDownloads/MacOSInstaller-arm64/@_organizationId">
+                    <a target="_blank" class="sr-btn sr-btn-primary w-full justify-start text-base" href="@($"/API/ClientDownloads/MacOSInstaller-arm64/{_organizationId}{_tokenQuery}")">
                         <i class="oi oi-data-transfer-download" aria-hidden="true"></i>
                         <span>macOS arm64 Bash Installer</span>
                     </a>
@@ -296,6 +304,8 @@
     private bool _isAuthenticated;
     private string? _androidSetupUrl;
     private string? _androidSetupQr;
+    private string _tokenQuery = string.Empty;
+    private DateTimeOffset _linksExpireAt;
 
     protected override async Task OnInitializedAsync()
     {
@@ -309,18 +319,15 @@
                 _organizationId = userResult.Value.OrganizationID;
             }
         }
-        else
-        {
-            var orgResult = await DataService.GetDefaultOrganization();
-            if (orgResult.IsSuccess)
-            {
-                _organizationId = orgResult.Value.ID;
-            }
-        }
 
         if (!string.IsNullOrWhiteSpace(_organizationId))
         {
-            _androidSetupUrl = $"{NavManager.BaseUri}api/ClientDownloads/AndroidSetup/{Uri.EscapeDataString(_organizationId)}";
+            // Downloads are never public: links on this page work for 24 hours, so they
+            // can be copied and sent to a customer.
+            var lifetime = TimeSpan.FromHours(24);
+            _linksExpireAt = DateTimeOffset.UtcNow + lifetime;
+            _tokenQuery = $"?{DownloadLinkService.QueryKey}={Uri.EscapeDataString(DownloadLinks.CreateToken(_organizationId, lifetime))}";
+            _androidSetupUrl = $"{NavManager.BaseUri}api/ClientDownloads/AndroidSetup/{Uri.EscapeDataString(_organizationId)}{_tokenQuery}";
             var png = QRCoder.PngByteQRCodeHelper.GetQRCode(_androidSetupUrl, QRCoder.QRCodeGenerator.ECCLevel.M, 8);
             _androidSetupQr = $"data:image/png;base64,{Convert.ToBase64String(png)}";
         }
