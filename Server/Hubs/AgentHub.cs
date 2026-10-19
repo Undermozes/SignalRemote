@@ -191,9 +191,12 @@ public class AgentHub : Hub<IAgentHubClient>
             }
 
             var authResult = await _deviceAuthService.Authenticate(device.ID, device.DeviceSecret);
+            // Rejections return false instead of aborting the connection.  Agents don't
+            // handle a server-side close: an aborted agent stops retrying until its
+            // service restarts.  With false it retries with backoff.  AgentHubAuthFilter
+            // keeps this unregistered connection from calling anything else.
             if (authResult == DeviceAuthResult.Rejected)
             {
-                Context.Abort();
                 return false;
             }
 
@@ -204,10 +207,11 @@ public class AgentHub : Hub<IAgentHubClient>
                 _serviceSessionCache.TryGetConnectionId(device.ID, out var existingConnectionId) &&
                 existingConnectionId != Context.ConnectionId)
             {
+                // Usually the same agent reconnecting before the server noticed its old
+                // connection died.  It retries, and gets in once the old one times out.
                 _logger.LogWarning(
-                    "Legacy agent tried to connect as device {deviceId}, which is already online.  Connection rejected.",
+                    "Legacy agent tried to connect as device {deviceId}, which is already online.  Connection rejected; the agent will retry.",
                     device.ID);
-                Context.Abort();
                 return false;
             }
 
