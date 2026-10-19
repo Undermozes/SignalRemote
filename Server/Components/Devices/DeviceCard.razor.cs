@@ -308,7 +308,11 @@ public partial class DeviceCard : AuthComponentBase
 
         void modalBody(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
         {
-            builder.AddMarkupContent(0, $"<div style='white-space: pre'>{disksString}</div>");
+            // Drive data comes from the device: add it as text so it's always HTML-encoded.
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "overflow-x-auto font-mono text-xs whitespace-pre");
+            builder.AddContent(2, disksString);
+            builder.CloseElement();
         }
 
         ModalService.ShowModal($"All Disks for {Device.DeviceName}", modalBody);
@@ -332,8 +336,11 @@ public partial class DeviceCard : AuthComponentBase
 
     private async Task StartRemoteControl(bool viewOnly)
     {
+        // The tap already opened a placeholder window (preopenPendingWindow); point it at
+        // the viewer when the session is ready, or close it when starting fails.
         if (!ServiceSessionCache.TryGetConnectionId(Device.ID, out _))
         {
+            JsInterop.ClosePendingWindow();
             ToastService.ShowToast("Device connection not found", classString: "bg-danger");
             return;
         }
@@ -341,6 +348,7 @@ public partial class DeviceCard : AuthComponentBase
         var result = await CircuitConnection.RemoteControl(Device.ID, viewOnly);
         if (!result.IsSuccess)
         {
+            JsInterop.ClosePendingWindow();
             return;
         }
 
@@ -348,16 +356,16 @@ public partial class DeviceCard : AuthComponentBase
 
         if (!await session.WaitForSessionReady(TimeSpan.FromSeconds(20)))
         {
+            JsInterop.ClosePendingWindow();
             ToastService.ShowToast("Session failed to start", classString: "bg-danger");
             return;
         }
 
-        JsInterop.OpenWindow(
+        JsInterop.OpenPendingWindow(
             $"/Viewer" +
                 $"?mode=Unattended&sessionId={session.UnattendedSessionId}" +
                 $"&accessKey={session.AccessKey}" +
-                $"&viewonly={viewOnly}", 
-            "_blank");
+                $"&viewonly={viewOnly}");
     }
 
     private void ToggleIsSelected(ChangeEventArgs args)

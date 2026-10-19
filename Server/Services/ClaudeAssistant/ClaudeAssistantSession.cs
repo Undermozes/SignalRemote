@@ -97,6 +97,7 @@ public sealed class ClaudeAssistantSession : IDisposable
     private readonly IAgentCommandRunner _commandRunner;
     private readonly IAgentHubSessionCache _agentSessionCache;
     private readonly IClaudeAssistantHistory _history;
+    private readonly ClaudePricing _pricing;
     private readonly ILogger _logger;
     private readonly List<BetaMessageParam> _messages = [];
     private readonly List<string> _pendingToolUseIds = [];
@@ -111,6 +112,7 @@ public sealed class ClaudeAssistantSession : IDisposable
         IAgentCommandRunner commandRunner,
         IAgentHubSessionCache agentSessionCache,
         IClaudeAssistantHistory history,
+        ClaudePricing pricing,
         ILogger logger,
         RemotelyUser user,
         Device device,
@@ -121,6 +123,7 @@ public sealed class ClaudeAssistantSession : IDisposable
         _commandRunner = commandRunner;
         _agentSessionCache = agentSessionCache;
         _history = history;
+        _pricing = pricing;
         _logger = logger;
         User = user;
         Device = device;
@@ -817,6 +820,21 @@ public sealed class ClaudeAssistantSession : IDisposable
 
     private void LogUsage(BetaMessage response)
     {
+        Record(ClaudeAssistantEventKind.Usage, x =>
+        {
+            x.Text = _model;
+            var input = response.Usage.InputTokens;
+            var output = response.Usage.OutputTokens;
+            var cacheRead = response.Usage.CacheReadInputTokens ?? 0;
+            var cacheWrite = response.Usage.CacheCreationInputTokens ?? 0;
+            x.Output = JsonSerializer.Serialize(new ClaudeUsage(
+                input,
+                output,
+                cacheRead,
+                cacheWrite,
+                _pricing.CostOf(input, output, cacheRead, cacheWrite)));
+        });
+
         _logger.LogDebug(
             "Claude usage for session {sessionId}: input {input}, cache read {cacheRead}, cache write {cacheWrite}, output {output}.",
             SessionId,

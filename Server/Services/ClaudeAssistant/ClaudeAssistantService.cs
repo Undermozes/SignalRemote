@@ -75,6 +75,11 @@ public class ClaudeAssistantService : IClaudeAssistantService
             _commandRunner,
             _agentSessionCache,
             _history,
+            new ClaudePricing(
+                settings.ClaudePriceInputPerMTok,
+                settings.ClaudePriceOutputPerMTok,
+                settings.ClaudePriceCacheReadPerMTok,
+                settings.ClaudePriceCacheWritePerMTok),
             _loggerFactory.CreateLogger<ClaudeAssistantSession>(),
             user,
             deviceResult.Value,

@@ -104,6 +104,42 @@ window.openWindow = (url, target) => {
     window.open(url, target);
 }
 
+// Mobile Safari only allows window.open directly in a tap.  Remote control needs a
+// server round trip (up to 20 s) before the viewer URL is known, so the tap opens a
+// placeholder window right away (inline onclick, before Blazor handles the event) and
+// the server later points it at the viewer, or closes it if the session failed.
+window.preopenPendingWindow = () => {
+    try {
+        const pending = window.open("", "_blank");
+        if (pending) {
+            pending.document.title = "Remote Control";
+            pending.document.body.innerHTML =
+                '<p style="font: 16px system-ui, sans-serif; margin: 2rem; color: #6b7280">Starting remote control…</p>';
+        }
+        window.__pendingWindow = pending;
+    } catch {
+        window.__pendingWindow = null;
+    }
+}
+
+window.openPendingWindow = (url) => {
+    const pending = window.__pendingWindow;
+    window.__pendingWindow = null;
+    if (pending && !pending.closed) {
+        pending.location.href = url;
+        return;
+    }
+    window.open(url, "_blank");
+}
+
+window.closePendingWindow = () => {
+    const pending = window.__pendingWindow;
+    window.__pendingWindow = null;
+    if (pending && !pending.closed) {
+        pending.close();
+    }
+}
+
 window.addEventListener("load", () => {
     window.addEventListener("resize", () => {
         autoHeight();

@@ -20,6 +20,12 @@ public interface IJsInterop
 
     void OpenWindow(string url, string target);
 
+    /// <summary>Points the window opened by preopenPendingWindow at the URL (or opens a new one).</summary>
+    void OpenPendingWindow(string url);
+
+    /// <summary>Closes the window opened by preopenPendingWindow, if any.</summary>
+    void ClosePendingWindow();
+
     void PreventTabOut(ElementReference terminalInput);
 
     ValueTask<string> Prompt(string message);
@@ -82,6 +88,16 @@ public class JsInterop : IJsInterop
     public void OpenWindow(string url, string target)
     {
         _jsRuntime.InvokeVoidAsync("openWindow", url, target);
+    }
+
+    public void OpenPendingWindow(string url)
+    {
+        _jsRuntime.InvokeVoidAsync("openPendingWindow", url);
+    }
+
+    public void ClosePendingWindow()
+    {
+        _jsRuntime.InvokeVoidAsync("closePendingWindow");
     }
 
     public void PreventTabOut(ElementReference terminalInput)

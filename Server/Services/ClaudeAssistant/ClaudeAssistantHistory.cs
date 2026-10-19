@@ -4,6 +4,41 @@ using Remotely.Shared.Entities;
 
 namespace Remotely.Server.Services.ClaudeAssistant;
 
+/// <summary>Prices in USD per million tokens (from Server Config).</summary>
+public record ClaudePricing(decimal InputPerMTok, decimal OutputPerMTok, decimal CacheReadPerMTok, decimal CacheWritePerMTok)
+{
+    public decimal CostOf(long input, long output, long cacheRead, long cacheWrite) =>
+        (input * InputPerMTok + output * OutputPerMTok + cacheRead * CacheReadPerMTok + cacheWrite * CacheWritePerMTok)
+        / 1_000_000m;
+}
+
+/// <summary>
+/// Token usage of one Claude API call, stored as JSON on Usage events.  CostUsd is
+/// computed with the prices in effect when the call was made.
+/// </summary>
+public record ClaudeUsage(long Input, long Output, long CacheRead, long CacheWrite, decimal CostUsd = 0)
+{
+    public long Total => Input + Output + CacheRead + CacheWrite;
+
+    public static ClaudeUsage Parse(string? json)
+    {
+        try
+        {
+            return string.IsNullOrWhiteSpace(json)
+                ? new(0, 0, 0, 0)
+                : System.Text.Json.JsonSerializer.Deserialize<ClaudeUsage>(json) ?? new(0, 0, 0, 0);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return new(0, 0, 0, 0);
+        }
+    }
+
+    public static ClaudeUsage Sum(IEnumerable<ClaudeUsage> usages) => usages.Aggregate(
+        new ClaudeUsage(0, 0, 0, 0),
+        (a, b) => new(a.Input + b.Input, a.Output + b.Output, a.CacheRead + b.CacheRead, a.CacheWrite + b.CacheWrite, a.CostUsd + b.CostUsd));
+}
+
 public record ClaudeHistorySessionSummary(
     Guid SessionId,
     DateTimeOffset Started,
@@ -14,7 +49,8 @@ public record ClaudeHistorySessionSummary(
     string? FirstQuestion,
     int Commands,
     int Screenshots,
-    int Errors);
+    int Errors,
+    ClaudeUsage Usage);
 
 public record ClaudeHistoryPage(IReadOnlyList<ClaudeHistorySessionSummary> Sessions, int TotalSessions);
 
@@ -44,6 +80,13 @@ public interface IClaudeAssistantHistory
         Guid sessionId);
 
     Task<byte[]?> GetScreenshot(string organizationId, string? userName, Guid eventId);
+
+    /// <summary>All sessions that started in [fromUtc, toUtc), oldest first, e.g. for billing.</summary>
+    Task<IReadOnlyList<ClaudeHistorySessionSummary>> GetSessionsInRange(
+        string organizationId,
+        string? userName,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc);
 }
 
 public class ClaudeAssistantHistory : IClaudeAssistantHistory
@@ -113,17 +156,56 @@ public class ClaudeAssistantHistory : IClaudeAssistantHistory
             .Select(x => new { x.SessionId, x.Timestamp, x.UserName, x.DeviceId, x.DeviceName })
             .ToListAsync();
 
-        var sessionIds = pageStarts.Select(x => x.SessionId).ToList();
+        var sessions = await Summarize(
+            dbContext,
+            pageStarts.Select(x => new SessionStart(x.SessionId, x.Timestamp, x.UserName, x.DeviceId, x.DeviceName)).ToList());
 
-        // Summarize in memory: one page of sessions is small, and it keeps the query
-        // simple for every database provider.
+        return new ClaudeHistoryPage(sessions, total);
+    }
+
+    public async Task<IReadOnlyList<ClaudeHistorySessionSummary>> GetSessionsInRange(
+        string organizationId,
+        string? userName,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc)
+    {
+        using var dbContext = _appDbFactory.GetContext();
+
+        var starts = dbContext.ClaudeAssistantEvents
+            .AsNoTracking()
+            .Where(x => x.OrganizationId == organizationId &&
+                x.Kind == ClaudeAssistantEventKind.SessionStarted &&
+                x.Timestamp >= fromUtc &&
+                x.Timestamp < toUtc);
+
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            starts = starts.Where(x => x.UserName == userName);
+        }
+
+        var list = await starts
+            .OrderBy(x => x.Timestamp)
+            .Select(x => new SessionStart(x.SessionId, x.Timestamp, x.UserName, x.DeviceId, x.DeviceName))
+            .ToListAsync();
+
+        return await Summarize(dbContext, list);
+    }
+
+    private record SessionStart(Guid SessionId, DateTimeOffset Timestamp, string? UserName, string DeviceId, string? DeviceName);
+
+    // Summarize in memory: a page (or a billing period) of sessions is small, and it
+    // keeps the query simple for every database provider.
+    private static async Task<List<ClaudeHistorySessionSummary>> Summarize(AppDb dbContext, List<SessionStart> starts)
+    {
+        var sessionIds = starts.Select(x => x.SessionId).ToList();
+
         var events = await dbContext.ClaudeAssistantEvents
             .AsNoTracking()
             .Where(x => sessionIds.Contains(x.SessionId))
-            .Select(x => new { x.SessionId, x.Kind, x.Timestamp, x.Text })
+            .Select(x => new { x.SessionId, x.Kind, x.Timestamp, x.Text, x.Output })
             .ToListAsync();
 
-        var sessions = pageStarts
+        return starts
             .Select(start =>
             {
                 var sessionEvents = events
@@ -141,11 +223,12 @@ public class ClaudeAssistantHistory : IClaudeAssistantHistory
                     sessionEvents.FirstOrDefault(x => x.Kind == ClaudeAssistantEventKind.UserMessage)?.Text,
                     sessionEvents.Count(x => x.Kind == ClaudeAssistantEventKind.CommandRequested),
                     sessionEvents.Count(x => x.Kind == ClaudeAssistantEventKind.Screenshot),
-                    sessionEvents.Count(x => x.Kind is ClaudeAssistantEventKind.Error or ClaudeAssistantEventKind.CommandFailed));
+                    sessionEvents.Count(x => x.Kind is ClaudeAssistantEventKind.Error or ClaudeAssistantEventKind.CommandFailed),
+                    ClaudeUsage.Sum(sessionEvents
+                        .Where(x => x.Kind == ClaudeAssistantEventKind.Usage)
+                        .Select(x => ClaudeUsage.Parse(x.Output))));
             })
             .ToList();
-
-        return new ClaudeHistoryPage(sessions, total);
     }
 
     public async Task<IReadOnlyList<ClaudeAssistantEvent>> GetSessionEvents(

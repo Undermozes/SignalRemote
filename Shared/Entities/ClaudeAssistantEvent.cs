@@ -16,6 +16,8 @@ public enum ClaudeAssistantEventKind
     Info,
     Error,
     SessionEnded,
+    /// <summary>Token usage of one Claude API call; JSON in <see cref="ClaudeAssistantEvent.Output"/>.</summary>
+    Usage,
 }
 
 /// <summary>
@@ -31,7 +33,8 @@ public class ClaudeAssistantEvent
 
     public Guid SessionId { get; set; }
 
-    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
+    /// <summary>Always UTC, so ordering and date filters work whatever the server's time zone.</summary>
+    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
 
     public ClaudeAssistantEventKind Kind { get; set; }
 

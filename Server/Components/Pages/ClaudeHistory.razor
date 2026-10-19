@@ -30,6 +30,27 @@
             </button>
         </form>
 
+        <details class="sr-card mb-4 px-4 py-3">
+            <summary class="cursor-pointer text-sm font-medium">
+                <span class="oi oi-data-transfer-download" aria-hidden="true"></span>
+                Export for billing (CSV)
+            </summary>
+            <form class="mt-3 grid grid-cols-2 items-end gap-3 sm:flex" method="get" action="api/claude-history/export">
+                <div>
+                    <label class="sr-label text-xs" for="exportFrom">From</label>
+                    <input id="exportFrom" class="sr-input" type="date" name="from" value="@_exportFrom.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div>
+                    <label class="sr-label text-xs" for="exportTo">To</label>
+                    <input id="exportTo" class="sr-input" type="date" name="to" value="@_exportTo.ToString("yyyy-MM-dd")" required />
+                </div>
+                <button class="sr-btn sr-btn-secondary col-span-2" type="submit">Download CSV</button>
+            </form>
+            <p class="sr-help mb-0">
+                One row per session with tokens and cost in USD, using the prices from Server Config at the time of the session.
+            </p>
+        </details>
+
         @if (_page is null)
         {
             <LoadingSignal />
@@ -72,6 +93,10 @@
                                 @if (session.Errors > 0)
                                 {
                                     <span class="sr-badge sr-badge-danger">@Plural(session.Errors, "error")</span>
+                                }
+                                @if (session.Usage.Total > 0)
+                                {
+                                    <span class="sr-badge sr-badge-success" title="@FormatTokens(session.Usage)">@FormatCost(session.Usage.CostUsd)</span>
                                 }
                             </div>
                         </a>
@@ -116,6 +141,13 @@
                 <time data-local-time datetime="@first.Timestamp.ToString("o")"><span class="utc">@first.Timestamp.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</span></time>
                 <span class="font-mono text-xs">@SessionId</span>
             </div>
+            @if (_sessionUsage.Total > 0)
+            {
+                <div class="sr-card mb-4 flex flex-wrap items-baseline gap-x-6 gap-y-1 px-4 py-3 text-sm">
+                    <span><span class="text-muted">Cost:</span> <strong>@FormatCost(_sessionUsage.CostUsd)</strong></span>
+                    <span class="text-muted">@FormatTokens(_sessionUsage)</span>
+                </div>
+            }
 
             <ol class="m-0 flex list-none flex-col gap-3 p-0">
                 @foreach (var ev in _events)
@@ -198,6 +230,10 @@
                                 </figure>
                                 break;
 
+                            case ClaudeAssistantEventKind.Usage:
+                                @* Summed in the header instead. *@
+                                break;
+
                             case ClaudeAssistantEventKind.Error:
                                 <div class="sr-alert sr-alert-danger mb-0">@ev.Text</div>
                                 break;
@@ -225,6 +261,9 @@
     private string? _activeSearch;
     private bool _isAdmin;
     private IJSObjectReference? _module;
+    private ClaudeUsage _sessionUsage = new(0, 0, 0, 0);
+    private DateOnly _exportFrom = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateOnly _exportTo = DateOnly.FromDateTime(DateTime.Today);
 
     [Parameter]
     public Guid? SessionId { get; set; }
@@ -254,6 +293,9 @@
         {
             _events = null;
             _events = await History.GetSessionEvents(User.OrganizationID, UserFilter, sessionId);
+            _sessionUsage = ClaudeUsage.Sum(_events
+                .Where(x => x.Kind == ClaudeAssistantEventKind.Usage)
+                .Select(x => ClaudeUsage.Parse(x.Output)));
         }
         else
         {
@@ -308,6 +350,12 @@
         _pageIndex = Math.Max(0, index);
         await LoadPage();
     }
+
+    private static string FormatCost(decimal usd) =>
+        "$" + usd.ToString(usd < 1 ? "0.0000" : "0.00", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string FormatTokens(ClaudeUsage usage) =>
+        $"{usage.Total:N0} tokens (input {usage.Input:N0}, output {usage.Output:N0}, cache read {usage.CacheRead:N0}, cache write {usage.CacheWrite:N0})";
 
     private static string Plural(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
 

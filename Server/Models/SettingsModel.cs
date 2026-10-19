@@ -30,6 +30,16 @@ public class SettingsModel
     /// Commands that may change the system always require approval.
     /// </summary>
     public bool ClaudeAutoRunReadOnlyCommands { get; set; } = true;
+
+    // Prices in USD per million tokens, used to put a cost on each assistant session.
+    // Defaults are Anthropic's list prices for claude-opus-5-5 (cache writes are the
+    // 5-minute rate, 1.25x input).  The API doesn't return prices; update these when
+    // the model or Anthropic's pricing changes.  Costs are stored per call when it
+    // happens, so changing these doesn't alter the cost of past sessions.
+    public decimal ClaudePriceInputPerMTok { get; set; } = 4.00m;
+    public decimal ClaudePriceOutputPerMTok { get; set; } = 20.00m;
+    public decimal ClaudePriceCacheReadPerMTok { get; set; } = 0.20m;
+    public decimal ClaudePriceCacheWritePerMTok { get; set; } = 5.00m;
     public List<string> BannedDevices { get; set; } = [];
     public double DataRetentionInDays { get; set; } = 90;
     public string DbProvider { get; set; } = "SQLite";

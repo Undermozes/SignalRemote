@@ -280,9 +280,21 @@ public partial class ManageOrganization : AuthComponentBase
 
         await ModalService.ShowModal("Password Reset", builder =>
         {
-            builder.AddMarkupContent(0, $@"<div class=""mb-2 text-sm font-medium"">Password Reset URL:</div>
-                    <input readonly value=""{resetUrl}"" class=""sr-input font-mono"" aria-label=""Password reset URL"" /> 
-                    <div class=""mt-3 text-sm text-muted"">NOTE: Give this URL to the user.  They must be logged out completely for it to work.</div>");
+            // Build elements instead of a markup string, so the URL is always attribute-encoded.
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "mb-2 text-sm font-medium");
+            builder.AddContent(2, "Password Reset URL:");
+            builder.CloseElement();
+            builder.OpenElement(3, "input");
+            builder.AddAttribute(4, "readonly", true);
+            builder.AddAttribute(5, "value", resetUrl);
+            builder.AddAttribute(6, "class", "sr-input font-mono");
+            builder.AddAttribute(7, "aria-label", "Password reset URL");
+            builder.CloseElement();
+            builder.OpenElement(8, "div");
+            builder.AddAttribute(9, "class", "mt-3 text-sm text-muted");
+            builder.AddContent(10, "NOTE: Give this URL to the user.  They must be logged out completely for it to work.");
+            builder.CloseElement();
         });
     }
 

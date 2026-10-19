@@ -217,7 +217,11 @@ public partial class DeviceDetails : AuthComponentBase
         var disksString = JsonSerializer.Serialize(_device.Drives, JsonSerializerHelper.IndentedOptions);
         void modalBody(RenderTreeBuilder builder)
         {
-            builder.AddMarkupContent(0, $"<div class='overflow-x-auto font-mono text-xs whitespace-pre'>{disksString}</div>");
+            // Drive data comes from the device: add it as text so it's always HTML-encoded.
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "overflow-x-auto font-mono text-xs whitespace-pre");
+            builder.AddContent(2, disksString);
+            builder.CloseElement();
         }
         ModalService.ShowModal($"All Disks for {_device.DeviceName}", modalBody);
     }
@@ -230,12 +234,25 @@ public partial class DeviceDetails : AuthComponentBase
             var error = string.Join("\r\n", result.ErrorOutput ?? Array.Empty<string>());
             var textareaClass = "sr-textarea h-48 font-mono text-xs whitespace-pre";
 
-            builder.AddMarkupContent(0, "<h5 class=\"mb-1 text-sm font-semibold\">Input</h5>");
-            builder.AddMarkupContent(1, $"<textarea readonly class=\"{textareaClass}\">{result.ScriptInput}</textarea>");
-            builder.AddMarkupContent(2, "<h5 class=\"mb-1 mt-4 text-sm font-semibold\">Standard Output</h5>");
-            builder.AddMarkupContent(3, $"<textarea readonly class=\"{textareaClass}\">{output}</textarea>");
-            builder.AddMarkupContent(4, "<h5 class=\"mb-1 mt-4 text-sm font-semibold\">Error Output</h5>");
-            builder.AddMarkupContent(3, $"<textarea readonly class=\"{textareaClass}\">{error}</textarea>");
+            // Script input and output come from users and devices: add them as text so
+            // they're HTML-encoded, never as markup.
+            var seq = 0;
+            void AddSection(string title, string text, bool first)
+            {
+                builder.OpenElement(seq++, "h5");
+                builder.AddAttribute(seq++, "class", first ? "mb-1 text-sm font-semibold" : "mb-1 mt-4 text-sm font-semibold");
+                builder.AddContent(seq++, title);
+                builder.CloseElement();
+                builder.OpenElement(seq++, "textarea");
+                builder.AddAttribute(seq++, "readonly", true);
+                builder.AddAttribute(seq++, "class", textareaClass);
+                builder.AddAttribute(seq++, "value", text);
+                builder.CloseElement();
+            }
+
+            AddSection("Input", result.ScriptInput ?? string.Empty, first: true);
+            AddSection("Standard Output", output, first: false);
+            AddSection("Error Output", error, first: false);
         }
 
         ModalService.ShowModal("Script Input/Output", outputModal);

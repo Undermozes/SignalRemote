@@ -53,7 +53,11 @@ public class ClaudeAssistantHistoryTests
         await Add(ClaudeAssistantEventKind.CommandApproved, x => x.DecidedBy = "auto (read-only)");
         await Add(ClaudeAssistantEventKind.CommandCompleted, x => x.Output = "chrome 95%");
         await Add(ClaudeAssistantEventKind.Screenshot, x => x.Screenshot = [1, 2, 3]);
+        await Add(ClaudeAssistantEventKind.Usage, x => x.Output = System.Text.Json.JsonSerializer.Serialize(
+            new ClaudeUsage(1000, 200, 5000, 300, 0.0123m)));
         await Add(ClaudeAssistantEventKind.AssistantMessage, x => x.Text = "Chrome uses most of the CPU.");
+        await Add(ClaudeAssistantEventKind.Usage, x => x.Output = System.Text.Json.JsonSerializer.Serialize(
+            new ClaudeUsage(500, 100, 6000, 0, 0.0100m)));
         await Add(ClaudeAssistantEventKind.SessionEnded);
         return sessionId;
     }
@@ -116,10 +120,55 @@ public class ClaudeAssistantHistoryTests
 
         var events = await _history.GetSessionEvents(_orgId, null, session);
 
-        Assert.AreEqual(8, events.Count);
+        Assert.AreEqual(10, events.Count);
         Assert.AreEqual(ClaudeAssistantEventKind.SessionStarted, events[0].Kind);
         Assert.AreEqual(ClaudeAssistantEventKind.SessionEnded, events[^1].Kind);
         Assert.IsTrue(events.All(x => x.Screenshot is null));
+    }
+
+    [TestMethod]
+    public async Task Summary_SumsTokensAndCost()
+    {
+        await AddSession("alice", "PC-1", "Question", DateTimeOffset.UtcNow.AddMinutes(-5));
+
+        var usage = (await _history.GetSessions(_orgId, null, null, 0, 20)).Sessions.Single().Usage;
+
+        Assert.AreEqual(1500, usage.Input);
+        Assert.AreEqual(300, usage.Output);
+        Assert.AreEqual(11000, usage.CacheRead);
+        Assert.AreEqual(300, usage.CacheWrite);
+        Assert.AreEqual(0.0223m, usage.CostUsd);
+    }
+
+    [TestMethod]
+    public async Task GetSessionsInRange_OnlyReturnsSessionsStartedInRange()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var inRange = await AddSession("alice", "PC-1", "In range", now.AddDays(-2));
+        await AddSession("alice", "PC-2", "Too old", now.AddDays(-40));
+
+        var sessions = await _history.GetSessionsInRange(_orgId, null, now.AddDays(-7), now);
+
+        Assert.AreEqual(1, sessions.Count);
+        Assert.AreEqual(inRange, sessions[0].SessionId);
+    }
+
+    [TestMethod]
+    public void Pricing_ComputesCostPerMillionTokens()
+    {
+        // claude-opus-5-5 list prices: $4 input, $20 output, $0.20 cache read, $5 cache write.
+        var pricing = new ClaudePricing(4m, 20m, 0.20m, 5m);
+
+        var cost = pricing.CostOf(input: 1_000_000, output: 100_000, cacheRead: 2_000_000, cacheWrite: 200_000);
+
+        Assert.AreEqual(4m + 2m + 0.4m + 1m, cost);
+    }
+
+    [TestMethod]
+    public void Usage_ParsesBadJsonAsZero()
+    {
+        Assert.AreEqual(0, ClaudeUsage.Parse("not json").Total);
+        Assert.AreEqual(0, ClaudeUsage.Parse(null).Total);
     }
 
     [TestMethod]

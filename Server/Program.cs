@@ -3,6 +3,7 @@ using Bitbound.SimpleMessenger;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -191,6 +192,15 @@ services.Configure<ForwardedHeadersOptions>(options =>
         }
     }
 });
+
+// Keep the keys that protect login cookies, antiforgery tokens and "remember me" in
+// AppData, which survives updates (a Docker volume).  Inside the container they'd be
+// lost on every redeploy, logging everyone out.
+var dataProtectionKeysDir = new DirectoryInfo(
+    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "AppData", "DataProtection-Keys"));
+services.AddDataProtection()
+    .PersistKeysToFileSystem(dataProtectionKeysDir)
+    .SetApplicationName("SignalRemote");
 
 services.AddSignalR(options =>
 {

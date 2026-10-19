@@ -114,14 +114,18 @@
     <div class="@(IsExpanded ? null : "hidden") border-t border-border px-3 py-3">
         <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Actions</div>
         <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-            <button class="sr-btn sr-btn-primary col-span-2" @onclick="() => StartRemoteControl(false)">
-                <i class="oi oi-laptop" aria-hidden="true"></i>
-                Remote Control
-            </button>
-            <button class="sr-btn sr-btn-secondary" @onclick="() => StartRemoteControl(true)">
-                <i class="oi oi-eye" aria-hidden="true"></i>
-                View Only
-            </button>
+            @* The inline onclick on the wrapper runs during the tap itself, so mobile Safari lets it
+               open the viewer window; see preopenPendingWindow in interop.js. *@
+            <span class="contents" onclick="preopenPendingWindow()">
+                <button class="sr-btn sr-btn-primary col-span-2" @onclick="() => StartRemoteControl(false)">
+                    <i class="oi oi-laptop" aria-hidden="true"></i>
+                    Remote Control
+                </button>
+                <button class="sr-btn sr-btn-secondary" @onclick="() => StartRemoteControl(true)">
+                    <i class="oi oi-eye" aria-hidden="true"></i>
+                    View Only
+                </button>
+            </span>
             <button class="sr-btn sr-btn-secondary" @onclick="StartChat">
                 <i class="oi oi-chat" aria-hidden="true"></i>
                 Chat

@@ -294,6 +294,32 @@
                     <InputText id="cfg-claude-model" @bind-Value="Input.ClaudeModel" class="sr-input" autocomplete="off" />
                     <ValidationMessage For="() => Input.ClaudeModel" />
                 </div>
+                <fieldset class="sr-field">
+                    <legend class="sr-label">Prices (USD per million tokens)</legend>
+                    <p class="sr-help mt-0 mb-2">
+                        Used for the cost per session in Claude History.  The API doesn't return prices:
+                        keep these in line with the model above (defaults: claude-opus-5-5 list prices).
+                        Past sessions keep the cost they had.
+                    </p>
+                    <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div>
+                            <label class="sr-label text-xs" for="cfg-claude-price-input">Input</label>
+                            <InputNumber id="cfg-claude-price-input" @bind-Value="Input.ClaudePriceInputPerMTok" class="sr-input" step="0.01" min="0" inputmode="decimal" />
+                        </div>
+                        <div>
+                            <label class="sr-label text-xs" for="cfg-claude-price-output">Output</label>
+                            <InputNumber id="cfg-claude-price-output" @bind-Value="Input.ClaudePriceOutputPerMTok" class="sr-input" step="0.01" min="0" inputmode="decimal" />
+                        </div>
+                        <div>
+                            <label class="sr-label text-xs" for="cfg-claude-price-cache-read">Cache read</label>
+                            <InputNumber id="cfg-claude-price-cache-read" @bind-Value="Input.ClaudePriceCacheReadPerMTok" class="sr-input" step="0.01" min="0" inputmode="decimal" />
+                        </div>
+                        <div>
+                            <label class="sr-label text-xs" for="cfg-claude-price-cache-write">Cache write</label>
+                            <InputNumber id="cfg-claude-price-cache-write" @bind-Value="Input.ClaudePriceCacheWritePerMTok" class="sr-input" step="0.01" min="0" inputmode="decimal" />
+                        </div>
+                    </div>
+                </fieldset>
                 <div class="sr-field mb-0">
                     <div class="flex min-h-11 items-center justify-between gap-4">
                         <label class="cursor-pointer text-sm font-medium" for="cfg-claude-autorun">Auto-Run Read-Only Commands</label>
