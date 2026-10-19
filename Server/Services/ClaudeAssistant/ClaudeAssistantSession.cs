@@ -65,7 +65,9 @@ public sealed class ClaudeAssistantSession : IDisposable
     private const string ServerSideFallbackBeta = "server-side-fallback-2026-07-01";
 
     // A stream that sends nothing for this long is treated as dead and retried once.
+    // Thinking can go quiet for longer between summaries, so it gets more room.
     private static readonly TimeSpan StreamIdleTimeout = TimeSpan.FromMinutes(3);
+    private static readonly TimeSpan ThinkingIdleTimeout = TimeSpan.FromMinutes(10);
 
     private static readonly string _systemPrompt = """
         You are an IT support assistant built into a remote management (RMM) tool used by a
@@ -405,9 +407,20 @@ public sealed class ClaudeAssistantSession : IDisposable
             {
                 var aggregator = new BetaMessageContentAggregator();
                 var stream = _client.Beta.Messages.CreateStreaming(BuildRequest(), idleCts.Token);
+                var thinking = false;
                 await foreach (var streamEvent in aggregator.CollectAsync(stream).WithCancellation(idleCts.Token))
                 {
-                    idleCts.CancelAfter(StreamIdleTimeout);
+                    if (streamEvent.TryPickContentBlockStart(out var blockStart))
+                    {
+                        thinking = blockStart.ContentBlock.TryPickBetaThinking(out _) ||
+                            blockStart.ContentBlock.TryPickBetaRedactedThinking(out _);
+                    }
+                    else if (streamEvent.TryPickContentBlockStop(out _))
+                    {
+                        thinking = false;
+                    }
+
+                    idleCts.CancelAfter(thinking ? ThinkingIdleTimeout : StreamIdleTimeout);
                     UpdateStatus(streamEvent);
                 }
                 return aggregator.Message();
@@ -415,13 +428,13 @@ public sealed class ClaudeAssistantSession : IDisposable
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
                 _logger.LogWarning(
-                    "Claude stream for session {sessionId} stalled for {timeout} (attempt {attempt}).",
-                    SessionId, StreamIdleTimeout, attempt);
+                    "Claude stream for session {sessionId} stalled (attempt {attempt}).",
+                    SessionId, attempt);
 
                 if (attempt >= 2)
                 {
                     throw new TimeoutException(
-                        $"Claude didn't respond for {StreamIdleTimeout.TotalMinutes:0} minutes, twice.  " +
+                        "Claude stopped responding twice.  " +
                         "Check the server's internet connection and send your message again.");
                 }
 
@@ -479,6 +492,9 @@ public sealed class ClaudeAssistantSession : IDisposable
             Betas = [ServerSideFallbackBeta],
             // Retry on Anthropic's recommended fallback model if a safety classifier declines.
             Fallbacks = new Default(),
+            // Stream a summary of Claude's thinking.  With the default (omitted) nothing arrives
+            // while Claude thinks, which can take minutes on a long investigation.
+            Thinking = new BetaThinkingConfigAdaptive { Display = Display.Summarized },
             OutputConfig = new BetaOutputConfig { Effort = Effort.High },
             // Cache the conversation prefix across agent-loop iterations.
             CacheControl = new BetaCacheControlEphemeral(),
