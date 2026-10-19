@@ -43,6 +43,35 @@
                 <pre class="m-0 max-h-48 overflow-auto rounded-b-xl bg-surface-sunken p-3 font-mono text-xs break-all whitespace-pre-wrap text-fg"><code>@script</code></pre>
             </div>
         }
+
+        @* Android has no install script: the phone scans this QR code (or opens the link),
+           installs the app and connects it to this server from the setup page. *@
+        @if (!string.IsNullOrWhiteSpace(_androidSetupUrl))
+        {
+            <div class="sr-card">
+                <div class="sr-card-header justify-between text-sm">
+                    <span>Android 8.0+ (phones and tablets)</span>
+                    <button class="sr-btn sr-btn-primary shrink-0" type="button" title="Copy setup link" @onclick="() => CopyScriptToClipboard(_androidSetupUrl)">
+                        <i class="oi oi-clipboard"></i>
+                        <span>Copy link</span>
+                    </button>
+                </div>
+                <div class="flex flex-col items-start gap-4 p-3 sm:flex-row sm:items-center">
+                    <img class="size-36 shrink-0 rounded bg-white p-1" src="@_androidSetupQr" alt="QR code to set up the Android agent" />
+                    <div class="min-w-0 text-sm">
+                        <p class="mb-2">
+                            Scan with the Android device, or send the link to the user.  The setup page installs the
+                            app and connects it to this server.  The user then taps <strong>Start Agent</strong>.
+                        </p>
+                        <p class="mb-2 text-muted">
+                            Android asks the user to allow screen sharing at the start of each remote session.
+                            For remote input, the user enables the app's accessibility service once.
+                        </p>
+                        <a class="break-all text-xs" href="@_androidSetupUrl" target="_blank" rel="noopener">@_androidSetupUrl</a>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 
     <h4 class="sr-section-title mt-8 text-success">
@@ -148,6 +177,8 @@
 @code {
     private static readonly SemaphoreSlim _writeLock = new(1, 1);
     private string _organizationId = string.Empty;
+    private string _androidSetupUrl = string.Empty;
+    private string _androidSetupQr = string.Empty;
     private string _windowsScript = string.Empty;
     private string _ubuntuScript = string.Empty;
     private string _manjaroScript = string.Empty;
@@ -176,6 +207,9 @@
         _organizationId = userResult.Value.OrganizationID;
         _appDataDir = Path.Combine(HostEnv.ContentRootPath, "AppData");
         _winX64Uri = $"{NavMan.BaseUri}api/custom-binaries/win-x64/desktop/{_organizationId}";
+        _androidSetupUrl = $"{NavMan.BaseUri}api/ClientDownloads/AndroidSetup/{Uri.EscapeDataString(_organizationId)}";
+        _androidSetupQr = "data:image/png;base64," + Convert.ToBase64String(
+            QRCoder.PngByteQRCodeHelper.GetQRCode(_androidSetupUrl, QRCoder.QRCodeGenerator.ECCLevel.M, 8));
         _winX86Uri = $"{NavMan.BaseUri}api/custom-binaries/win-x86/desktop/{_organizationId}";
 
         SetFileInfos();
