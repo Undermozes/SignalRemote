@@ -207,3 +207,11 @@
 #components-reconnect-modal.components-reconnect-resume-failed .sr-reconnect-resume-failed {
     display: block;
 }
+/* While retrying Blazor keeps the show class too: only the retry text then. */
+#components-reconnect-modal.components-reconnect-retrying .sr-reconnect-first {
+    display: none;
+}
+#components-reconnect-modal:focus,
+#components-reconnect-modal:focus-visible {
+    outline: none;
+}
