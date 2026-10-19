@@ -140,3 +140,57 @@
 .sr-dialog::backdrop {
     @apply bg-black/50;
 }
+
+/* Navigation (sidebar and drawer). */
+.sr-nav-link {
+    @apply flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted no-underline transition-colors;
+    @apply hover:bg-black/5 hover:text-fg hover:no-underline dark:hover:bg-white/5;
+}
+.sr-nav-tile {
+    @apply flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg text-[0.7rem] font-medium text-muted no-underline transition-colors;
+    @apply hover:bg-black/5 hover:text-fg hover:no-underline dark:hover:bg-white/5;
+}
+.sr-nav-link.sr-nav-active,
+.sr-nav-tile.sr-nav-active {
+    @apply bg-brand/10 text-brand dark:bg-brand/20 dark:text-blue-300;
+}
+.sr-nav-section {
+    @apply px-3 pb-1 pt-5 text-[0.7rem] font-semibold uppercase tracking-wider text-muted;
+}
+
+/* Brand mark: rounded tile with the app glyph. */
+.sr-logo {
+    @apply flex shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 to-sky-400 text-white shadow-md shadow-blue-500/25;
+}
+
+/* Sign-in pages: one card in the middle of the screen.  Pages inside it keep their
+   own sr-card markup, which is flattened here so cards don't nest. */
+.sr-auth-card .sr-card {
+    @apply border-0 bg-transparent shadow-none;
+}
+.sr-auth-card .sr-card-body {
+    @apply p-0;
+}
+.sr-auth-title {
+    @apply mb-1 text-xl font-semibold text-fg;
+}
+.sr-auth-lead {
+    @apply mb-6 text-sm text-muted;
+}
+
+/* Input with a leading icon: wrap in .sr-input-group and put <Icon> before the input. */
+.sr-input-group {
+    @apply relative;
+}
+.sr-input-group > svg:first-child {
+    @apply pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted;
+}
+.sr-input-group > .sr-input {
+    @apply pl-10;
+}
+
+/* One-time code: large, centred digits. */
+.sr-otp {
+    @apply block min-h-14 w-full rounded-xl border border-border bg-surface px-3 text-center font-mono text-2xl tracking-[0.4em] text-fg;
+    @apply placeholder:tracking-[0.4em] placeholder:text-muted/50 focus:border-brand focus:outline-2 focus:outline-brand/30;
+}

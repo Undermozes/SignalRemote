@@ -24,54 +24,69 @@
 else
 {
     <StatusMessage Message="@message" />
-    <h3 class="sr-section-title mt-0">Configure authenticator app</h3>
-    <div>
-        <p>To use an authenticator app go through the following steps:</p>
-        <ol class="list-decimal space-y-4 pl-5">
-            <li>
-                <p>
-                    Download a two-factor authenticator app like Microsoft Authenticator for
-                    <a href="https://go.microsoft.com/fwlink/?Linkid=825072" class="text-brand">Android</a> and
-                    <a href="https://go.microsoft.com/fwlink/?Linkid=825073" class="text-brand">iOS</a> or
-                    Google Authenticator for
-                    <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&amp;hl=en" class="text-brand">Android</a> and
-                    <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8" class="text-brand">iOS</a>.
-                </p>
-            </li>
-            <li>
-                <p>Scan the QR Code or enter this key <kbd class="rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-sm break-all text-fg">@sharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
-                <div>
-                    @if (!string.IsNullOrWhiteSpace(_qrCodeDataUri))
-                    {
-                        <img src="@_qrCodeDataUri" alt="QR code" class="h-auto w-full max-w-60 rounded-lg bg-white p-2" />
-                    }
-                    else
-                    {
-                        <div class="sr-alert sr-alert-warning">Failed to generate QR code.</div>
-                    }
+    <h3 class="sr-section-title mt-0">Set up your authenticator app</h3>
+    <p class="mb-6 text-sm text-muted">Three quick steps. Keep this page open until you've entered the code.</p>
+
+    <ol class="m-0 list-none space-y-4 p-0">
+        <li class="sr-card p-4 sm:p-5">
+            <div class="flex gap-3">
+                <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">1</span>
+                <div class="min-w-0">
+                    <p class="mb-1 font-medium">Install an authenticator app</p>
+                    <p class="m-0 text-sm text-muted">
+                        For example Microsoft Authenticator
+                        (<a href="https://go.microsoft.com/fwlink/?Linkid=825072" class="text-brand">Android</a>,
+                        <a href="https://go.microsoft.com/fwlink/?Linkid=825073" class="text-brand">iOS</a>)
+                        or Google Authenticator
+                        (<a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&amp;hl=en" class="text-brand">Android</a>,
+                        <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8" class="text-brand">iOS</a>).
+                    </p>
                 </div>
-                <div data-url="@authenticatorUri"></div>
-            </li>
-            <li>
-                <p>
-                    Once you have scanned the QR code or input the key above, your two factor authentication app will provide you
-                    with a unique code. Enter the code in the confirmation box below.
-                </p>
-                <div class="max-w-lg">
-                    <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post">
+            </div>
+        </li>
+        <li class="sr-card p-4 sm:p-5">
+            <div class="flex gap-3">
+                <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">2</span>
+                <div class="min-w-0 flex-1">
+                    <p class="mb-3 font-medium">Scan this QR code with the app</p>
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                        @if (!string.IsNullOrWhiteSpace(_qrCodeDataUri))
+                        {
+                            <img src="@_qrCodeDataUri" alt="QR code for your authenticator app" class="h-auto w-48 max-w-full rounded-xl border border-border bg-white p-2" />
+                        }
+                        else
+                        {
+                            <div class="sr-alert sr-alert-warning">Failed to generate QR code.</div>
+                        }
+                        <div class="min-w-0 text-sm text-muted">
+                            <p class="mb-1">Can't scan it? Enter this key instead:</p>
+                            <kbd class="block rounded-lg bg-surface-sunken px-3 py-2 font-mono text-sm break-all text-fg select-all">@sharedKey</kbd>
+                            <p class="mb-0 mt-1 text-xs">Spaces and capitals don't matter.</p>
+                        </div>
+                    </div>
+                    <div data-url="@authenticatorUri"></div>
+                </div>
+            </div>
+        </li>
+        <li class="sr-card p-4 sm:p-5">
+            <div class="flex gap-3">
+                <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">3</span>
+                <div class="min-w-0 flex-1">
+                    <p class="mb-3 font-medium">Enter the 6-digit code from the app</p>
+                    <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post" class="max-w-xs">
                         <DataAnnotationsValidator />
                         <div class="sr-field">
-                            <label for="code" class="sr-label">Verification Code</label>
-                            <InputText id="code" @bind-Value="Input.Code" class="sr-input font-mono tracking-widest" autocomplete="off" inputmode="numeric" placeholder="Please enter the code." />
+                            <label for="code" class="sr-label sr-only">Verification code</label>
+                            <InputText id="code" @bind-Value="Input.Code" class="sr-otp" autocomplete="one-time-code" inputmode="numeric" maxlength="7" placeholder="000000" aria-label="Verification code" />
                             <ValidationMessage For="() => Input.Code" class="mt-1 text-sm text-danger dark:text-red-400" />
                         </div>
-                        <button type="submit" class="sr-btn sr-btn-primary w-full sm:w-auto">Verify</button>
+                        <button type="submit" class="sr-btn sr-btn-primary min-h-12 w-full">Verify and turn on</button>
                         <ValidationSummary class="mt-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
                     </EditForm>
                 </div>
-            </li>
-        </ol>
-    </div>
+            </div>
+        </li>
+    </ol>
 }
 
 @code {

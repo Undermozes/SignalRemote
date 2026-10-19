@@ -9,53 +9,62 @@
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject IDataService DataService
 
 <PageTitle>Log in</PageTitle>
 
-<div class="mx-auto w-full max-w-md py-4 sm:py-10">
-    <h1 class="sr-page-title mb-1">Log in</h1>
-    <section>
-        <StatusMessage Message="@errorMessage" />
-        <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
-            <DataAnnotationsValidator />
-            <h2 class="mb-4 text-base font-normal text-muted">Use a local account to log in.</h2>
-            <div class="sr-card">
-                <div class="sr-card-body sm:p-6">
-                    <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
-                    <div class="sr-field">
-                        <label for="email" class="sr-label">Email</label>
-                        <InputText id="email" inputmode="email" @bind-Value="Input.Email" class="sr-input" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                        <ValidationMessage For="() => Input.Email" class="mt-1 text-sm text-danger dark:text-red-400" />
-                    </div>
-                    <div class="sr-field">
-                        <label for="password" class="sr-label">Password</label>
-                        <InputText id="password" type="password" @bind-Value="Input.Password" class="sr-input" autocomplete="current-password" aria-required="true" placeholder="password" />
-                        <ValidationMessage For="() => Input.Password" class="mt-1 text-sm text-danger dark:text-red-400" />
-                    </div>
-                    <div class="sr-field">
-                        <label class="inline-flex min-h-11 cursor-pointer items-center gap-3 text-sm text-fg">
-                            <InputCheckbox @bind-Value="Input.RememberMe" class="sr-checkbox" />
-                            <span>Remember me</span>
-                        </label>
-                    </div>
-                    <button type="submit" class="sr-btn sr-btn-primary min-h-12 w-full text-base">Log in</button>
-                </div>
-            </div>
-            <div class="mt-4 flex flex-col text-sm">
-                <a href="Account/ForgotPassword" class="inline-flex min-h-11 items-center text-brand no-underline hover:underline">Forgot your password?</a>
-                <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" class="inline-flex min-h-11 items-center text-brand no-underline hover:underline">Register as a new user</a>
-                <a href="Account/ResendEmailConfirmation" class="inline-flex min-h-11 items-center text-brand no-underline hover:underline">Resend email confirmation</a>
-            </div>
-        </EditForm>
-    </section>
-@*  <section class="mt-8">
-        <h3 class="sr-section-title">Use another service to log in.</h3>
-        <ExternalLoginPicker />
-    </section> *@
-</div>
+<h1 class="sr-auth-title">Welcome back</h1>
+<p class="sr-auth-lead">Sign in to continue to the support portal.</p>
+
+<StatusMessage Message="@errorMessage" />
+<EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
+    <div class="sr-field">
+        <label for="email" class="sr-label">Email</label>
+        <div class="sr-input-group">
+            <Icon Name="mail" />
+            <InputText id="email" type="email" inputmode="email" @bind-Value="Input.Email" class="sr-input min-h-12" autocomplete="username" aria-required="true" placeholder="name@example.com" data-autofocus />
+        </div>
+        <ValidationMessage For="() => Input.Email" class="mt-1 text-sm text-danger dark:text-red-400" />
+    </div>
+    <div class="sr-field">
+        <div class="mb-1 flex items-baseline justify-between gap-2">
+            <label for="password" class="sr-label mb-0">Password</label>
+            <a href="Account/ForgotPassword" class="text-sm font-medium text-brand no-underline hover:underline">Forgot password?</a>
+        </div>
+        <div class="sr-input-group">
+            <Icon Name="lock" />
+            <InputText id="password" type="password" @bind-Value="Input.Password" class="sr-input min-h-12 pr-12" autocomplete="current-password" aria-required="true" placeholder="Your password" />
+            <button type="button" data-password-toggle="password" aria-label="Show password" aria-pressed="false"
+                    class="absolute right-1 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-lg text-muted hover:bg-surface-sunken hover:text-fg aria-pressed:text-brand">
+                <Icon Name="eye" />
+            </button>
+        </div>
+        <ValidationMessage For="() => Input.Password" class="mt-1 text-sm text-danger dark:text-red-400" />
+    </div>
+    <label class="mb-6 inline-flex min-h-11 cursor-pointer items-center gap-3 text-sm text-fg">
+        <InputCheckbox @bind-Value="Input.RememberMe" class="sr-checkbox" />
+        <span>Keep me signed in</span>
+    </label>
+    <button type="submit" class="sr-btn sr-btn-primary min-h-12 w-full text-base">
+        Sign in <Icon Name="arrow-right" Class="size-4" />
+    </button>
+</EditForm>
+
+@if (_isRegistrationEnabled)
+{
+    <div class="mt-6 border-t border-border pt-4 text-center text-sm text-muted">
+        New here?
+        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" class="font-medium text-brand no-underline hover:underline">Create an account</a>
+        <span class="mx-1">&middot;</span>
+        <a href="Account/ResendEmailConfirmation" class="font-medium text-brand no-underline hover:underline">Resend confirmation</a>
+    </div>
+}
 
 @code {
     private string? errorMessage;
+    private bool _isRegistrationEnabled;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -68,6 +77,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var settings = await DataService.GetSettings();
+        _isRegistrationEnabled = settings.MaxOrganizationCount < 0 || DataService.GetOrganizationCount() < settings.MaxOrganizationCount;
+
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
             // Clear the existing external cookie to ensure a clean login process
@@ -98,7 +110,7 @@
         }
         else
         {
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = "Error: That email and password don't match.";
         }
     }
 

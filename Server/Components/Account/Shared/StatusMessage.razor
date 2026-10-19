@@ -1,8 +1,10 @@
 ﻿@if (!string.IsNullOrEmpty(DisplayMessage))
 {
-    var statusMessageClass = DisplayMessage.StartsWith("Error") ? "danger" : "success";
-    <div class="sr-alert sr-alert-@statusMessageClass" role="alert">
-        @DisplayMessage
+    var isError = DisplayMessage.StartsWith("Error");
+    var text = isError ? DisplayMessage["Error".Length..].TrimStart(':', ' ') : DisplayMessage;
+    <div class="sr-alert @(isError ? "sr-alert-danger" : "sr-alert-success")" role="@(isError ? "alert" : "status")">
+        <Icon Name="@(isError ? "alert" : "check-circle")" Class="@(isError ? "mt-0.5 size-4 shrink-0 text-danger dark:text-red-400" : "mt-0.5 size-4 shrink-0 text-success")" />
+        <span>@text</span>
     </div>
 }
 

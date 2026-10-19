@@ -6,27 +6,35 @@
 <AuthorizeView Policy="@PolicyNames.TwoFactorRequired">
     <Authorized>
         @* Mobile first: a top bar with a menu on phones, a fixed sidebar from md (768px) up. *@
-        <div class="min-h-dvh md:flex">
-            <aside class="sticky top-0 z-30 bg-[linear-gradient(155deg,rgb(30_30_30),steelblue_200%)] text-gray-200
-                          md:h-dvh md:w-64 md:shrink-0 md:overflow-y-auto">
+        <div class="min-h-dvh bg-surface md:flex">
+            <aside class="contents">
                 <NavMenu />
             </aside>
 
-            <main class="min-w-0 flex-1 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-8">
+            <main class="min-w-0 flex-1 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-8 md:pt-6">
                 @Body
             </main>
         </div>
     </Authorized>
     <NotAuthorized>
-        <div class="mx-auto mt-12 max-w-lg px-4">
-            <h3 class="mb-4 text-2xl font-semibold">Two-Factor Authentication Required</h3>
-            <p class="mb-6 text-muted">
-                Two-factor authentication is required.  Click the button below to set up your authenticator app.
-            </p>
-            <button class="w-full rounded-lg bg-brand px-4 py-3 font-medium text-brand-contrast hover:bg-brand-hover sm:w-auto"
-                    @onclick="NavigateToTwoFactor">
-                Enable 2FA
-            </button>
+        <div class="flex min-h-dvh items-center justify-center bg-surface-sunken px-4 py-10">
+            <div class="w-full max-w-md rounded-2xl border border-border bg-surface-raised p-6 shadow-xl shadow-black/5 sm:p-8">
+                <div class="mb-5 flex size-12 items-center justify-center rounded-full bg-brand/10 text-brand dark:bg-brand/20 dark:text-blue-300">
+                    <Icon Name="shield-check" Class="size-6" />
+                </div>
+                <h1 class="mb-1 text-xl font-semibold">Set up two-factor authentication</h1>
+                <p class="mb-5 text-sm text-muted">
+                    This portal requires a second step when you sign in. It takes about a minute:
+                </p>
+                <ol class="mb-6 list-none space-y-3 p-0 text-sm">
+                    <li class="flex gap-3"><span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-xs font-semibold">1</span> Install an authenticator app, such as Microsoft or Google Authenticator.</li>
+                    <li class="flex gap-3"><span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-xs font-semibold">2</span> Scan the QR code on the next page.</li>
+                    <li class="flex gap-3"><span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-xs font-semibold">3</span> Enter the 6-digit code to confirm.</li>
+                </ol>
+                <button class="sr-btn sr-btn-primary min-h-12 w-full text-base" @onclick="NavigateToTwoFactor">
+                    Get started <Icon Name="arrow-right" Class="size-4" />
+                </button>
+            </div>
         </div>
     </NotAuthorized>
 </AuthorizeView>

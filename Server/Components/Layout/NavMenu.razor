@@ -1,165 +1,114 @@
 ﻿@implements IDisposable
 @inject NavigationManager NavigationManager
-@inject IAuthService AuthService 
+@inject IAuthService AuthService
 @inject IDataService DataService
 
-@* CSS-only toggle (checkbox + peer-checked), so the menu also opens on the statically
-   rendered /Account pages.  On interactive pages, tapping a link unchecks it. *@
+@* Phones: a top bar with a menu button that slides the sidebar in as a drawer.
+   md and up: the sidebar is always shown.  The toggle is a CSS-only checkbox, so it also
+   works on statically rendered /Account pages; on interactive pages a tap on a link closes it. *@
 <input type="checkbox" id="navMenuToggle" class="peer sr-only" aria-label="Menu" @bind="_menuOpen" />
 
-<div class="flex h-14 items-center justify-between bg-black/30 pl-4 pr-2">
-    <a class="min-w-0 text-white no-underline" href="">
-        <div class="truncate text-lg font-semibold leading-tight">
-            @if (!string.IsNullOrWhiteSpace(_organization?.OrganizationName))
-            {
-                @_organization.OrganizationName
-            }
-            else
-            {
-                <span>Remotely</span>
-            }
-        </div>
-        <div class="text-xs text-sky-400">Support Portal</div>
-    </a>
-    <label for="navMenuToggle"
-           class="flex size-12 cursor-pointer items-center justify-center rounded-lg text-2xl text-gray-200 hover:bg-white/10 md:hidden"
-           title="Menu">
-        <span class="oi oi-menu" aria-hidden="true"></span>
+<header class="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-surface-raised/90 px-2 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden">
+    <label for="navMenuToggle" class="flex size-11 cursor-pointer items-center justify-center rounded-lg text-fg hover:bg-surface-sunken" title="Menu">
+        <Icon Name="menu" Class="size-6" />
     </label>
-</div>
+    <a href="" class="flex min-w-0 items-center gap-2 text-fg no-underline hover:no-underline">
+        <span class="sr-logo size-8 rounded-lg"><Icon Name="monitor" Class="size-4" /></span>
+        <span class="truncate font-semibold">@_orgName</span>
+    </a>
+</header>
 
-@* On phones the menu opens below the top bar and closes after a tap.  From md up it's always shown. *@
-<nav class="hidden peer-checked:block max-h-[calc(100dvh-3.5rem)] overflow-y-auto px-3 py-3 md:block md:max-h-none" @onclick="CloseNavMenu">
-    <ul class="m-0 flex list-none flex-col gap-1 p-0">
-        <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home w-5 text-center" aria-hidden="true"></span> Home
-            </NavLink>
-        </li>
-        <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="downloads">
-                <span class="oi oi-cloud-download w-5 text-center" aria-hidden="true"></span> Downloads
-            </NavLink>
-        </li>
-        <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="/Viewer" target="_blank">
-                <span class="oi oi-monitor w-5 text-center" aria-hidden="true"></span> Remote Control
-            </NavLink>
-        </li>
+<label for="navMenuToggle" aria-hidden="true"
+       class="pointer-events-none fixed inset-0 z-40 bg-black/40 opacity-0 backdrop-blur-[2px] transition-opacity peer-checked:pointer-events-auto peer-checked:opacity-100 md:hidden"></label>
 
-        <AuthorizeView>
-            <Authorized>
-                <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="deploy">
-                <span class="oi oi-data-transfer-upload w-5 text-center" aria-hidden="true"></span> Deploy
-            </NavLink>
-        </li>
-                <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="scripts">
-                <span class="oi oi-script w-5 text-center" aria-hidden="true"></span> Scripts
-            </NavLink>
-        </li>
-                <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="device-details">
-                <span class="oi oi-info w-5 text-center" aria-hidden="true"></span> Device Details
-            </NavLink>
-        </li>
-                <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="user-options">
-                <span class="oi oi-pencil w-5 text-center" aria-hidden="true"></span> User Options
-            </NavLink>
-        </li>
-                <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="backup">
-                <span class="oi oi-hard-drive w-5 text-center" aria-hidden="true"></span> Backup
-            </NavLink>
-        </li>
-                <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="assistant-history">
-                <span class="oi oi-list-rich w-5 text-center" aria-hidden="true"></span> Claude History
-            </NavLink>
-        </li>
-            </Authorized>
-        </AuthorizeView>
+<div class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] -translate-x-full flex-col border-r border-border bg-surface-sunken
+            shadow-2xl transition-transform duration-200 peer-checked:translate-x-0
+            md:sticky md:top-0 md:z-auto md:h-dvh md:w-64 md:max-w-none md:shrink-0 md:translate-x-0 md:shadow-none">
+    <div class="flex h-16 shrink-0 items-center gap-3 px-4 pt-[env(safe-area-inset-top)]">
+        <a href="" class="flex min-w-0 flex-1 items-center gap-3 text-fg no-underline hover:no-underline">
+            <span class="sr-logo size-9"><Icon Name="monitor" Class="size-5" /></span>
+            <span class="min-w-0">
+                <span class="block truncate font-semibold leading-tight">@_orgName</span>
+                <span class="block text-xs text-muted">Support portal</span>
+            </span>
+        </a>
+        <label for="navMenuToggle" class="flex size-10 cursor-pointer items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-fg md:hidden dark:hover:bg-white/5" title="Close menu">
+            <Icon Name="x" />
+        </label>
+    </div>
 
-        @if (_user?.IsAdministrator == true)
-        {
-            <li class="px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Admin
+    <nav class="min-h-0 flex-1 overflow-y-auto px-3 pb-3" aria-label="Main" @onclick="CloseNavMenu">
+        <ul class="m-0 flex list-none flex-col gap-0.5 p-0">
+            <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="" Match="NavLinkMatch.All"><Icon Name="house" /> Home</NavLink></li>
+            <li>
+                <a class="sr-nav-link" href="/Viewer" target="_blank">
+                    <Icon Name="monitor" /> <span class="flex-1">Remote Control</span> <Icon Name="external" Class="size-3.5 opacity-60" />
+                </a>
             </li>
-            <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="manage-organization">
-                <span class="oi oi-briefcase w-5 text-center" aria-hidden="true"></span> Organization
-            </NavLink>
-        </li>
-            <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="branding">
-                <span class="oi oi-brush w-5 text-center" aria-hidden="true"></span> Branding
-            </NavLink>
-        </li>
-            <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="api-keys">
-                <span class="oi oi-key w-5 text-center" aria-hidden="true"></span> API Keys
-            </NavLink>
-        </li>
+            <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="deploy"><Icon Name="package" /> Deploy</NavLink></li>
+            <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="downloads"><Icon Name="download" /> Downloads</NavLink></li>
 
-            @if (_user?.IsServerAdmin == true)
+            <li class="sr-nav-section">Tools</li>
+            <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="scripts"><Icon Name="terminal" /> Scripts</NavLink></li>
+            <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="device-details"><Icon Name="info" /> Device Details</NavLink></li>
+            <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="assistant-history"><Icon Name="sparkles" /> Claude History</NavLink></li>
+            <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="backup"><Icon Name="hard-drive" /> Backup</NavLink></li>
+
+            @if (_user?.IsAdministrator == true)
             {
-                <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="server-logs">
-                <span class="oi oi-document w-5 text-center" aria-hidden="true"></span> Server Logs
-            </NavLink>
-        </li>
-                <li>
-            <NavLink class="flex h-12 items-center gap-3 rounded-lg px-3 text-[0.95rem] text-gray-300 no-underline hover:bg-white/10 hover:text-white" ActiveClass="bg-white/20 text-white" href="server-config">
-                <span class="oi oi-wrench w-5 text-center" aria-hidden="true"></span> Server Config
-            </NavLink>
-        </li>
-            }
-        }
-
-        <li class="my-3 border-t border-white/10"></li>
-
-        <AuthorizeView>
-            <Authorized>
-                <li>
-                    <a class="flex h-11 w-full items-center rounded-lg px-3 text-left text-gray-300 no-underline hover:bg-white/10 hover:text-white" href="Account/Manage">Account</a>
-                </li>
-                <li>
-                    <form action="Account/Logout" method="post">
-                        <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@_currentUrl" />
-                        <button type="submit" class="flex h-11 w-full items-center rounded-lg px-3 text-left text-gray-300 no-underline hover:bg-white/10 hover:text-white border-0 bg-transparent">
-                            Logout
-                        </button>
-                    </form>
-                </li>
-            </Authorized>
-            <NotAuthorized>
-                <li>
-                    <a class="flex h-11 w-full items-center rounded-lg px-3 text-left text-gray-300 no-underline hover:bg-white/10 hover:text-white" href="Account/Login">Log in</a>
-                </li>
-                @if (_isRegistrationEnabled)
+                <li class="sr-nav-section">Admin</li>
+                <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="manage-organization"><Icon Name="building" /> Organization</NavLink></li>
+                <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="branding"><Icon Name="image" /> Branding</NavLink></li>
+                <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="api-keys"><Icon Name="key" /> API Keys</NavLink></li>
+                @if (_user.IsServerAdmin)
                 {
-                    <li>
-                        <a class="flex h-11 w-full items-center rounded-lg px-3 text-left text-gray-300 no-underline hover:bg-white/10 hover:text-white" href="Account/Register">Register</a>
-                    </li>
+                    <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="server-logs"><Icon Name="file-text" /> Server Logs</NavLink></li>
+                    <li><NavLink class="sr-nav-link" ActiveClass="sr-nav-active" href="server-config"><Icon Name="server" /> Server Config</NavLink></li>
                 }
-            </NotAuthorized>
-        </AuthorizeView>
+            }
+        </ul>
+    </nav>
 
-        <li>
-            <a class="flex h-11 w-full items-center rounded-lg px-3 text-left text-gray-300 no-underline hover:bg-white/10 hover:text-white" href="/about">About</a>
-        </li>
-    </ul>
-</nav>
+    @if (_user is not null)
+    {
+        <div class="shrink-0 border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div class="flex items-center gap-3 rounded-lg px-2 py-2">
+                <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/15 text-sm font-semibold uppercase text-brand dark:text-blue-300" aria-hidden="true">@_initial</span>
+                <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-medium text-fg" title="@_user.UserName">@_user.UserName</span>
+                    <span class="block text-xs text-muted">@(_user.IsServerAdmin ? "Server admin" : _user.IsAdministrator ? "Admin" : "User")</span>
+                </span>
+            </div>
+            <div class="mt-1 grid grid-cols-3 gap-1" @onclick="CloseNavMenu">
+                <NavLink class="sr-nav-tile"
+                         ActiveClass="sr-nav-active" href="user-options" title="Preferences">
+                    <Icon Name="sliders" Class="size-4" /> Preferences
+                </NavLink>
+                <a class="sr-nav-tile"
+                   href="Account/Manage" title="Account and security">
+                    <Icon Name="user" Class="size-4" /> Account
+                </a>
+                <form action="Account/Logout" method="post" class="contents">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="@_currentUrl" />
+                    <button type="submit" title="Sign out"
+                            class="sr-nav-tile border-0 bg-transparent hover:bg-red-500/10 hover:text-danger dark:hover:bg-red-500/10 dark:hover:text-red-400">
+                        <Icon Name="log-out" Class="size-4" /> Sign out
+                    </button>
+                </form>
+            </div>
+            <a href="/about" class="mt-1 block px-2 text-xs text-muted no-underline hover:text-fg hover:underline">About</a>
+        </div>
+    }
+</div>
 
 @code {
     private bool _menuOpen;
-    private bool _isRegistrationEnabled;
     private RemotelyUser? _user;
     private Organization? _organization;
     private string? _currentUrl;
+    private string _orgName = "Remotely";
+    private string _initial = "?";
 
     public void Dispose()
     {
@@ -168,9 +117,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var settings = await DataService.GetSettings();
-        _isRegistrationEnabled = settings.MaxOrganizationCount < 0 || DataService.GetOrganizationCount() < settings.MaxOrganizationCount;
-
         await base.OnInitializedAsync();
 
         _currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
@@ -184,6 +130,7 @@
         }
 
         _user = userResult.Value;
+        _initial = string.IsNullOrEmpty(_user.UserName) ? "?" : _user.UserName[..1];
 
         if (!string.IsNullOrWhiteSpace(_user?.OrganizationID))
         {
@@ -200,6 +147,15 @@
             {
                 _organization = orgResult.Value;
             }
+        }
+        SetOrgName();
+    }
+
+    private void SetOrgName()
+    {
+        if (!string.IsNullOrWhiteSpace(_organization?.OrganizationName))
+        {
+            _orgName = _organization.OrganizationName;
         }
     }
 

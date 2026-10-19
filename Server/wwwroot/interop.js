@@ -171,3 +171,40 @@ window.addBeforeUnloadHandler = () => {
         }
     })
 }
+// Sign-in pages (statically rendered, so no Blazor events): show/hide password,
+// submit a one-time code once all six digits are in, and focus the first field.
+document.addEventListener("click", ev => {
+    const toggle = ev.target instanceof Element ? ev.target.closest("[data-password-toggle]") : null;
+    if (!toggle) {
+        return;
+    }
+    const input = document.getElementById(toggle.getAttribute("data-password-toggle"));
+    if (!input) {
+        return;
+    }
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    toggle.setAttribute("aria-pressed", String(show));
+    toggle.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    input.focus();
+});
+
+document.addEventListener("input", ev => {
+    const input = ev.target;
+    if (!(input instanceof HTMLInputElement) || !input.hasAttribute("data-otp-autosubmit")) {
+        return;
+    }
+    const digits = input.value.replace(/\D/g, "");
+    if (digits.length === 6 && input.form && !input.form.dataset.submitted) {
+        input.form.dataset.submitted = "true";
+        input.form.requestSubmit();
+    }
+});
+
+(() => {
+    const focusFirst = () => document.querySelector("[data-autofocus]")?.focus();
+    document.addEventListener("DOMContentLoaded", () => {
+        focusFirst();
+        window.Blazor?.addEventListener?.("enhancedload", focusFirst);
+    });
+})();

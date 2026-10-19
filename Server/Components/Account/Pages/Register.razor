@@ -19,8 +19,8 @@
 @inject IWebHostEnvironment HostEnv
 
 <PageTitle>Register</PageTitle>
-<div class="mx-auto w-full max-w-md py-4 sm:py-10">
-    <h1 class="sr-page-title mb-1">Register</h1>
+<div>
+    <h1 class="sr-auth-title mb-1">Register</h1>
 
     @if (!_registrationEnabled)
     {
@@ -31,7 +31,7 @@
         <StatusMessage Message="@Message" />
         <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
             <DataAnnotationsValidator />
-            <h2 class="mb-4 text-base font-normal text-muted">Create a new account.</h2>
+            <p class="sr-auth-lead">Create a new account.</p>
             <div class="sr-card">
                 <div class="sr-card-body sm:p-6">
                     <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />

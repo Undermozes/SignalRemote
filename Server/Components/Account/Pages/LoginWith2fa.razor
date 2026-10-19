@@ -11,36 +11,39 @@
 
 <PageTitle>Two-factor authentication</PageTitle>
 
-<div class="mx-auto w-full max-w-md py-4 sm:py-10">
-    <h1 class="sr-page-title">Two-factor authentication</h1>
-    <StatusMessage Message="@message" />
-    <p class="text-muted">Your login is protected with an authenticator app. Enter your authenticator code below.</p>
-    <div class="sr-card">
-        <div class="sr-card-body sm:p-6">
-            <EditForm Model="Input" FormName="login-with-2fa" OnValidSubmit="OnValidSubmitAsync" method="post">
-                <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
-                <input type="hidden" name="RememberMe" value="@RememberMe" />
-                <DataAnnotationsValidator />
-                <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
-                <div class="sr-field">
-                    <label for="two-factor-code" class="sr-label">Authenticator code</label>
-                    <InputText id="two-factor-code" @bind-Value="Input.TwoFactorCode" class="sr-input font-mono tracking-widest" autocomplete="off" inputmode="numeric" />
-                    <ValidationMessage For="() => Input.TwoFactorCode" class="mt-1 text-sm text-danger dark:text-red-400" />
-                </div>
-                <div class="sr-field">
-                    <label for="remember-machine" class="inline-flex min-h-11 cursor-pointer items-center gap-3 text-sm text-fg">
-                        <InputCheckbox id="remember-machine" @bind-Value="Input.RememberMachine" class="sr-checkbox" />
-                        Remember this machine
-                    </label>
-                </div>
-                <button type="submit" class="sr-btn sr-btn-primary min-h-12 w-full text-base">Log in</button>
-            </EditForm>
-        </div>
+<div class="mb-5 flex size-12 items-center justify-center rounded-full bg-brand/10 text-brand dark:bg-brand/20 dark:text-blue-300">
+    <Icon Name="shield-check" Class="size-6" />
+</div>
+<h1 class="sr-auth-title">Two-factor authentication</h1>
+<p class="sr-auth-lead">Open your authenticator app and enter the 6-digit code for this account.</p>
+
+<StatusMessage Message="@message" />
+<EditForm Model="Input" FormName="login-with-2fa" OnValidSubmit="OnValidSubmitAsync" method="post">
+    <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+    <input type="hidden" name="RememberMe" value="@RememberMe" />
+    <DataAnnotationsValidator />
+    <ValidationSummary class="mb-4 list-none space-y-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-danger dark:text-red-400" role="alert" />
+    <div class="sr-field">
+        <label for="two-factor-code" class="sr-label sr-only">Authenticator code</label>
+        <InputText id="two-factor-code" @bind-Value="Input.TwoFactorCode" class="sr-otp" autocomplete="one-time-code"
+                   inputmode="numeric" maxlength="7" placeholder="000000" aria-label="Authenticator code"
+                   data-autofocus data-otp-autosubmit />
+        <ValidationMessage For="() => Input.TwoFactorCode" class="mt-1 text-sm text-danger dark:text-red-400" />
     </div>
-    <p class="mt-4 text-sm text-muted">
-        Don't have access to your authenticator device? You can
-        <a href="Account/LoginWithRecoveryCode?ReturnUrl=@ReturnUrl" class="text-brand">log in with a recovery code</a>.
-    </p>
+    <label for="remember-machine" class="mb-6 inline-flex min-h-11 cursor-pointer items-center gap-3 text-sm text-fg">
+        <InputCheckbox id="remember-machine" @bind-Value="Input.RememberMachine" class="sr-checkbox" />
+        Don't ask again on this device
+    </label>
+    <button type="submit" class="sr-btn sr-btn-primary min-h-12 w-full text-base">Verify</button>
+</EditForm>
+
+<div class="mt-6 flex flex-col gap-1 border-t border-border pt-4 text-sm">
+    <a href="@($"Account/LoginWithRecoveryCode?ReturnUrl={Uri.EscapeDataString(ReturnUrl ?? "/")}")" class="inline-flex min-h-10 items-center gap-2 font-medium text-brand no-underline hover:underline">
+        <Icon Name="life-buoy" Class="size-4" /> No access to your phone? Use a recovery code
+    </a>
+    <a href="Account/Login" class="inline-flex min-h-10 items-center gap-2 text-muted no-underline hover:text-fg">
+        <Icon Name="arrow-left" Class="size-4" /> Back to sign in
+    </a>
 </div>
 
 @code {
@@ -82,7 +85,7 @@
         else
         {
             Logger.LogWarning("Invalid authenticator code entered for user with ID '{UserId}'.", userId);
-            message = "Error: Invalid authenticator code.";
+            message = "Error: That code didn't work. Check the time on your phone and try the newest code.";
         }
     }
 

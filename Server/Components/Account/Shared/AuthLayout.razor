@@ -1,0 +1,61 @@
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject IDataService DataService
+
+@* Sign-in pages: no menu, just the brand and one card in the middle of the screen. *@
+<div class="relative isolate flex min-h-dvh flex-col items-center justify-start overflow-hidden bg-surface-sunken px-4
+            pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:justify-center sm:pt-10">
+    <div class="pointer-events-none absolute -left-32 -top-32 -z-10 size-96 rounded-full bg-blue-500/15 blur-3xl dark:bg-blue-500/10"></div>
+    <div class="pointer-events-none absolute -bottom-40 -right-24 -z-10 size-[28rem] rounded-full bg-sky-400/15 blur-3xl dark:bg-sky-400/10"></div>
+
+    <div class="w-full max-w-[26rem]">
+        <div class="mb-5 flex flex-col items-center text-center sm:mb-6">
+            <div class="sr-logo size-12 rounded-2xl sm:size-14">
+                <Icon Name="monitor" Class="size-6 sm:size-7" />
+            </div>
+            <div class="mt-2 text-lg font-semibold text-fg sm:mt-3">@_productName</div>
+            <div class="text-sm text-muted">Remote support portal</div>
+        </div>
+
+        <main class="sr-auth-card rounded-2xl border border-border bg-surface-raised p-6 shadow-xl shadow-black/5 sm:p-8 dark:shadow-black/30">
+            @if (HttpContext is null)
+            {
+                <p class="py-8 text-center text-muted">Loading...</p>
+            }
+            else
+            {
+                @Body
+            }
+        </main>
+
+        <p class="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted">
+            <Icon Name="lock" Class="size-3.5" /> Secure connection
+        </p>
+    </div>
+</div>
+
+@code {
+    private string _productName = "Remotely";
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var orgResult = await DataService.GetDefaultOrganization();
+        if (orgResult.IsSuccess && !string.IsNullOrWhiteSpace(orgResult.Value.OrganizationName))
+        {
+            _productName = orgResult.Value.OrganizationName;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (HttpContext is null)
+        {
+            // Rendering interactively: the identity pages need an HttpContext to set cookies,
+            // so switch back to a server-rendered page.
+            NavigationManager.Refresh(forceReload: true);
+        }
+    }
+}
