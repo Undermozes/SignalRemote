@@ -1,0 +1,318 @@
+@page "/assistant-history"
+@page "/assistant-history/{SessionId:guid}"
+@attribute [Authorize]
+@inherits AuthComponentBase
+@implements IAsyncDisposable
+@using Remotely.Server.Services.ClaudeAssistant
+
+@* Audit history of everything the Claude assistant did: questions, answers, commands with
+   their approval and output, and the screenshots Claude looked at. *@
+<div class="mx-auto max-w-4xl">
+    @if (SessionId is null)
+    {
+        <h3 class="sr-page-title">Claude History</h3>
+        <p class="text-sm text-muted">
+            Every Claude assistant session: what was asked, what Claude answered, which commands ran,
+            who approved them, and what Claude saw on screen.
+            @(_isAdmin ? "You see all sessions in your organization." : "You see your own sessions.")
+            History is kept for the server's data retention period.
+        </p>
+
+        <form class="mb-4 flex gap-2" @onsubmit="Search" @onsubmit:preventDefault="true">
+            <input class="sr-input min-w-0 flex-1"
+                   type="search"
+                   aria-label="Search history"
+                   placeholder="Search device, technician, question, command..."
+                   @bind="_search" />
+            <button class="sr-btn sr-btn-primary shrink-0" type="submit">
+                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
+                <span class="hidden sm:inline">Search</span>
+            </button>
+        </form>
+
+        @if (_page is null)
+        {
+            <LoadingSignal />
+        }
+        else if (_page.Sessions.Count == 0)
+        {
+            <div class="sr-card sr-card-body text-center text-sm text-muted">
+                @(string.IsNullOrWhiteSpace(_activeSearch) ? "No Claude sessions yet." : "No sessions match your search.")
+            </div>
+        }
+        else
+        {
+            <ul class="m-0 flex list-none flex-col gap-3 p-0">
+                @foreach (var session in _page.Sessions)
+                {
+                    <li @key="session.SessionId">
+                        <a class="sr-card block p-4 text-fg no-underline hover:border-brand hover:no-underline"
+                           href="assistant-history/@session.SessionId">
+                            <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                                <span class="font-semibold">@(session.DeviceName ?? session.DeviceId)</span>
+                                <time class="text-xs text-muted" data-local-time datetime="@session.Started.ToString("o")">
+                                    <span class="utc">@session.Started.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</span>
+                                </time>
+                            </div>
+                            <div class="mt-1 text-sm text-muted">@session.UserName</div>
+                            @if (!string.IsNullOrWhiteSpace(session.FirstQuestion))
+                            {
+                                <p class="m-0 mt-2 line-clamp-2 text-sm">@session.FirstQuestion</p>
+                            }
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <span class="sr-badge sr-badge-neutral">
+                                    <span class="oi oi-terminal" aria-hidden="true"></span> @session.Commands commands
+                                </span>
+                                @if (session.Screenshots > 0)
+                                {
+                                    <span class="sr-badge sr-badge-info">
+                                        <span class="oi oi-image" aria-hidden="true"></span> @session.Screenshots screenshots
+                                    </span>
+                                }
+                                @if (session.Errors > 0)
+                                {
+                                    <span class="sr-badge sr-badge-danger">@session.Errors errors</span>
+                                }
+                            </div>
+                        </a>
+                    </li>
+                }
+            </ul>
+
+            @if (TotalPages > 1)
+            {
+                <div class="mt-4 flex items-center justify-center gap-3 text-sm">
+                    <button class="sr-btn sr-btn-secondary" disabled="@(_pageIndex == 0)" @onclick="() => GoToPage(_pageIndex - 1)">
+                        <span class="oi oi-chevron-left" aria-hidden="true"></span> Newer
+                    </button>
+                    <span class="text-muted tabular-nums">@(_pageIndex + 1) / @TotalPages</span>
+                    <button class="sr-btn sr-btn-secondary" disabled="@(_pageIndex >= TotalPages - 1)" @onclick="() => GoToPage(_pageIndex + 1)">
+                        Older <span class="oi oi-chevron-right" aria-hidden="true"></span>
+                    </button>
+                </div>
+            }
+        }
+    }
+    else
+    {
+        <a class="sr-btn sr-btn-ghost mb-3 -ml-3" href="assistant-history">
+            <span class="oi oi-chevron-left" aria-hidden="true"></span> All sessions
+        </a>
+
+        @if (_events is null)
+        {
+            <LoadingSignal />
+        }
+        else if (_events.Count == 0)
+        {
+            <div class="sr-alert sr-alert-warning">Session not found.</div>
+        }
+        else
+        {
+            var first = _events[0];
+            <h3 class="sr-page-title mb-1">@(first.DeviceName ?? first.DeviceId)</h3>
+            <div class="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+                <span><span class="oi oi-person" aria-hidden="true"></span> @first.UserName</span>
+                <time data-local-time datetime="@first.Timestamp.ToString("o")"><span class="utc">@first.Timestamp.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</span></time>
+                <span class="font-mono text-xs">@SessionId</span>
+            </div>
+
+            <ol class="m-0 flex list-none flex-col gap-3 p-0">
+                @foreach (var ev in _events)
+                {
+                    <li @key="ev.Id">
+                        @switch (ev.Kind)
+                        {
+                            case ClaudeAssistantEventKind.UserMessage:
+                                <div class="flex justify-end">
+                                    <div class="max-w-[85%] rounded-2xl rounded-br-sm bg-brand px-3 py-2 text-brand-contrast">
+                                        <div class="text-[0.7rem] font-semibold opacity-80">@ev.UserName · <EventTime Value="ev.Timestamp" /></div>
+                                        <div class="whitespace-pre-wrap break-words">@ev.Text</div>
+                                    </div>
+                                </div>
+                                break;
+
+                            case ClaudeAssistantEventKind.AssistantMessage:
+                                <div class="max-w-[92%] rounded-2xl rounded-bl-sm border border-border bg-surface-raised px-3 py-2">
+                                    <div class="text-[0.7rem] font-semibold text-muted">Claude · <EventTime Value="ev.Timestamp" /></div>
+                                    <div class="whitespace-pre-wrap break-words">@ev.Text</div>
+                                </div>
+                                break;
+
+                            case ClaudeAssistantEventKind.CommandRequested:
+                                <div class="sr-card overflow-hidden">
+                                    <div class="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
+                                        <span class="sr-badge @(ev.IsReadOnly == true ? "sr-badge-neutral" : "sr-badge-warning")">
+                                            @(ev.IsReadOnly == true ? "Read-only" : "Changes system")
+                                        </span>
+                                        <span class="font-mono">@ev.Shell</span>
+                                        <span class="ml-auto text-muted">Requested <EventTime Value="ev.Timestamp" /></span>
+                                    </div>
+                                    <div class="space-y-2 p-3">
+                                        @if (!string.IsNullOrWhiteSpace(ev.Purpose))
+                                        {
+                                            <div class="text-sm">@ev.Purpose</div>
+                                        }
+                                        <pre class="m-0 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-sunken p-2 font-mono text-xs">@ev.Text</pre>
+                                        @if (!string.IsNullOrWhiteSpace(ev.Output))
+                                        {
+                                            <div class="text-xs text-muted">@ev.Output</div>
+                                        }
+                                    </div>
+                                </div>
+                                break;
+
+                            case ClaudeAssistantEventKind.CommandApproved:
+                                <StatusLine Icon="oi-check" Class="text-success" Timestamp="ev.Timestamp"
+                                            Text="@($"Approved by {ev.DecidedBy}")" />
+                                break;
+
+                            case ClaudeAssistantEventKind.CommandRejected:
+                                <StatusLine Icon="oi-x" Class="text-danger" Timestamp="ev.Timestamp"
+                                            Text="@($"Rejected by {ev.DecidedBy}{(string.IsNullOrWhiteSpace(ev.Output) ? "" : $": {ev.Output}")}")" />
+                                break;
+
+                            case ClaudeAssistantEventKind.CommandCompleted:
+                            case ClaudeAssistantEventKind.CommandFailed:
+                                <details class="sr-card px-3 py-2">
+                                    <summary class="cursor-pointer text-sm @(ev.Kind == ClaudeAssistantEventKind.CommandFailed ? "text-danger" : "text-muted")">
+                                        <span class="oi @(ev.Kind == ClaudeAssistantEventKind.CommandFailed ? "oi-warning" : "oi-document")" aria-hidden="true"></span>
+                                        @(ev.Kind == ClaudeAssistantEventKind.CommandFailed ? "Command failed" : "Output") · <EventTime Value="ev.Timestamp" />
+                                    </summary>
+                                    <pre class="mb-1 mt-2 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-surface-sunken p-2 font-mono text-xs">@ev.Output</pre>
+                                </details>
+                                break;
+
+                            case ClaudeAssistantEventKind.Screenshot:
+                                <figure class="sr-card m-0 overflow-hidden">
+                                    <a href="api/claude-history/screenshot/@ev.Id" target="_blank" rel="noopener">
+                                        <img class="block w-full bg-surface-sunken"
+                                             src="api/claude-history/screenshot/@ev.Id"
+                                             loading="lazy"
+                                             alt="Screen Claude looked at" />
+                                    </a>
+                                    <figcaption class="px-3 py-2 text-xs text-muted">
+                                        <span class="oi oi-image" aria-hidden="true"></span>
+                                        Claude looked at the screen (@ev.Text) · <EventTime Value="ev.Timestamp" />
+                                    </figcaption>
+                                </figure>
+                                break;
+
+                            case ClaudeAssistantEventKind.Error:
+                                <div class="sr-alert sr-alert-danger mb-0">@ev.Text</div>
+                                break;
+
+                            default:
+                                <div class="text-center text-xs italic text-muted">
+                                    @GetLabel(ev) · <EventTime Value="ev.Timestamp" />
+                                </div>
+                                break;
+                        }
+                    </li>
+                }
+            </ol>
+        }
+    }
+</div>
+
+@code {
+    private const int PageSize = 20;
+
+    private ClaudeHistoryPage? _page;
+    private IReadOnlyList<ClaudeAssistantEvent>? _events;
+    private int _pageIndex;
+    private string? _search;
+    private string? _activeSearch;
+    private bool _isAdmin;
+    private IJSObjectReference? _module;
+
+    [Parameter]
+    public Guid? SessionId { get; set; }
+
+    [Inject]
+    private IClaudeAssistantHistory History { get; set; } = null!;
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = null!;
+
+    private int TotalPages => _page is null ? 0 : (int)Math.Ceiling(_page.TotalSessions / (double)PageSize);
+
+    // Admins see the whole organization, technicians only their own sessions.
+    private string? UserFilter => _isAdmin ? null : UserName;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // AuthComponentBase sets User in OnInitializedAsync, which runs first.
+        if (User is null)
+        {
+            return;
+        }
+
+        _isAdmin = User.IsAdministrator;
+
+        if (SessionId is Guid sessionId)
+        {
+            _events = null;
+            _events = await History.GetSessionEvents(User.OrganizationID, UserFilter, sessionId);
+        }
+        else
+        {
+            await LoadPage();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Show times in the viewer's own time zone; the server renders UTC.
+        try
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./claude-history.js");
+            await _module.InvokeVoidAsync("localizeTimes");
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+
+    private async Task LoadPage()
+    {
+        EnsureUserSet();
+        _page = await History.GetSessions(User.OrganizationID, UserFilter, _activeSearch, _pageIndex, PageSize);
+    }
+
+    private async Task Search()
+    {
+        _activeSearch = _search;
+        _pageIndex = 0;
+        _page = null;
+        await LoadPage();
+    }
+
+    private async Task GoToPage(int index)
+    {
+        _pageIndex = Math.Max(0, index);
+        await LoadPage();
+    }
+
+    private static string GetLabel(ClaudeAssistantEvent ev) => ev.Kind switch
+    {
+        ClaudeAssistantEventKind.SessionStarted => $"Session started{(string.IsNullOrWhiteSpace(ev.Text) ? "" : $" ({ev.Text})")}",
+        ClaudeAssistantEventKind.SessionEnded => "Session ended",
+        _ => ev.Text ?? $"{ev.Kind}",
+    };
+}

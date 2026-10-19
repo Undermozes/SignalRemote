@@ -17,7 +17,7 @@ namespace Remotely.Server.Migrations.PostgreSql
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.2")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -376,6 +376,69 @@ namespace Remotely.Server.Migrations.PostgreSql
                         .IsUnique();
 
                     b.ToTable("BrandingInfos");
+                });
+
+            modelBuilder.Entity("Remotely.Shared.Entities.ClaudeAssistantEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DecidedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("DeviceName")
+                        .HasColumnType("text");
+
+                    b.Property<bool?>("IsReadOnly")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OrganizationId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Output")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Purpose")
+                        .HasColumnType("text");
+
+                    b.Property<byte[]>("Screenshot")
+                        .HasColumnType("bytea");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Shell")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Text")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeviceId");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("OrganizationId", "Timestamp");
+
+                    b.ToTable("ClaudeAssistantEvents");
                 });
 
             modelBuilder.Entity("Remotely.Shared.Entities.Device", b =>

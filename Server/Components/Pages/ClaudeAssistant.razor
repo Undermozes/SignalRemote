@@ -31,7 +31,10 @@
     else
     {
         <details class="mb-2 text-xs text-muted">
-            <summary class="cursor-pointer select-none">How Claude works on this device</summary>
+            <summary class="cursor-pointer select-none">
+                How Claude works on this device ·
+                <a href="assistant-history/@_session.SessionId" target="_blank" rel="noopener">History of this session</a>
+            </summary>
             <p class="mt-1 mb-0">
                 Claude runs commands on this device through the agent.  Read-only commands
                 @(_autoRunReadOnly ? "run automatically" : "need your approval");

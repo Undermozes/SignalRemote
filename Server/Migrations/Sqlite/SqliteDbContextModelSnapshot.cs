@@ -15,7 +15,7 @@ namespace Remotely.Server.Migrations.Sqlite
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.2");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
             modelBuilder.Entity("DeviceGroupRemotelyUser", b =>
                 {
@@ -368,6 +368,70 @@ namespace Remotely.Server.Migrations.Sqlite
                         .IsUnique();
 
                     b.ToTable("BrandingInfos");
+                });
+
+            modelBuilder.Entity("Remotely.Shared.Entities.ClaudeAssistantEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DecidedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool?>("IsReadOnly")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OrganizationId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Output")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Purpose")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("Screenshot")
+                        .HasColumnType("BLOB");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Shell")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Text")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Timestamp")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeviceId");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("OrganizationId", "Timestamp");
+
+                    b.ToTable("ClaudeAssistantEvents");
                 });
 
             modelBuilder.Entity("Remotely.Shared.Entities.Device", b =>

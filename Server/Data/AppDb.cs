@@ -29,6 +29,7 @@ public class AppDb : IdentityDbContext
 
     public DbSet<ApiToken> ApiTokens { get; set; }
     public DbSet<BrandingInfo> BrandingInfos { get; set; }
+    public DbSet<ClaudeAssistantEvent> ClaudeAssistantEvents { get; set; }
     public DbSet<DeviceGroup> DeviceGroups { get; set; }
     public DbSet<Device> Devices { get; set; }
     public DbSet<InviteLink> InviteLinks { get; set; }
@@ -229,6 +230,13 @@ public class AppDb : IdentityDbContext
             .WithOne(x => x.Schedule)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.ClientSetNull);
+
+        builder.Entity<ClaudeAssistantEvent>()
+            .HasIndex(x => x.SessionId);
+        builder.Entity<ClaudeAssistantEvent>()
+            .HasIndex(x => new { x.OrganizationId, x.Timestamp });
+        builder.Entity<ClaudeAssistantEvent>()
+            .HasIndex(x => x.DeviceId);
 
 
         var isSqlite = Database.IsSqlite();

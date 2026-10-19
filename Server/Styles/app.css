@@ -85,6 +85,10 @@
     /* Blazor's FocusOnNavigate focuses the page heading for screen readers; don't outline it. */
     h1:focus, h1:focus-visible { outline: none; }
 
+    /* Local times set by claude-history.js; the UTC text stays as a fallback. */
+    time[data-localized] > .utc { display: none; }
+    time[data-localized]::after { content: attr(data-localized); }
+
     /* Blazor form validation */
     .validation-message { @apply mt-1 text-sm text-danger dark:text-red-400; }
     .validation-errors { @apply mb-4 list-none rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-fg; }

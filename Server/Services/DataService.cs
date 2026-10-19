@@ -677,6 +677,11 @@ public class DataService : IDataService
 
         dbContext.RemoveRange(sharedFiles);
 
+        var assistantEvents = dbContext.ClaudeAssistantEvents
+                                .Where(x => x.Timestamp < expirationDate);
+
+        dbContext.RemoveRange(assistantEvents);
+
         await dbContext.SaveChangesAsync();
     }
 

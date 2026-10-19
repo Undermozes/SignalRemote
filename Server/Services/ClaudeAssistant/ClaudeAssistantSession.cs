@@ -96,6 +96,7 @@ public sealed class ClaudeAssistantSession : IDisposable
     private readonly AnthropicClient _client;
     private readonly IAgentCommandRunner _commandRunner;
     private readonly IAgentHubSessionCache _agentSessionCache;
+    private readonly IClaudeAssistantHistory _history;
     private readonly ILogger _logger;
     private readonly List<BetaMessageParam> _messages = [];
     private readonly List<string> _pendingToolUseIds = [];
@@ -109,6 +110,7 @@ public sealed class ClaudeAssistantSession : IDisposable
         AnthropicClient client,
         IAgentCommandRunner commandRunner,
         IAgentHubSessionCache agentSessionCache,
+        IClaudeAssistantHistory history,
         ILogger logger,
         RemotelyUser user,
         Device device,
@@ -118,6 +120,7 @@ public sealed class ClaudeAssistantSession : IDisposable
         _client = client;
         _commandRunner = commandRunner;
         _agentSessionCache = agentSessionCache;
+        _history = history;
         _logger = logger;
         User = user;
         Device = device;
@@ -130,6 +133,8 @@ public sealed class ClaudeAssistantSession : IDisposable
             user.UserName,
             device.ID,
             device.DeviceName);
+
+        Record(ClaudeAssistantEventKind.SessionStarted, x => x.Text = $"Model: {model}");
     }
 
     public event Action? Changed;
@@ -171,6 +176,7 @@ public sealed class ClaudeAssistantSession : IDisposable
         _sessionCts.Cancel();
         _sessionCts.Dispose();
         _logger.LogInformation("[ClaudeAudit] Session {sessionId} ended.", SessionId);
+        Record(ClaudeAssistantEventKind.SessionEnded);
     }
 
     public async Task SendMessage(string text)
@@ -508,6 +514,7 @@ public sealed class ClaudeAssistantSession : IDisposable
             entry.State = CommandState.Running;
             entry.DecidedBy = "auto (read-only)";
             AddEntry(entry);
+            RecordCommand(ClaudeAssistantEventKind.CommandApproved, entry);
         }
         else
         {
@@ -527,6 +534,7 @@ public sealed class ClaudeAssistantSession : IDisposable
                 entry.State = CommandState.Rejected;
                 entry.Output = note ?? string.Empty;
                 Changed?.Invoke();
+                RecordCommand(ClaudeAssistantEventKind.CommandRejected, entry);
 
                 _logger.LogInformation(
                     "[ClaudeAudit] Session {sessionId}: {user} rejected command.  Note: {note}",
@@ -542,6 +550,7 @@ public sealed class ClaudeAssistantSession : IDisposable
 
             entry.State = CommandState.Running;
             Changed?.Invoke();
+            RecordCommand(ClaudeAssistantEventKind.CommandApproved, entry);
         }
 
         _logger.LogInformation(
@@ -562,6 +571,7 @@ public sealed class ClaudeAssistantSession : IDisposable
             entry.State = CommandState.Failed;
             entry.Output = result.Reason;
             Changed?.Invoke();
+            RecordCommand(ClaudeAssistantEventKind.CommandFailed, entry);
             return ToolResult(toolUse.ID, $"Command could not be run: {result.Reason}", isError: true);
         }
 
@@ -569,6 +579,7 @@ public sealed class ClaudeAssistantSession : IDisposable
         entry.State = CommandState.Completed;
         entry.Output = output;
         Changed?.Invoke();
+        RecordCommand(ClaudeAssistantEventKind.CommandCompleted, entry);
 
         _logger.LogInformation(
             "[ClaudeAudit] Session {sessionId}: command finished.  Result ID: {resultId}.  Had errors: {hadErrors}.",
@@ -596,7 +607,12 @@ public sealed class ClaudeAssistantSession : IDisposable
             "[ClaudeAudit] Session {sessionId}: Claude took a screenshot of device {deviceId} ({width}x{height}).",
             SessionId, Device.ID, screenshot.Width, screenshot.Height);
 
-        AddEntry(new AssistantEntry { Kind = AssistantEntryKind.Info, Text = "Claude looked at the screen." });
+        AddEntry(new AssistantEntry { Kind = AssistantEntryKind.Info, Text = "Claude looked at the screen." }, record: false);
+        Record(ClaudeAssistantEventKind.Screenshot, x =>
+        {
+            x.Text = $"{screenshot.Width}x{screenshot.Height}";
+            x.Screenshot = TryDecodeBase64(screenshot.JpegBase64);
+        });
 
         return new BetaToolResultBlockParam
         {
@@ -699,10 +715,84 @@ public sealed class ClaudeAssistantSession : IDisposable
         };
     }
 
-    private void AddEntry(AssistantEntry entry)
+    private void AddEntry(AssistantEntry entry, bool record = true)
     {
         Entries.Add(entry);
         Changed?.Invoke();
+
+        if (!record)
+        {
+            return;
+        }
+
+        switch (entry.Kind)
+        {
+            case AssistantEntryKind.User:
+                Record(ClaudeAssistantEventKind.UserMessage, x => x.Text = entry.Text);
+                break;
+            case AssistantEntryKind.Assistant:
+                Record(ClaudeAssistantEventKind.AssistantMessage, x => x.Text = entry.Text);
+                break;
+            case AssistantEntryKind.Command:
+                RecordCommand(ClaudeAssistantEventKind.CommandRequested, entry);
+                break;
+            case AssistantEntryKind.Info:
+                Record(ClaudeAssistantEventKind.Info, x => x.Text = entry.Text);
+                break;
+            case AssistantEntryKind.Error:
+                Record(ClaudeAssistantEventKind.Error, x => x.Text = entry.Text);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Adds an event to the persistent history.  Fire and forget: storing history must
+    /// never slow down or break the session.  Timestamps are taken now, so order holds.
+    /// </summary>
+    private void Record(ClaudeAssistantEventKind kind, Action<ClaudeAssistantEvent>? fill = null)
+    {
+        var assistantEvent = new ClaudeAssistantEvent
+        {
+            SessionId = SessionId,
+            Kind = kind,
+            OrganizationId = Device.OrganizationID,
+            DeviceId = Device.ID,
+            DeviceName = Device.DeviceName,
+            UserName = User.UserName,
+        };
+        fill?.Invoke(assistantEvent);
+        _ = _history.Record(assistantEvent);
+    }
+
+    private void RecordCommand(ClaudeAssistantEventKind kind, AssistantEntry entry)
+    {
+        Record(kind, x =>
+        {
+            x.Text = entry.Command;
+            x.Shell = $"{entry.Shell}";
+            x.Purpose = entry.Purpose;
+            x.IsReadOnly = entry.IsReadOnly;
+            x.DecidedBy = entry.DecidedBy;
+            x.Output = kind == ClaudeAssistantEventKind.CommandRequested && !entry.IsReadOnly
+                ? $"Needs approval: {entry.ClassificationReason}"
+                : entry.Output;
+        });
+    }
+
+    private static byte[]? TryDecodeBase64(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+        try
+        {
+            return Convert.FromBase64String(value);
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
     }
 
     /// <summary>

@@ -252,6 +252,7 @@ services.AddScoped<IExpiringTokenService, ExpiringTokenService>();
 services.AddScoped<IDeviceAuthService, DeviceAuthService>();
 services.AddScoped<IAgentCommandRunner, AgentCommandRunner>();
 services.AddScoped<IClaudeAssistantService, ClaudeAssistantService>();
+services.AddSingleton<IClaudeAssistantHistory, ClaudeAssistantHistory>();
 services.AddSingleton<AgentHubAuthFilter>();
 services.AddSingleton<ViewerHubAuthFilter>();
 services.AddScoped<IScriptScheduleDispatcher, ScriptScheduleDispatcher>();

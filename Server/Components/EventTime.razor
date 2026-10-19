@@ -1,0 +1,7 @@
+@* A timestamp that claude-history.js shows in the viewer's time zone (the server renders UTC). *@
+<time data-local-time="time" datetime="@Value.ToString("o")"><span class="utc">@Value.ToUniversalTime().ToString("HH:mm:ss") UTC</span></time>
+
+@code {
+    [Parameter]
+    public DateTimeOffset Value { get; set; }
+}

@@ -14,17 +14,20 @@ public class ClaudeAssistantService : IClaudeAssistantService
 {
     private readonly IAgentCommandRunner _commandRunner;
     private readonly IAgentHubSessionCache _agentSessionCache;
+    private readonly IClaudeAssistantHistory _history;
     private readonly IDataService _dataService;
     private readonly ILoggerFactory _loggerFactory;
 
     public ClaudeAssistantService(
         IAgentCommandRunner commandRunner,
         IAgentHubSessionCache agentSessionCache,
+        IClaudeAssistantHistory history,
         IDataService dataService,
         ILoggerFactory loggerFactory)
     {
         _commandRunner = commandRunner;
         _agentSessionCache = agentSessionCache;
+        _history = history;
         _dataService = dataService;
         _loggerFactory = loggerFactory;
     }
@@ -71,6 +74,7 @@ public class ClaudeAssistantService : IClaudeAssistantService
             client,
             _commandRunner,
             _agentSessionCache,
+            _history,
             _loggerFactory.CreateLogger<ClaudeAssistantSession>(),
             user,
             deviceResult.Value,
