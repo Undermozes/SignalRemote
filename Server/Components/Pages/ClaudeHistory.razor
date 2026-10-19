@@ -61,17 +61,17 @@
                             }
                             <div class="mt-3 flex flex-wrap gap-2">
                                 <span class="sr-badge sr-badge-neutral">
-                                    <span class="oi oi-terminal" aria-hidden="true"></span> @session.Commands commands
+                                    <span class="oi oi-terminal" aria-hidden="true"></span> @Plural(session.Commands, "command")
                                 </span>
                                 @if (session.Screenshots > 0)
                                 {
                                     <span class="sr-badge sr-badge-info">
-                                        <span class="oi oi-image" aria-hidden="true"></span> @session.Screenshots screenshots
+                                        <span class="oi oi-image" aria-hidden="true"></span> @Plural(session.Screenshots, "screenshot")
                                     </span>
                                 }
                                 @if (session.Errors > 0)
                                 {
-                                    <span class="sr-badge sr-badge-danger">@session.Errors errors</span>
+                                    <span class="sr-badge sr-badge-danger">@Plural(session.Errors, "error")</span>
                                 }
                             </div>
                         </a>
@@ -308,6 +308,8 @@
         _pageIndex = Math.Max(0, index);
         await LoadPage();
     }
+
+    private static string Plural(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
 
     private static string GetLabel(ClaudeAssistantEvent ev) => ev.Kind switch
     {
