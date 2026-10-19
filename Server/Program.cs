@@ -336,6 +336,22 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseCors("TrustedOriginPolicy");
 
+// A user who is already signed in (for example in another tab) gets sent on instead of
+// seeing the login page again. Posting a login form that was rendered before signing in
+// would otherwise fail the antiforgery check with a bare 400.
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true &&
+        context.Request.Path.Equals("/Account/Login", StringComparison.OrdinalIgnoreCase))
+    {
+        var returnUrl = context.Request.Query["ReturnUrl"].ToString();
+        var isLocal = returnUrl.StartsWith('/') && !returnUrl.StartsWith("//") && !returnUrl.StartsWith("/\\");
+        context.Response.Redirect(isLocal ? returnUrl : "/", permanent: false);
+        return;
+    }
+    await next();
+});
+
 app.UseAntiforgery();
 
 
