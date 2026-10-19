@@ -47,6 +47,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- signalremote://setup?host=...&org=... from the server's Android setup page -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="signalremote" android:host="setup" />
+            </intent-filter>
         </activity>
 
         <!-- Agent foreground service (persistent connection to server) -->

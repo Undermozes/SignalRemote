@@ -151,6 +151,78 @@ public class ClientDownloadsController : ControllerBase
         return orgResult.IsSuccess;
     }
 
+    /// <summary>
+    /// Phone-friendly page for setting up the Android agent: download the APK, then open
+    /// the app with the server and organization filled in (signalremote://setup link).
+    /// The Downloads page shows a QR code to this page.  The organization ID is the same
+    /// one the desktop installers embed.
+    /// </summary>
+    [HttpGet("AndroidSetup/{organizationId}")]
+    public async Task<IActionResult> GetAndroidSetup(string organizationId)
+    {
+        if (!await IsValidOrganizationId(organizationId))
+        {
+            return NotFound();
+        }
+
+        var scheme = Request.Scheme;
+        if (scheme == "http" && !Request.Host.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+        {
+            // Behind a TLS-terminating proxy (e.g. cloudflared) the request arrives as http.
+            scheme = "https";
+        }
+        var host = $"{scheme}://{Request.Host}";
+        var setupLink = $"signalremote://setup?host={Uri.EscapeDataString(host)}&org={Uri.EscapeDataString(organizationId)}";
+        var apkLink = "/api/ClientDownloads/Desktop/AndroidApk";
+        var apkAvailable = FileIO.Exists(Path.Combine(_hostEnv.WebRootPath, "Content", "Android", "SignalRemote-Agent.apk"));
+
+        Func<string?, string?> e = System.Net.WebUtility.HtmlEncode;
+        var installStep = apkAvailable
+            ? $"<a class=\"btn\" href=\"{e(apkLink)}\">Download app</a>"
+            : "<p>The app isn't available on this server yet. Ask your IT provider.</p>";
+        var html = $$"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>Install SignalRemote Agent</title>
+            <style>
+              body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: #16181d; color: #e5e7eb; }
+              main { max-width: 28rem; margin: 0 auto; padding: 2rem 1.25rem; }
+              h1 { font-size: 1.5rem; margin: 0 0 .5rem; }
+              p { color: #9ca3af; margin: 0 0 1.5rem; }
+              .step { background: #2a2e36; border: 1px solid #3a3f4a; border-radius: .75rem; padding: 1rem; margin-bottom: 1rem; }
+              .step h2 { font-size: 1rem; margin: 0 0 .25rem; }
+              .step p { font-size: .875rem; margin: 0 0 .75rem; }
+              a.btn { display: block; text-align: center; padding: .85rem 1rem; border-radius: .6rem; background: #2563eb; color: #fff; text-decoration: none; font-weight: 600; }
+              a.btn.secondary { background: transparent; border: 1px solid #3a3f4a; color: #e5e7eb; }
+              .muted { font-size: .8rem; color: #9ca3af; word-break: break-all; }
+            </style>
+            </head>
+            <body>
+            <main>
+              <h1>SignalRemote Agent</h1>
+              <p>Set up remote support on this Android device (Android 8.0 or newer).</p>
+              <div class="step">
+                <h2>1. Install the app</h2>
+                <p>Allow <em>Install unknown apps</em> for your browser when Android asks.</p>
+                {{installStep}}
+              </div>
+              <div class="step">
+                <h2>2. Connect to your IT provider</h2>
+                <p>Opens the app with the server filled in. Check it, then tap <strong>Start Agent</strong>.</p>
+                <a class="btn secondary" href="{{e(setupLink)}}">Open in the app</a>
+              </div>
+              <p class="muted">Server: {{e(host)}}<br />Organization ID: {{e(organizationId)}}</p>
+            </main>
+            </body>
+            </html>
+            """;
+
+        return Content(html, "text/html; charset=utf-8");
+    }
+
     private async Task<IActionResult> GetAndroidApk()
     {
         await LogRequest(nameof(GetAndroidApk));

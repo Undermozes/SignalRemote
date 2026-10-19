@@ -104,6 +104,13 @@ class MainActivity : AppCompatActivity() {
 
         populateFields()
         setupListeners()
+        applySetupLink(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        applySetupLink(intent)
     }
 
     override fun onResume() {
@@ -202,6 +209,34 @@ class MainActivity : AppCompatActivity() {
             return false
         }
         return true
+    }
+
+    /**
+     * Fills in the server and organization from a signalremote://setup?host=...&org=...
+     * link (the server's Android setup page).  Only https servers are accepted, and the
+     * agent is never started from a link: the user checks the values and taps Start.
+     */
+    private fun applySetupLink(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (uri.scheme != "signalremote" || uri.host != "setup") {
+            return
+        }
+
+        val host = uri.getQueryParameter("host")?.trim()?.trimEnd('/').orEmpty()
+        val orgId = uri.getQueryParameter("org")?.trim().orEmpty()
+        if (!host.startsWith("https://") || orgId.isBlank()) {
+            Toast.makeText(this, "This setup link isn't valid.", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        // The text watchers save the new values.
+        binding.editTextHost.setText(host)
+        binding.editTextOrgId.setText(orgId)
+        Toast.makeText(
+            this,
+            "Server filled in: $host. Check it and tap Start Agent.",
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     private fun saveSettings() {

@@ -68,6 +68,19 @@
                 <p class="sr-help mt-0">
                     Sideloading required. Enable <em>Install unknown apps</em> in Android Settings → Apps before installing.
                 </p>
+                @if (!string.IsNullOrWhiteSpace(_androidSetupQr))
+                {
+                    @* Scan with the phone: opens a setup page with the download and a link that
+                       fills in this server and organization in the app. *@
+                    <div class="flex items-center gap-4 rounded-lg border border-border bg-surface-sunken p-3">
+                        <img class="size-32 shrink-0 rounded bg-white p-1" src="@_androidSetupQr" alt="QR code to set up the Android agent" />
+                        <div class="text-sm">
+                            <div class="font-medium">Scan to install</div>
+                            <p class="mb-2 mt-1 text-muted">Opens the setup page on the phone: install the app, then connect it to this server in one tap.</p>
+                            <a class="break-all text-xs" href="@_androidSetupUrl" target="_blank">Open setup page</a>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
         @*<div class="sr-card">
@@ -281,6 +294,8 @@
 @code {
     private string? _organizationId;
     private bool _isAuthenticated;
+    private string? _androidSetupUrl;
+    private string? _androidSetupQr;
 
     protected override async Task OnInitializedAsync()
     {
@@ -301,6 +316,13 @@
             {
                 _organizationId = orgResult.Value.ID;
             }
+        }
+
+        if (!string.IsNullOrWhiteSpace(_organizationId))
+        {
+            _androidSetupUrl = $"{NavManager.BaseUri}api/ClientDownloads/AndroidSetup/{Uri.EscapeDataString(_organizationId)}";
+            var png = QRCoder.PngByteQRCodeHelper.GetQRCode(_androidSetupUrl, QRCoder.QRCodeGenerator.ECCLevel.M, 8);
+            _androidSetupQr = $"data:image/png;base64,{Convert.ToBase64String(png)}";
         }
 
         await base.OnInitializedAsync();
