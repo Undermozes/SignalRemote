@@ -78,6 +78,17 @@ public class AgentUpdateController : ControllerBase
                     return BadRequest();
             }
 
+            // A package in Content/staged is a release being piloted.  Agents only fetch this
+            // endpoint when told to update ("Update Agent" on a device); the automatic check
+            // looks at the file in Content itself, so other devices keep the current version
+            // until the staged package is moved into Content.
+            var stagedPath = Path.Combine(Path.GetDirectoryName(filePath)!, "staged", Path.GetFileName(filePath));
+            if (System.IO.File.Exists(stagedPath))
+            {
+                _logger.LogInformation("Serving staged agent package {file} to {remoteIp}.", stagedPath, remoteIp);
+                filePath = stagedPath;
+            }
+
             var fileStream = System.IO.File.OpenRead(filePath);
 
             return File(fileStream, "application/octet-stream", "RemotelyUpdate.zip");
