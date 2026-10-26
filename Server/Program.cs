@@ -43,7 +43,8 @@ var appOptions = configuration
 
 services
     .AddRazorComponents()
-    .AddInteractiveServerComponents();
+    // Keep a disconnected page's state for a while, so a phone that slept picks up where it was.
+    .AddInteractiveServerComponents(options => options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10));
 
 services.AddRazorPages();
 
@@ -263,6 +264,7 @@ services.AddScoped<IDeviceAuthService, DeviceAuthService>();
 services.AddScoped<IAgentCommandRunner, AgentCommandRunner>();
 services.AddScoped<IClaudeAssistantService, ClaudeAssistantService>();
 services.AddSingleton<IClaudeAssistantHistory, ClaudeAssistantHistory>();
+services.AddSingleton<IClaudeAssistantSessionRegistry, ClaudeAssistantSessionRegistry>();
 services.AddSingleton<IDownloadLinkService, DownloadLinkService>();
 services.AddScoped<DownloadAccessFilter>();
 services.AddSingleton<AgentHubAuthFilter>();

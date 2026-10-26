@@ -10,6 +10,13 @@
         <h3 class="m-0 shrink-0 font-semibold @(Embedded ? "text-base" : "text-2xl")">Claude Assistant</h3>
         @if (_session is not null)
         {
+            <button type="button" class="sr-btn sr-btn-sm sr-btn-ghost order-last ml-auto shrink-0" title="Start a new conversation"
+                    @onclick="() => { if (_session.SnapshotEntries().Any(x => x.Kind == AssistantEntryKind.User)) _confirmNew = true; else _ = NewConversation(); }">
+                <Icon Name="sparkles" Class="size-3.5" /> New
+            </button>
+        }
+        @if (_session is not null)
+        {
             <span class="truncate text-sm text-muted">
                 @_session.Device.DeviceName
                 @if (!string.IsNullOrWhiteSpace(_session.Device.Alias))
@@ -36,27 +43,81 @@
                 <a href="assistant-history/@_session.SessionId" target="_blank" rel="noopener">History of this session</a>
             </summary>
             <p class="mt-1 mb-0">
-                Claude runs commands on this device through the agent.  Read-only commands
-                @(_autoRunReadOnly ? "run automatically" : "need your approval");
-                anything that could change the system always needs your approval.
+                Claude runs commands on this device through the agent.  The approval mode decides
+                which commands wait for you.  The conversation keeps running on the server when you
+                close or refresh this page, and continues when you come back.
                 Every command is logged and appears in the device's script history.
-                @if (_session.ScreenshotProvider is not null)
+                @if (_session.ScreenshotsEnabled)
                 {
                     <span>Claude can see the remote screen.</span>
                 }
             </p>
         </details>
 
+        @if (_confirmNew)
+        {
+            <div class="sr-alert sr-alert-warning mb-2 flex-col text-xs sm:flex-row sm:items-center" role="alertdialog" aria-label="Confirm new conversation">
+                <div class="flex-1">
+                    <strong>Start a new conversation?</strong>
+                    @(_session.IsBusy ? "Claude stops what it is doing. " : "")This one stays in Claude History, where you can continue it later.
+                </div>
+                <div class="flex w-full gap-2 sm:w-auto">
+                    <button class="sr-btn sr-btn-sm sr-btn-secondary flex-1 sm:flex-none" @onclick="() => _confirmNew = false">Cancel</button>
+                    <button class="sr-btn sr-btn-sm sr-btn-primary flex-1 sm:flex-none" @onclick="NewConversation">New conversation</button>
+                </div>
+            </div>
+        }
+
+        @* Approval mode for this session. *@
+        <div class="mb-2 flex flex-wrap items-center gap-2 text-xs">
+            <span class="text-muted">Approval:</span>
+            <div class="inline-flex rounded-lg border border-border bg-surface-sunken p-0.5" role="radiogroup" aria-label="Approval mode">
+                @foreach (var mode in Enum.GetValues<ApprovalMode>().Where(x => x.IsAllowedFor(User!)))
+                {
+                    var active = _session.Mode == mode;
+                    <button type="button" role="radio" aria-checked="@(active ? "true" : "false")"
+                            title="@mode.Description()"
+                            class="min-h-8 rounded-md px-2.5 font-medium transition-colors @(active ? (mode == ApprovalMode.AllowAll ? "bg-danger text-white shadow-sm" : "bg-surface-raised text-fg shadow-sm") : "text-muted hover:text-fg")"
+                            @onclick="() => ChooseMode(mode)">
+                        @mode.ShortName()
+                    </button>
+                }
+            </div>
+            <span class="min-w-0 flex-1 truncate text-muted">@_session.Mode.Description()</span>
+        </div>
+
+        @if (_confirmAllowAll)
+        {
+            <div class="sr-alert sr-alert-danger mb-2 flex-col text-xs sm:flex-row sm:items-center" role="alertdialog" aria-label="Confirm allow all">
+                <div class="flex-1">
+                    <strong>Run every command without asking?</strong>
+                    Claude can then change this device as SYSTEM/root without your approval, including
+                    commands waiting now.  It stays on until you switch back or close this session.
+                </div>
+                <div class="flex w-full gap-2 sm:w-auto">
+                    <button class="sr-btn sr-btn-sm sr-btn-secondary flex-1 sm:flex-none" @onclick="() => _confirmAllowAll = false">Cancel</button>
+                    <button class="sr-btn sr-btn-sm sr-btn-danger flex-1 sm:flex-none" @onclick="ConfirmAllowAll">Allow all</button>
+                </div>
+            </div>
+        }
+        else if (_session.Mode == ApprovalMode.AllowAll)
+        {
+            <div class="sr-alert sr-alert-danger mb-2 items-center text-xs" role="status">
+                <span class="flex-1"><strong>Allow all is on.</strong> Claude runs every command without asking.</span>
+                <button class="sr-btn sr-btn-sm sr-btn-secondary" @onclick="() => ChooseMode(ApprovalMode.AllowReadOnly)">Back to @ApprovalMode.AllowReadOnly.ShortName()</button>
+            </div>
+        }
+
         <div @ref="_logElement"
              class="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-surface-sunken p-3">
-            @if (_session.Entries.Count == 0)
+            @if (_session.SnapshotEntries().Length == 0)
             {
                 <div class="py-8 text-center text-sm text-muted">
                     Describe the problem and Claude will investigate this device.
                 </div>
             }
 
-            @foreach (var entry in _session.Entries)
+            @foreach (var entry in _session.SnapshotEntries())
             {
                 switch (entry.Kind)
                 {
@@ -167,7 +228,9 @@
     private string? _errorMessage;
     private string _input = string.Empty;
     private string _rejectNote = string.Empty;
-    private bool _autoRunReadOnly;
+    private bool _confirmAllowAll;
+    private bool _confirmNew;
+    private Func<CancellationToken, Task<ViewerScreenshot>>? _screenshotSource;
 
     private IJSObjectReference? _embedModule;
     private ElementReference _logElement;
@@ -217,22 +280,7 @@
             return;
         }
 
-        var result = await AssistantService.StartSession(User, DeviceId, ContinueSessionId);
-        if (!result.IsSuccess)
-        {
-            _errorMessage = result.Reason;
-            return;
-        }
-
-        var settings = await DataService.GetSettings();
-        _autoRunReadOnly = settings.ClaudeAutoRunReadOnlyCommands;
-
-        _session = result.Value;
-        if (Embedded)
-        {
-            _session.ScreenshotProvider = CaptureViewerScreenshot;
-        }
-        _session.Changed += HandleSessionChanged;
+        await AttachSession(startNew: false);
 
         // Keep the elapsed time ticking while Claude works.
         _ticker = new System.Threading.Timer(_ =>
@@ -247,15 +295,57 @@
     private static string FormatElapsed(TimeSpan elapsed) =>
         elapsed.TotalHours >= 1 ? elapsed.ToString(@"h\:mm\:ss") : elapsed.ToString(@"m\:ss");
 
+    // The session keeps running on the server when this page goes away (refresh, phone
+    // screen off, lost connection); the next page for this device picks it up again.
+    private async Task AttachSession(bool startNew)
+    {
+        DetachSession();
+        _renderedEntryCount = 0;
+
+        var result = await AssistantService.StartSession(User!, DeviceId, startNew ? null : ContinueSessionId, startNew);
+        if (!result.IsSuccess)
+        {
+            _errorMessage = result.Reason;
+            return;
+        }
+
+        _session = result.Value;
+        _session.Attach();
+        if (Embedded)
+        {
+            _screenshotSource ??= CaptureViewerScreenshot;
+            _session.ScreenshotProvider = _screenshotSource;
+        }
+        _session.Changed += HandleSessionChanged;
+    }
+
+    private void DetachSession()
+    {
+        if (_session is null)
+        {
+            return;
+        }
+
+        _session.Changed -= HandleSessionChanged;
+        _session.Detach();
+        if (_screenshotSource is not null && _session.ScreenshotProvider == _screenshotSource)
+        {
+            _session.ScreenshotProvider = null;
+        }
+        _session = null;
+    }
+
+    private async Task NewConversation()
+    {
+        _confirmNew = false;
+        _confirmAllowAll = false;
+        await AttachSession(startNew: true);
+    }
+
     public void Dispose()
     {
         _ticker?.Dispose();
-
-        if (_session is not null)
-        {
-            _session.Changed -= HandleSessionChanged;
-            _session.Dispose();
-        }
+        DetachSession();
 
         if (_embedModule is not null)
         {
@@ -318,9 +408,9 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // Follow the conversation as entries are added.
-        if (_session is not null && _session.Entries.Count != _renderedEntryCount)
+        if (_session is not null && _session.SnapshotEntries().Length != _renderedEntryCount)
         {
-            _renderedEntryCount = _session.Entries.Count;
+            _renderedEntryCount = _session.SnapshotEntries().Length;
             try
             {
                 _embedModule ??= await JS.InvokeAsync<IJSObjectReference>("import", FileVersion.AddFileVersionToPath(Microsoft.AspNetCore.Http.PathString.Empty, "/assistant-embed.js"));
@@ -356,6 +446,27 @@
         {
             await Send();
         }
+    }
+
+    private void ChooseMode(ApprovalMode mode)
+    {
+        if (_session is null)
+        {
+            return;
+        }
+        if (mode == ApprovalMode.AllowAll && _session.Mode != ApprovalMode.AllowAll)
+        {
+            _confirmAllowAll = true;
+            return;
+        }
+        _confirmAllowAll = false;
+        _session.SetMode(mode);
+    }
+
+    private void ConfirmAllowAll()
+    {
+        _confirmAllowAll = false;
+        _session?.SetMode(ApprovalMode.AllowAll);
     }
 
     private void Approve(AssistantEntry entry)

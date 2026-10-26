@@ -55,6 +55,48 @@ public class ClaudeHistoryController : ControllerBase
         return File(bytes, "image/jpeg");
     }
 
+    /// <summary>One conversation as a PDF report, screenshots included.</summary>
+    [HttpGet("session/{sessionId:guid}/pdf")]
+    public async Task<IActionResult> ExportPdf(Guid sessionId)
+    {
+        if (string.IsNullOrWhiteSpace(User.Identity?.Name))
+        {
+            return Unauthorized();
+        }
+
+        var userResult = await _dataService.GetUserByName(User.Identity.Name);
+        if (!userResult.IsSuccess)
+        {
+            return Unauthorized();
+        }
+
+        var user = userResult.Value;
+        var userFilter = user.IsAdministrator ? null : user.UserName;
+        var events = await _history.GetSessionEvents(user.OrganizationID, userFilter, sessionId);
+        if (events.Count == 0)
+        {
+            return NotFound();
+        }
+
+        var screenshots = new Dictionary<Guid, byte[]>();
+        foreach (var ev in events.Where(x => x.Kind == Remotely.Shared.Entities.ClaudeAssistantEventKind.Screenshot))
+        {
+            if (await _history.GetScreenshot(user.OrganizationID, userFilter, ev.Id) is { Length: > 0 } bytes)
+            {
+                screenshots[ev.Id] = bytes;
+            }
+        }
+
+        var pdf = ClaudeConversationPdf.Render(events, screenshots, TimeZoneInfo.Local);
+
+        var device = new string((events[0].DeviceName ?? "device")
+            .Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' ? c : '-')
+            .ToArray()).Trim('-');
+        var started = TimeZoneInfo.ConvertTime(events[0].Timestamp, TimeZoneInfo.Local);
+        Response.Headers.CacheControl = "no-store";
+        return File(pdf, "application/pdf", $"claude-{(device.Length > 0 ? device : "device")}-{started:yyyy-MM-dd-HHmm}.pdf");
+    }
+
     /// <summary>
     /// Sessions in a date range as CSV (for billing customers), with tokens and cost.
     /// Dates are days in the server's time zone; "to" is inclusive.  Uses ";" and a

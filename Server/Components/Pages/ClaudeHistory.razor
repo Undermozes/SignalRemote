@@ -141,6 +141,10 @@
                     <a class="sr-btn sr-btn-primary flex-1 sm:flex-none" href="@($"assistant/{Uri.EscapeDataString(first.DeviceId)}?continue={SessionId}")">
                         <Icon Name="sparkles" Class="size-4" /> Continue conversation
                     </a>
+                    <a class="sr-btn sr-btn-secondary" href="@($"api/claude-history/session/{SessionId}/pdf")"
+                       title="Export as PDF" aria-label="Export as PDF" download>
+                        <Icon Name="download" Class="size-4" /> <span>PDF</span>
+                    </a>
                     @if (_isAdmin)
                     {
                         <button class="sr-btn sr-btn-secondary text-danger dark:text-red-400" title="Delete conversation"

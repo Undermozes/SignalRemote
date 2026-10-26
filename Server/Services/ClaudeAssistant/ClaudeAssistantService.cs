@@ -8,8 +8,13 @@ namespace Remotely.Server.Services.ClaudeAssistant;
 public interface IClaudeAssistantService
 {
     Task<bool> IsEnabled();
-    /// <param name="continueSessionId">An earlier session from the history to continue, or null for a new one.</param>
-    Task<Result<ClaudeAssistantSession>> StartSession(RemotelyUser user, string deviceId, Guid? continueSessionId = null);
+    /// <summary>
+    /// Returns the technician's running session for this device, or starts one.  Sessions live
+    /// on the server, so a refreshed or reconnected page continues where it was.
+    /// </summary>
+    /// <param name="continueSessionId">An earlier session from the history to continue.</param>
+    /// <param name="startNew">End the running session and start a new conversation.</param>
+    Task<Result<ClaudeAssistantSession>> StartSession(RemotelyUser user, string deviceId, Guid? continueSessionId = null, bool startNew = false);
 }
 
 public class ClaudeAssistantService : IClaudeAssistantService
@@ -49,6 +54,7 @@ public class ClaudeAssistantService : IClaudeAssistantService
     private readonly IAgentCommandRunner _commandRunner;
     private readonly IAgentHubSessionCache _agentSessionCache;
     private readonly IClaudeAssistantHistory _history;
+    private readonly IClaudeAssistantSessionRegistry _registry;
     private readonly IDataService _dataService;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -56,12 +62,14 @@ public class ClaudeAssistantService : IClaudeAssistantService
         IAgentCommandRunner commandRunner,
         IAgentHubSessionCache agentSessionCache,
         IClaudeAssistantHistory history,
+        IClaudeAssistantSessionRegistry registry,
         IDataService dataService,
         ILoggerFactory loggerFactory)
     {
         _commandRunner = commandRunner;
         _agentSessionCache = agentSessionCache;
         _history = history;
+        _registry = registry;
         _dataService = dataService;
         _loggerFactory = loggerFactory;
     }
@@ -72,7 +80,7 @@ public class ClaudeAssistantService : IClaudeAssistantService
         return settings.ClaudeAssistantEnabled;
     }
 
-    public async Task<Result<ClaudeAssistantSession>> StartSession(RemotelyUser user, string deviceId, Guid? continueSessionId = null)
+    public async Task<Result<ClaudeAssistantSession>> StartSession(RemotelyUser user, string deviceId, Guid? continueSessionId = null, bool startNew = false)
     {
         var settings = await _dataService.GetSettings();
         if (!settings.ClaudeAssistantEnabled)
@@ -99,6 +107,29 @@ public class ClaudeAssistantService : IClaudeAssistantService
         {
             return Result.Fail<ClaudeAssistantSession>(
                 "No Anthropic API key configured.  Set it in Server Config or the ANTHROPIC_API_KEY environment variable.");
+        }
+
+        // Pick up a session that is still running on the server.
+        if (continueSessionId is Guid runningId && _registry.TryGet(runningId, out var running))
+        {
+            if (running.Device.ID != deviceId)
+            {
+                return Result.Fail<ClaudeAssistantSession>("That conversation was about another device.");
+            }
+            if (running.User.UserName != user.UserName)
+            {
+                return Result.Fail<ClaudeAssistantSession>($"{running.User.UserName} is using that conversation right now.");
+            }
+            return Result.Ok(running);
+        }
+
+        if (continueSessionId is null && _registry.TryGetActive($"{user.UserName}", deviceId, out var active))
+        {
+            if (!startNew)
+            {
+                return Result.Ok(active);
+            }
+            _registry.End(active);
         }
 
         ResumedConversation? resumedFrom = null;
@@ -149,6 +180,7 @@ public class ClaudeAssistantService : IClaudeAssistantService
             settings.ClaudeAutoRunReadOnlyCommands,
             resumedFrom);
 
+        _registry.Add(session);
         return Result.Ok(session);
     }
 }

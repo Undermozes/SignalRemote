@@ -4,6 +4,8 @@ using Anthropic.Helpers;
 using Anthropic.Models.Beta.Messages;
 using Remotely.Shared.Entities;
 using Remotely.Shared.Enums;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 
@@ -25,6 +27,38 @@ public enum CommandState
     Completed,
     Rejected,
     Failed,
+}
+
+/// <summary>How commands Claude wants to run get approved.  Chosen per session.</summary>
+public enum ApprovalMode
+{
+    [Display(ShortName = "Ask always", Name = "Ask for everything",
+        Description = "Every command waits for your approval.")]
+    AskAlways,
+
+    [Display(ShortName = "Allow read-only", Name = "Allow read-only",
+        Description = "Read-only commands run at once; commands that change the system wait for you.")]
+    AllowReadOnly,
+
+    [Display(ShortName = "Allow all", Name = "Allow all",
+        Description = "Every command runs without asking.  Administrators only.")]
+    AllowAll,
+}
+
+public static class ApprovalModeExtensions
+{
+    private static readonly Dictionary<ApprovalMode, DisplayAttribute> _display = Enum.GetValues<ApprovalMode>()
+        .ToDictionary(
+            x => x,
+            x => typeof(ApprovalMode).GetField(x.ToString())!.GetCustomAttribute<DisplayAttribute>() ?? new DisplayAttribute { Name = x.ToString() });
+
+    public static string DisplayName(this ApprovalMode mode) => _display[mode].Name ?? mode.ToString();
+    public static string ShortName(this ApprovalMode mode) => _display[mode].ShortName ?? mode.DisplayName();
+    public static string Description(this ApprovalMode mode) => _display[mode].Description ?? string.Empty;
+
+    /// <summary>Allow all lets Claude change the device without asking, so only administrators get it.</summary>
+    public static bool IsAllowedFor(this ApprovalMode mode, RemotelyUser user) =>
+        mode != ApprovalMode.AllowAll || user.IsAdministrator;
 }
 
 public class AssistantEntry
@@ -108,7 +142,6 @@ public sealed class ClaudeAssistantSession : IDisposable
     private readonly List<BetaMessageParam> _messages = [];
     private readonly List<string> _pendingToolUseIds = [];
     private readonly string _model;
-    private readonly bool _autoRunReadOnly;
     private readonly CancellationTokenSource _sessionCts = new();
     private readonly SemaphoreSlim _turnLock = new(1, 1);
     private CancellationTokenSource? _turnCts;
@@ -136,7 +169,7 @@ public sealed class ClaudeAssistantSession : IDisposable
         User = user;
         Device = device;
         _model = model;
-        _autoRunReadOnly = autoRunReadOnly;
+        Mode = autoRunReadOnly ? ApprovalMode.AllowReadOnly : ApprovalMode.AskAlways;
         _resumedFrom = resumedFrom;
 
         if (resumedFrom is null)
@@ -174,17 +207,89 @@ public sealed class ClaudeAssistantSession : IDisposable
 
     public event Action? Changed;
 
+    private Func<CancellationToken, Task<ViewerScreenshot>>? _screenshotProvider;
+    private bool _screenshotsEnabled;
+    private int _viewers;
+
     /// <summary>
-    /// Captures the remote screen from the viewer this session is embedded in.  Null when
-    /// the assistant isn't attached to a remote control session, in which case Claude
-    /// doesn't get the get_screenshot tool.  Set it before the first message, because
-    /// changing the tool list mid-conversation invalidates the prompt cache.
+    /// Captures the remote screen from the viewer panel the assistant is open in, or null
+    /// when no viewer panel is attached right now.  Once a viewer panel attached, Claude
+    /// keeps the get_screenshot tool for the rest of the session (the tool list stays
+    /// stable for the prompt cache); without a panel the tool reports that.
     /// </summary>
-    public Func<CancellationToken, Task<ViewerScreenshot>>? ScreenshotProvider { get; set; }
+    public Func<CancellationToken, Task<ViewerScreenshot>>? ScreenshotProvider
+    {
+        get => _screenshotProvider;
+        set
+        {
+            _screenshotProvider = value;
+            _screenshotsEnabled |= value is not null;
+        }
+    }
+
+    /// <summary>True when Claude can take screenshots (a viewer panel is or was attached).</summary>
+    public bool ScreenshotsEnabled => _screenshotsEnabled;
+
+    /// <summary>Last time anything happened in the session, for ending idle sessions.</summary>
+    public DateTimeOffset LastActivity { get; private set; } = DateTimeOffset.Now;
+
+    /// <summary>Pages showing this session right now.  The session outlives its pages.</summary>
+    public int Viewers => Volatile.Read(ref _viewers);
+
+    public bool IsEnded { get; private set; }
+
+    public bool IsWaitingForApproval => SnapshotEntries().Any(x => x.State == CommandState.AwaitingApproval);
+
+    /// <summary>A copy of the entries, safe to enumerate while Claude adds new ones.</summary>
+    public AssistantEntry[] SnapshotEntries()
+    {
+        lock (Entries)
+        {
+            return [.. Entries];
+        }
+    }
+
+    public void Attach() => Interlocked.Increment(ref _viewers);
+
+    public void Detach() => Interlocked.Decrement(ref _viewers);
 
     public Device Device { get; }
     public List<AssistantEntry> Entries { get; } = [];
     public bool IsBusy { get; private set; }
+
+    public ApprovalMode Mode { get; private set; }
+
+    /// <summary>
+    /// Changes how commands are approved for the rest of this session.  Switching to
+    /// <see cref="ApprovalMode.AllowAll"/> also approves the commands waiting right now.
+    /// </summary>
+    public bool SetMode(ApprovalMode mode)
+    {
+        if (!mode.IsAllowedFor(User))
+        {
+            return false;
+        }
+        if (mode == Mode)
+        {
+            return true;
+        }
+
+        Mode = mode;
+        var label = mode.DisplayName();
+        _logger.LogInformation(
+            "[ClaudeAudit] Session {sessionId}: {user} set approval mode to {mode}.",
+            SessionId, User.UserName, label);
+        AddEntry(new AssistantEntry { Kind = AssistantEntryKind.Info, Text = $"Approval mode: {label} (set by {User.UserName})." });
+
+        if (mode == ApprovalMode.AllowAll)
+        {
+            foreach (var waiting in SnapshotEntries().Where(x => x.State == CommandState.AwaitingApproval).ToList())
+            {
+                Approve(waiting);
+            }
+        }
+        return true;
+    }
 
     /// <summary>What Claude is doing in the current turn, e.g. "Thinking...".</summary>
     public string Status { get; private set; } = string.Empty;
@@ -214,6 +319,11 @@ public sealed class ClaudeAssistantSession : IDisposable
 
     public void Dispose()
     {
+        if (IsEnded)
+        {
+            return;
+        }
+        IsEnded = true;
         _sessionCts.Cancel();
         _sessionCts.Dispose();
         _logger.LogInformation("[ClaudeAudit] Session {sessionId} ended.", SessionId);
@@ -480,7 +590,7 @@ public sealed class ClaudeAssistantSession : IDisposable
             new() { Text = _systemPrompt, CacheControl = new BetaCacheControlEphemeral() },
             new() { Text = platformNote },
         };
-        if (ScreenshotProvider is not null)
+        if (_screenshotsEnabled)
         {
             system.Add(new() { Text = RemoteSessionNote });
         }
@@ -574,7 +684,7 @@ public sealed class ClaudeAssistantSession : IDisposable
             },
         ];
 
-        if (ScreenshotProvider is not null)
+        if (_screenshotsEnabled)
         {
             tools.Add(new BetaTool
             {
@@ -639,10 +749,11 @@ public sealed class ClaudeAssistantSession : IDisposable
             State = CommandState.AwaitingApproval,
         };
 
-        if (isReadOnly && _autoRunReadOnly)
+        var autoApprove = Mode == ApprovalMode.AllowAll || (isReadOnly && Mode == ApprovalMode.AllowReadOnly);
+        if (autoApprove)
         {
             entry.State = CommandState.Running;
-            entry.DecidedBy = "auto (read-only)";
+            entry.DecidedBy = Mode == ApprovalMode.AllowAll ? $"{User.UserName} (allow all)" : "auto (read-only)";
             AddEntry(entry);
             RecordCommand(ClaudeAssistantEventKind.CommandApproved, entry);
         }
@@ -720,12 +831,16 @@ public sealed class ClaudeAssistantSession : IDisposable
 
     private async Task<BetaContentBlockParam> ScreenshotTool(BetaToolUseBlock toolUse, CancellationToken cancellationToken)
     {
-        if (ScreenshotProvider is null)
+        var provider = ScreenshotProvider;
+        if (provider is null)
         {
-            return ToolResult(toolUse.ID, "No remote control session is attached to this assistant.", isError: true);
+            return ToolResult(toolUse.ID,
+                "The technician's remote control viewer isn't open right now, so no screenshot is possible.  " +
+                "Continue with commands, or ask the technician to open the viewer.",
+                isError: true);
         }
 
-        var screenshot = await ScreenshotProvider(cancellationToken);
+        var screenshot = await provider(cancellationToken);
         if (string.IsNullOrWhiteSpace(screenshot.JpegBase64))
         {
             var reason = screenshot.Error ?? "The viewer didn't return a screenshot.";
@@ -862,7 +977,11 @@ public sealed class ClaudeAssistantSession : IDisposable
 
     private void AddEntry(AssistantEntry entry, bool record = true)
     {
-        Entries.Add(entry);
+        LastActivity = DateTimeOffset.Now;
+        lock (Entries)
+        {
+            Entries.Add(entry);
+        }
         Changed?.Invoke();
 
         if (!record)

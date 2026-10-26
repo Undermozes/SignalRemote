@@ -70,8 +70,18 @@ export function UpdateThumbnail(displayName, imageBytes) {
     _thumbnailMap.set(displayName, `data:image/jpeg;base64,${base64}`);
     var img = document.querySelector(`[data-display="${CSS.escape(displayName)}"] img`);
     if (img) {
-        img.src = _thumbnailMap.get(displayName);
+        ShowThumbnail(img, _thumbnailMap.get(displayName));
     }
+}
+// Constant markup (Lucide "monitor"), never user data.
+const MonitorIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>';
+function ShowThumbnail(img, src) {
+    img.onload = () => {
+        var _a, _b;
+        img.hidden = false;
+        (_b = (_a = img.parentElement) === null || _a === void 0 ? void 0 : _a.querySelector("svg")) === null || _b === void 0 ? void 0 : _b.setAttribute("hidden", "");
+    };
+    img.src = src;
 }
 export function CloseAllPopupMenus(exceptMenuId) {
     PopupMenus.forEach(x => {
@@ -253,19 +263,29 @@ export function UpdateDisplays(selectedDisplay, displayNames, displayLayouts) {
         var button = document.createElement("button");
         button.className = "sr-btn sr-btn-ghost h-auto w-full flex-col gap-1 p-2";
         button.setAttribute("data-display", displayNames[i]);
+        button.title = displayNames[i];
+        // A tile with a monitor icon until the agent sends a thumbnail (older agents never do).
+        var thumb = document.createElement("span");
+        thumb.className = "monitor-thumbnail";
+        thumb.innerHTML = MonitorIconSvg;
         var img = document.createElement("img");
-        img.className = "monitor-thumbnail";
-        img.alt = `Monitor ${i + 1} (${displayNames[i]})`;
+        img.alt = "";
+        img.hidden = true;
+        img.onerror = () => {
+            img.hidden = true;
+            img.removeAttribute("src");
+        };
+        thumb.appendChild(img);
         var cachedSrc = _thumbnailMap.get(displayNames[i]);
         if (cachedSrc) {
-            img.src = cachedSrc;
+            ShowThumbnail(img, cachedSrc);
         }
         var label = document.createElement("span");
         label.innerText = `Monitor ${i + 1}`;
         if (displayNames[i] == selectedDisplay) {
             button.classList.add("toggled");
         }
-        button.appendChild(img);
+        button.appendChild(thumb);
         button.appendChild(label);
         ScreenSelectMenu.appendChild(button);
         button.onclick = (ev) => {
