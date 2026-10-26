@@ -59,16 +59,20 @@ public class ClaudeApprovalModeTests
     }
 
     [TestMethod]
-    public void ModeChange_IsRecordedInHistory()
+    public void ModeChange_IsShownInChat_ButNoHistoryBeforeFirstMessage()
     {
         var session = CreateSession(isAdmin: true);
         session.SetMode(ApprovalMode.AllowAll);
         session.SetMode(ApprovalMode.AllowAll); // no change, no extra entry
 
-        var changes = _recorded.Where(x => x.Kind == ClaudeAssistantEventKind.Info && x.Text!.StartsWith("Approval mode")).ToList();
+        var changes = session.SnapshotEntries().Where(x => x.Kind == AssistantEntryKind.Info && x.Text.StartsWith("Approval mode")).ToList();
         Assert.AreEqual(1, changes.Count);
         StringAssert.Contains(changes[0].Text, "Allow all");
         StringAssert.Contains(changes[0].Text, "tech@example.com");
+
+        // Nothing asked yet: no history at all, also not when the session ends.
+        session.Dispose();
+        Assert.AreEqual(0, _recorded.Count);
     }
 
     [TestMethod]
@@ -100,7 +104,7 @@ public class ClaudeApprovalModeTests
         Assert.IsTrue(registry.TryGet(watched.SessionId, out _), "A session with an open page keeps running.");
         Assert.IsFalse(registry.TryGet(idle.SessionId, out _), "An idle session without a page ends.");
         Assert.IsTrue(idle.IsEnded);
-        Assert.IsTrue(_recorded.Any(x => x.SessionId == idle.SessionId && x.Kind == ClaudeAssistantEventKind.SessionEnded));
+        Assert.IsFalse(_recorded.Any(x => x.SessionId == idle.SessionId), "A session without questions leaves no history.");
 
         watched.Detach();
         registry.Cleanup(System.DateTimeOffset.Now + ClaudeAssistantSessionRegistry.IdleTimeout + System.TimeSpan.FromMinutes(1));

@@ -54,6 +54,10 @@ public class ClaudeConversationPdfTests
         {
             Event(ClaudeAssistantEventKind.SessionStarted, "Model: claude-opus-5-5"),
             Event(ClaudeAssistantEventKind.UserMessage, "Onderzoek waarom Resengo zo traag is in Chrome. 🚀 Één tab hangt."),
+            // Blank lines and trailing newlines (crashed the export in production).
+            Event(ClaudeAssistantEventKind.UserMessage, "Eerste alinea.\n\nTweede alinea.\n\n\n"),
+            Event(ClaudeAssistantEventKind.UserMessage, "\n"),
+            Event(ClaudeAssistantEventKind.CommandRequested, "Get-Date", x => { x.Shell = "PSCore"; x.Purpose = "Regel 1\n\nRegel 2"; x.IsReadOnly = true; }),
             screenshot,
             Event(ClaudeAssistantEventKind.CommandRequested, "Get-Process chrome | Sort-Object CPU -Descending", x => { x.Shell = "PSCore"; x.Purpose = "Check CPU."; x.IsReadOnly = true; }),
             Event(ClaudeAssistantEventKind.CommandApproved, null, x => x.DecidedBy = "auto (read-only)"),

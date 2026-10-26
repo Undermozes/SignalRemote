@@ -147,6 +147,12 @@ public sealed class ClaudeAssistantSession : IDisposable
     private CancellationTokenSource? _turnCts;
     private ResumedConversation? _resumedFrom;
 
+    // History is only written once the technician sent a first message, so opening the
+    // assistant without asking anything leaves no empty session behind.  Until then,
+    // events (session start, mode changes) wait here.
+    private readonly List<ClaudeAssistantEvent> _unsavedEvents = [];
+    private bool _historyStarted;
+
     public ClaudeAssistantSession(
         AnthropicClient client,
         IAgentCommandRunner commandRunner,
@@ -327,7 +333,10 @@ public sealed class ClaudeAssistantSession : IDisposable
         _sessionCts.Cancel();
         _sessionCts.Dispose();
         _logger.LogInformation("[ClaudeAudit] Session {sessionId} ended.", SessionId);
-        Record(ClaudeAssistantEventKind.SessionEnded);
+        if (_historyStarted)
+        {
+            Record(ClaudeAssistantEventKind.SessionEnded);
+        }
     }
 
     public async Task SendMessage(string text)
@@ -1025,7 +1034,30 @@ public sealed class ClaudeAssistantSession : IDisposable
             UserName = User.UserName,
         };
         fill?.Invoke(assistantEvent);
-        _ = _history.Record(assistantEvent);
+
+        List<ClaudeAssistantEvent> toSave;
+        lock (_unsavedEvents)
+        {
+            if (!_historyStarted && kind != ClaudeAssistantEventKind.UserMessage)
+            {
+                _unsavedEvents.Add(assistantEvent);
+                return;
+            }
+            _historyStarted = true;
+            toSave = [.. _unsavedEvents, assistantEvent];
+            _unsavedEvents.Clear();
+        }
+
+        // In order, so the start comes before the first question.
+        _ = SaveInOrder(toSave);
+    }
+
+    private async Task SaveInOrder(List<ClaudeAssistantEvent> events)
+    {
+        foreach (var assistantEvent in events)
+        {
+            await _history.Record(assistantEvent);
+        }
     }
 
     private void RecordCommand(ClaudeAssistantEventKind kind, AssistantEntry entry)

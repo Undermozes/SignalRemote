@@ -382,12 +382,13 @@ public static partial class ClaudeConversationPdf
             for (var i = 0; i < lines.Count; i++)
             {
                 var line = lines[i];
-                var height = line.Max(x => x.Run.Size) * 1.4f;
+                // An empty line (a blank line in the text) keeps the height of the text around it.
+                var height = (line.Count > 0 ? line.Max(x => x.Run.Size) : runs.FirstOrDefault()?.Size ?? 10f) * 1.4f;
                 EnsureRoom(height);
                 Strip(height, draw: false);
 
                 var baseline = _y + height * 0.76f;
-                if (bullet is not null && i == 0)
+                if (bullet is not null && i == 0 && line.Count > 0)
                 {
                     var font = Font(line[0].Run.Font == Fonts.Mono ? Fonts.Regular : line[0].Run.Font, line[0].Run.Size);
                     using var paint = Paint(Fg);
