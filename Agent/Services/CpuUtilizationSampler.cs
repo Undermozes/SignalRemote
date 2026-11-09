@@ -61,22 +61,31 @@ internal class CpuUtilizationSampler : BackgroundService, ICpuUtilizationSampler
         double totalUtilization = 0;
         var utilizations = new Dictionary<int, Tuple<DateTimeOffset, TimeSpan>>();
         var processes = Process.GetProcesses();
-
-        // If we're on Windows and not running in an elevated process,
-        // don't try to get CPU utilization for session 0 processes. It
-        // will throw.
-        if (OperatingSystem.IsWindows() &&
-            !_elevationDetector.IsElevated())
-        {
-
-            processes = processes.Where(x => x.SessionId != 0).ToArray();
-        }
+        var skipSessionZero = OperatingSystem.IsWindows() && !_elevationDetector.IsElevated();
 
         foreach (var proc in processes)
         {
+            // Every Process object holds an OS handle on Windows.  Dispose all of them.
+            using var _ = proc;
+
             if (cancelToken.IsCancellationRequested)
             {
-                return 0;
+                continue;
+            }
+
+            // If we're on Windows and not running in an elevated process,
+            // don't try to get CPU utilization for session 0 processes. It
+            // will throw.
+            try
+            {
+                if (skipSessionZero && proc.SessionId == 0)
+                {
+                    continue;
+                }
+            }
+            catch
+            {
+                continue;
             }
 
 
@@ -113,7 +122,7 @@ internal class CpuUtilizationSampler : BackgroundService, ICpuUtilizationSampler
             var endTime = DateTimeOffset.Now;
             try
             {
-                var proc = Process.GetProcessById(kvp.Key);
+                using var proc = Process.GetProcessById(kvp.Key);
                 var startTime = kvp.Value.Item1;
                 var startCpuUsage = kvp.Value.Item2;
                 var endCpuUsage = proc.TotalProcessorTime;

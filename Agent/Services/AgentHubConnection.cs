@@ -51,6 +51,7 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
     private Timer? _heartbeatTimer;
     private HubConnection? _hubConnection;
     private bool _isServerVerified;
+    private readonly SemaphoreSlim _connectLock = new(1, 1);
 
     public AgentHubConnection(
         IConfigService configService,
@@ -106,6 +107,27 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
 
     public async Task Connect()
     {
+        // Only one connect loop may run at a time.  Overlapping loops would each
+        // build their own HubConnection and orphan the others, which keep
+        // reconnecting (and leaking sockets) forever.
+        if (!await _connectLock.WaitAsync(0))
+        {
+            _logger.LogInformation("Connect already in progress.  Skipping.");
+            return;
+        }
+
+        try
+        {
+            await ConnectImpl();
+        }
+        finally
+        {
+            _connectLock.Release();
+        }
+    }
+
+    private async Task ConnectImpl()
+    {
         using var throttle = new SemaphoreSlim(1, 1);
 
         for (var i = 1; true; i++)
@@ -135,7 +157,19 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
 
                 if (_hubConnection is not null)
                 {
-                    await _hubConnection.DisposeAsync();
+                    var oldConnection = _hubConnection;
+                    _hubConnection = null;
+                    oldConnection.Reconnected -= HubConnection_Reconnected;
+                    try
+                    {
+                        using var disposeCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                        await oldConnection.StopAsync(disposeCts.Token);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error while stopping previous hub connection.");
+                    }
+                    await oldConnection.DisposeAsync();
                 }
 
                 _hubConnection = new HubConnectionBuilder()
@@ -646,16 +680,12 @@ public class AgentHubConnection : IAgentHubConnection, IDisposable
 
         var device = await CreateDeviceDto(_connectionInfo);
 
-        if (!await _hubConnection.InvokeAsync<bool>("DeviceCameOnline", device))
+        if (!await _hubConnection.InvokeAsync<bool>("DeviceCameOnline", device) ||
+            await CheckForServerMigration())
         {
-            await Connect();
-            return;
-        }
-
-        if (await CheckForServerMigration())
-        {
-            await Connect();
-            return;
+            // Don't await Connect() inside this handler.  Connect() disposes the
+            // connection that is currently invoking us, which can deadlock.
+            _ = Task.Run(Connect);
         }
     }
 

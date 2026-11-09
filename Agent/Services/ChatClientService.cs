@@ -137,6 +137,11 @@ public class ChatClientService : IChatClientService
         while (clientPipe.IsConnected)
         {
             var messageJson = await sr.ReadLineAsync();
+            if (messageJson is null)
+            {
+                // End of stream: the pipe closed.  Without this the loop spins forever.
+                break;
+            }
             if (!string.IsNullOrWhiteSpace(messageJson))
             {
                 var chatMessage = JsonSerializer.Deserialize<ChatMessage>(messageJson);

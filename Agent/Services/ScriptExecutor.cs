@@ -25,12 +25,15 @@ public class ScriptExecutor : IScriptExecutor
     private readonly IConfigService _configService;
     private readonly IScriptingShellFactory _scriptingShellFactory;
     private readonly ILogger<ScriptExecutor> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public ScriptExecutor(
         IConfigService configService, 
         IScriptingShellFactory scriptingShellFactory,
+        IHttpClientFactory httpClientFactory,
         ILogger<ScriptExecutor> logger)
     {
+        _httpClientFactory = httpClientFactory;
         _configService = configService;
         _scriptingShellFactory = scriptingShellFactory;
         _logger = logger;
@@ -111,9 +114,9 @@ public class ScriptExecutor : IScriptExecutor
                 initiator);
 
             var url = $"{_configService.GetConnectionInfo().Host}/API/SavedScripts/{savedScriptId}";
-            using var hc = new HttpClient();
+            using var hc = _httpClientFactory.CreateClient();
             hc.DefaultRequestHeaders.Add(AppConstants.ExpiringTokenHeaderName, expiringToken);
-            var response = await hc.GetAsync(url);
+            using var response = await hc.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -205,7 +208,7 @@ public class ScriptExecutor : IScriptExecutor
     {
         var targetURL = _configService.GetConnectionInfo().Host + $"/API/ScriptResults";
 
-        using var httpClient = new HttpClient();
+        using var httpClient = _httpClientFactory.CreateClient();
         httpClient.DefaultRequestHeaders.Add(AppConstants.ExpiringTokenHeaderName, expiringToken);
 
         using var response = await httpClient.PostAsJsonAsync(targetURL, result);
