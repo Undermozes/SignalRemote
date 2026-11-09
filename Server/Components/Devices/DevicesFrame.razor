@@ -114,8 +114,10 @@
     </div>
 
     @* One column of compact cards on phones, a grid from md up.  Bottom padding keeps the
-       last cards clear of the fixed Terminal / Quick Scripts tabs. *@
-    <div id="deviceListDiv" class="grid grid-cols-1 items-start gap-3 pb-24 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+       last cards clear of the fixed Terminal / Quick Scripts tabs.
+       An expanded card spans the full row.  Dense packing lets the next cards fill the
+       rest of its row instead of leaving a gap, so the details open below that row. *@
+    <div id="deviceListDiv" class="grid grid-cols-1 items-start gap-3 pb-24 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" style="grid-auto-flow: row dense">
         @foreach (var device in DisplayedDevices)
         {
             <CascadingValue Value="this">
